@@ -15,7 +15,7 @@ interface HeaderProps {
 
 export function Header({
   title = 'ThekaBook',
-  subtitle = 'KAAM KA POORA HISAB',
+  subtitle = 'COMPLETE CONTRACTOR LEDGER',
   onBack,
   onRefresh,
   onLogout,
