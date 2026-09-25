@@ -161,9 +161,9 @@ export function AttendancePage({
 
           {!sortedAttendance.length && (
             <EmptyState
-              title="Koi Haziri Recorded Nahi Hai"
-              description="Nayi haziri mark karein taaki automatically wages calculate ho sakein."
-              actionTitle="Pehli Haziri Lagayein"
+              title="No Attendance Recorded"
+              description="Mark attendance to automatically record earned daily wages and overtime."
+              actionTitle="+ Mark Attendance"
               onAction={() => onOpenAttendanceModal()}
             />
           )}

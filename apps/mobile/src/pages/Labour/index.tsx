@@ -75,7 +75,7 @@ export function LabourPage({
             <Text style={styles.subtitle}>Daily wages, overtime & clear balances</Text>
           </View>
           <Button
-            title="Naya Worker"
+            title="+ Add Worker"
             onPress={() => onOpenWorkerModal()}
             icon="add"
             size="sm"
@@ -173,9 +173,9 @@ export function LabourPage({
 
           {!filteredWorkers.length && (
             <EmptyState
-              title="Koi Worker Nahi Mila"
-              description="Naye karigar ya labour ko add karein taaki daily rates save ho sakein."
-              actionTitle="Pehla Worker Jodein"
+              title="No Workers Found"
+              description="Add workers and team members to track daily attendance and wages."
+              actionTitle="+ Add First Worker"
               onAction={() => onOpenWorkerModal()}
             />
           )}

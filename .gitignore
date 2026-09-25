@@ -11,3 +11,4 @@ dist-verified/
 android/
 ios/
 tools/
+*.apk

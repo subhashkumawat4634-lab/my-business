@@ -143,8 +143,7 @@ export function ReportsPage({
         <View style={styles.noticeBox}>
           <AppIcon name="shield-outline" size={18} color={Colors.primary} />
           <Text style={styles.noticeText}>
-            Yeh reports site margins hain (bina office rent, personal diesel ya GST
-            ke). Audited income statement ke liye accountant se consult karein.
+            These figures represent direct project site margins (excluding common office overhead, owner salary, or statutory taxes). Consult your certified accountant for statutory audited statements.
           </Text>
         </View>
 

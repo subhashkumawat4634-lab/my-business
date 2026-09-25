@@ -101,8 +101,7 @@ export function HisabPage({
         <View style={styles.noticeBox}>
           <AppIcon name="information-circle-outline" size={18} color={Colors.warning} />
           <Text style={styles.noticeText}>
-            Material aur Expense bills sirf cost record karte hain. Nagad bhugtan ke liye
-            "Pay Bill" use karein taaki cash out accurately count ho sake.
+            Material and Expense bills record accrued costs. To record payments against bills, use "Pay Bill" so cash outflow is tracked accurately.
           </Text>
         </View>
 
@@ -255,9 +254,9 @@ export function HisabPage({
 
           {!filteredEntries.length && (
             <EmptyState
-              title="Koi Hisab Entry Nahi Mili"
-              description="Nayi payment, receipt ya bill jodein taaki ledger update ho sake."
-              actionTitle="Pehli Entry Karein"
+              title="No Ledger Entries Found"
+              description="Add a payment, client receipt or expense bill to update the financial ledger."
+              actionTitle="+ Add First Entry"
               onAction={() => onOpenEntry('RECEIPT')}
             />
           )}

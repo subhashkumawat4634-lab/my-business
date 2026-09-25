@@ -18,6 +18,7 @@ import { SearchBar } from '../../components/common/SearchBar';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Snapshot, Row } from '../../types';
 import { money, siteSummary } from '../../finance';
+import { parseSiteNotesAndDocs } from '../../components/sites/SiteFormModal';
 
 interface SitesPageProps {
   data: Snapshot;
@@ -56,6 +57,7 @@ export function SitesPage({
   // Render Single Site Details View
   if (site) {
     const f = siteSummary(site, data.attendance, data.entries);
+    const { userNotes, documents } = parseSiteNotesAndDocs(site.notes || '');
     const siteEntries = data.entries
       .filter((e) => e.site_id === site.id)
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -123,8 +125,8 @@ export function SitesPage({
                 {site.address}
               </Text>
             ) : null}
-            {site.notes ? (
-              <Text style={styles.siteNotes}>Notes: {site.notes}</Text>
+            {userNotes ? (
+              <Text style={styles.siteNotes}>Notes: {userNotes}</Text>
             ) : null}
           </Card>
 
@@ -156,6 +158,81 @@ export function SitesPage({
             />
           </View>
 
+          {/* Agreements & Documents Section */}
+          <Card style={styles.documentsCard}>
+            <View style={styles.docHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <AppIcon name="document-text" size={18} color="#7C3AED" />
+                <Text style={styles.cardHeaderTitle}>
+                  Agreements & Documents ({documents.length})
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => onEditSite(site)}
+                style={({ pressed }) => [
+                  styles.uploadDocBtn,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <AppIcon name="cloud-upload" size={14} color="#7C3AED" />
+                <Text style={styles.uploadDocBtnText}>+ Manage</Text>
+              </Pressable>
+            </View>
+
+            {documents.length > 0 ? (
+              <View style={styles.docItemsGrid}>
+                {documents.map((d) => (
+                  <View key={d.id} style={styles.docItemCard}>
+                    <View style={styles.docItemIconBox}>
+                      <AppIcon
+                        name={
+                          d.category === 'AGREEMENT'
+                            ? 'document-text'
+                            : d.category === 'DRAWING'
+                            ? 'map'
+                            : d.category === 'QUOTATION'
+                            ? 'receipt'
+                            : 'image'
+                        }
+                        size={18}
+                        color={
+                          d.category === 'AGREEMENT'
+                            ? '#16A34A'
+                            : d.category === 'DRAWING'
+                            ? '#2563EB'
+                            : d.category === 'QUOTATION'
+                            ? '#D97706'
+                            : '#9333EA'
+                        }
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={styles.docItemName} numberOfLines={1}>
+                          {d.name}
+                        </Text>
+                        <Badge label={d.category} tone="gray" />
+                      </View>
+                      <Text style={styles.docItemMeta}>
+                        {d.size ? `${d.size} • ` : ''}Date: {d.date}
+                        {d.refNo ? ` • Ref: ${d.refNo}` : ''}
+                      </Text>
+                      {d.terms ? (
+                        <Text style={styles.docItemTerms} numberOfLines={2}>
+                          Terms: {d.terms}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noDocText}>
+                No contracts or agreements attached yet. Tap "+ Manage" to attach files.
+              </Text>
+            )}
+          </Card>
+
           {/* Cost & Cash Breakdown */}
           <Card style={styles.breakdownCard}>
             <Text style={styles.cardHeaderTitle}>Cost & Cash Breakdown</Text>
@@ -181,12 +258,12 @@ export function SitesPage({
           {/* Site Action Buttons */}
           <View style={styles.actionsWrap}>
             <Button
-              title="Receive Money"
+              title="Receive Payment"
               onPress={() => onOpenEntry('RECEIPT', site.id)}
               icon="arrow-down"
             />
             <Button
-              title="Mark Haziri"
+              title="Attendance"
               variant="secondary"
               onPress={() => onOpenAttendance(site.id)}
               icon="calendar"
@@ -213,7 +290,7 @@ export function SitesPage({
 
           {/* Site Ledger Entries */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Site Ledger (Hisab)</Text>
+            <Text style={styles.sectionTitle}>Site Ledger</Text>
             <Text style={styles.sectionSubtitle}>All transactions for this site</Text>
           </View>
 
@@ -266,7 +343,7 @@ export function SitesPage({
             })}
             {!siteEntries.length && (
               <Text style={styles.emptyNotice}>
-                Is site ka koi kharcha ya receipt abhi recorded nahi hai.
+                No expenses or receipts recorded for this site yet.
               </Text>
             )}
           </View>
@@ -306,7 +383,7 @@ export function SitesPage({
         {/* Page Topbar */}
         <View style={styles.pageHeader}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.pageTitle}>Work Sites (Theke)</Text>
+            <Text style={styles.pageTitle}>Work Sites</Text>
             <Text style={styles.pageSubtitle}>
               Projects, client agreements & balances
             </Text>
@@ -319,26 +396,26 @@ export function SitesPage({
             ]}
           >
             <AppIcon name="add" size={19} color="#FFFFFF" />
-            <Text style={styles.nayaThekaBtnText}>Naya Theka</Text>
+            <Text style={styles.nayaThekaBtnText}>+ New Site</Text>
           </Pressable>
         </View>
 
         {/* Quick Stats Overview Banner */}
         <View style={styles.statsBanner}>
           <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>Kul Theke</Text>
+            <Text style={styles.statBannerLabel}>Total Sites</Text>
             <Text style={styles.statBannerValue}>{totalSitesCount}</Text>
           </View>
           <View style={styles.statBannerDivider} />
           <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>Chalu (Ongoing)</Text>
+            <Text style={styles.statBannerLabel}>Active Sites</Text>
             <Text style={[styles.statBannerValue, { color: Colors.success }]}>
               {ongoingSitesCount}
             </Text>
           </View>
           <View style={styles.statBannerDivider} />
           <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>Kul Theka Rashi</Text>
+            <Text style={styles.statBannerLabel}>Total Value</Text>
             <Text style={styles.statBannerValue}>
               {money(totalContractVal)}
             </Text>
@@ -459,9 +536,9 @@ export function SitesPage({
           </View>
         ) : (
           <EmptyState
-            title="Koi Theka Nahi Mila"
-            description="Aapne abhi tak koi site add nahi ki hai ya filter khali hai. Naya theka shuru karein aur hisab asan banayein."
-            actionTitle="+ Naya Theka Shuru Karein"
+            title="No Work Sites Found"
+            description="No work sites found. Create a new site to start managing contract agreements, daily attendance and cash flows."
+            actionTitle="+ Create New Site"
             onAction={onOpenNewSite}
           />
         )}
@@ -806,5 +883,72 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 13,
     marginVertical: 12,
+  },
+  documentsCard: {
+    padding: 16,
+    marginBottom: 16,
+  },
+  docHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  uploadDocBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: '#F3E8FF',
+  },
+  uploadDocBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#7C3AED',
+  },
+  docItemsGrid: {
+    gap: 8,
+  },
+  docItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: Colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  docItemIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  docItemName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    flexShrink: 1,
+  },
+  docItemMeta: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  docItemTerms: {
+    fontSize: 10,
+    color: '#6B7280',
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  noDocText: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    fontStyle: 'italic',
   },
 });

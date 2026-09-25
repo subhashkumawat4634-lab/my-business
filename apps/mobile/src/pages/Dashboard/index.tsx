@@ -179,7 +179,7 @@ export function DashboardPage({
             <View style={[styles.quickIconBox, { backgroundColor: '#EEF4FF' }]}>
               <AppIcon name="business" size={22} color={Colors.primary} />
             </View>
-            <Text style={styles.quickActionText}>Naya Theka</Text>
+            <Text style={styles.quickActionText}>New Site</Text>
           </Pressable>
         </View>
 
@@ -300,9 +300,9 @@ export function DashboardPage({
           </View>
         ) : (
           <EmptyState
-            title="Aapka Pehla Theka Add Karein"
-            description="Site add karein, mistri/labour jodein aur haziri lagana shuru karein."
-            actionTitle="Naya Theka Banayein"
+            title="Add Your First Work Site"
+            description="Create a work site, add workers, and begin tracking daily attendance and project ledger."
+            actionTitle="Create New Site"
             onAction={onOpenNewSite}
           />
         )}
@@ -310,7 +310,7 @@ export function DashboardPage({
         {/* Recent Activity Section */}
         <View style={[styles.sectionHeader, { marginTop: 24 }]}>
           <View>
-            <Text style={styles.sectionTitle}>Haal Ka Hisab (Recent Activity)</Text>
+            <Text style={styles.sectionTitle}>Recent Activity</Text>
             <Text style={styles.sectionSubtitle}>Last transactions & entries</Text>
           </View>
           <Pressable onPress={() => onNavigateTab('ledger')}>
