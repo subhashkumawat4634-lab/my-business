@@ -57,7 +57,8 @@ export function SitesPage({
   // Render Single Site Details View
   if (site) {
     const f = siteSummary(site, data.attendance, data.entries);
-    const { userNotes, documents } = parseSiteNotesAndDocs(site.notes || '');
+    const { userNotes, documents, gstin, state, stateCode, businessName } =
+      parseSiteNotesAndDocs(site.notes || '');
     const siteEntries = data.entries
       .filter((e) => e.site_id === site.id)
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -93,6 +94,11 @@ export function SitesPage({
                 <Text style={styles.siteClient}>
                   {site.owner_name} • {site.phone || 'No phone'}
                 </Text>
+                {businessName ? (
+                  <Text style={styles.siteBusinessText}>
+                    🏢 {businessName}
+                  </Text>
+                ) : null}
               </View>
               <Button
                 title="Edit"
@@ -117,6 +123,15 @@ export function SitesPage({
                 tone="blue"
               />
               <Badge label={site.pricing} tone="gray" />
+              {gstin ? (
+                <Badge label={`GST: ${gstin}`} tone="green" />
+              ) : null}
+              {state ? (
+                <Badge
+                  label={`${state}${stateCode ? ` (${stateCode})` : ''}`}
+                  tone="blue"
+                />
+              ) : null}
             </View>
 
             {site.address ? (
@@ -773,6 +788,12 @@ const styles = StyleSheet.create({
   siteClient: {
     fontSize: 13,
     color: Colors.textMuted,
+    marginTop: 2,
+  },
+  siteBusinessText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary,
     marginTop: 2,
   },
   badgeRow: {

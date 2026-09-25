@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../theme/colors';
@@ -28,6 +29,15 @@ export interface SiteDocument {
   terms?: string;
 }
 
+export interface SiteMetadata {
+  userNotes: string;
+  documents: SiteDocument[];
+  gstin?: string;
+  state?: string;
+  stateCode?: string;
+  businessName?: string;
+}
+
 interface SiteFormModalProps {
   spec: FormSpec;
   busy: boolean;
@@ -36,13 +46,57 @@ interface SiteFormModalProps {
   onSave: (values: Record<string, string>) => void;
 }
 
+export const INDIAN_STATES: Array<{ code: string; name: string }> = [
+  { code: '01', name: 'Jammu & Kashmir' },
+  { code: '02', name: 'Himachal Pradesh' },
+  { code: '03', name: 'Punjab' },
+  { code: '04', name: 'Chandigarh' },
+  { code: '05', name: 'Uttarakhand' },
+  { code: '06', name: 'Haryana' },
+  { code: '07', name: 'Delhi' },
+  { code: '08', name: 'Rajasthan' },
+  { code: '09', name: 'Uttar Pradesh' },
+  { code: '10', name: 'Bihar' },
+  { code: '11', name: 'Sikkim' },
+  { code: '12', name: 'Arunachal Pradesh' },
+  { code: '13', name: 'Nagaland' },
+  { code: '14', name: 'Manipur' },
+  { code: '15', name: 'Mizoram' },
+  { code: '16', name: 'Tripura' },
+  { code: '17', name: 'Meghalaya' },
+  { code: '18', name: 'Assam' },
+  { code: '19', name: 'West Bengal' },
+  { code: '20', name: 'Jharkhand' },
+  { code: '21', name: 'Odisha' },
+  { code: '22', name: 'Chhattisgarh' },
+  { code: '23', name: 'Madhya Pradesh' },
+  { code: '24', name: 'Gujarat' },
+  { code: '26', name: 'Dadra & Nagar Haveli and Daman & Diu' },
+  { code: '27', name: 'Maharashtra' },
+  { code: '29', name: 'Karnataka' },
+  { code: '30', name: 'Goa' },
+  { code: '31', name: 'Lakshadweep' },
+  { code: '32', name: 'Kerala' },
+  { code: '33', name: 'Tamil Nadu' },
+  { code: '34', name: 'Puducherry' },
+  { code: '35', name: 'Andaman & Nicobar Islands' },
+  { code: '36', name: 'Telangana' },
+  { code: '37', name: 'Andhra Pradesh' },
+  { code: '38', name: 'Ladakh' },
+];
+
+const GST_STATE_MAP = INDIAN_STATES.reduce((acc, curr) => {
+  acc[curr.code] = curr.name;
+  return acc;
+}, {} as Record<string, string>);
+
 const COMMON_UNITS = [
   { label: 'Sq Ft', value: 'sq ft' },
   { label: 'Sq Mtr', value: 'sq mtr' },
   { label: 'Running Ft', value: 'rft' },
   { label: 'Brass', value: 'brass' },
   { label: 'Days', value: 'days' },
-  { label: 'Job / Lumpsum', value: 'job' },
+  { label: 'Job', value: 'job' },
 ];
 
 const SITE_SUGGESTIONS = [
@@ -54,42 +108,90 @@ const SITE_SUGGESTIONS = [
 ];
 
 const AGREEMENT_TERMS_PRESETS = [
-  'Payment: 25% Advance, 50% Mid-way, 25% Handover',
-  'Labour Only contract; client supplies all materials',
+  '25% Advance, 50% Mid-way, 25% Handover',
+  'Labour Only contract; client supplies materials',
   'Full Labour + Material; contractor procures supplies',
-  'Includes 6 months quality & waterproofing warranty',
-  'Penalty clause applies for delays beyond scheduled completion',
+  'Includes 6 months waterproofing warranty',
 ];
 
+const META_MARKER = '--- SITE_METADATA_JSON ---';
 const DOC_MARKER = '--- ATTACHED DOCUMENTS ---';
 
-export function parseSiteNotesAndDocs(rawNotes: string = '') {
-  if (!rawNotes) return { userNotes: '', documents: [] as SiteDocument[] };
-  const idx = rawNotes.indexOf(DOC_MARKER);
-  if (idx === -1) {
-    return { userNotes: rawNotes.trim(), documents: [] as SiteDocument[] };
+export function parseSiteNotesAndDocs(rawNotes: string = ''): SiteMetadata {
+  if (!rawNotes) {
+    return {
+      userNotes: '',
+      documents: [],
+      gstin: '',
+      state: '',
+      stateCode: '',
+      businessName: '',
+    };
   }
-  const userNotes = rawNotes.slice(0, idx).trim();
-  const docPart = rawNotes.slice(idx + DOC_MARKER.length).trim();
-  try {
-    const parsed = JSON.parse(docPart);
-    if (Array.isArray(parsed)) {
-      return { userNotes, documents: parsed as SiteDocument[] };
+
+  // Check for META_MARKER
+  const metaIdx = rawNotes.indexOf(META_MARKER);
+  if (metaIdx !== -1) {
+    const userNotes = rawNotes.slice(0, metaIdx).trim();
+    const jsonPart = rawNotes.slice(metaIdx + META_MARKER.length).trim();
+    try {
+      const parsed = JSON.parse(jsonPart);
+      return {
+        userNotes,
+        documents: (parsed.documents || []) as SiteDocument[],
+        gstin: parsed.gstin || '',
+        state: parsed.state || '',
+        stateCode: parsed.stateCode || '',
+        businessName: parsed.businessName || '',
+      };
+    } catch (e) {
+      // Ignore JSON parse errors
     }
-  } catch (e) {
-    // Ignore JSON parse errors
   }
-  return { userNotes, documents: [] as SiteDocument[] };
+
+  // Fallback to legacy DOC_MARKER
+  const docIdx = rawNotes.indexOf(DOC_MARKER);
+  if (docIdx !== -1) {
+    const userNotes = rawNotes.slice(0, docIdx).trim();
+    const docPart = rawNotes.slice(docIdx + DOC_MARKER.length).trim();
+    try {
+      const parsed = JSON.parse(docPart);
+      if (Array.isArray(parsed)) {
+        return {
+          userNotes,
+          documents: parsed as SiteDocument[],
+          gstin: '',
+          state: '',
+          stateCode: '',
+          businessName: '',
+        };
+      }
+    } catch (e) {}
+  }
+
+  return {
+    userNotes: rawNotes.trim(),
+    documents: [],
+    gstin: '',
+    state: '',
+    stateCode: '',
+    businessName: '',
+  };
 }
 
 export function serializeSiteNotesAndDocs(
   userNotes: string,
-  documents: SiteDocument[]
+  documents: SiteDocument[],
+  gstin?: string,
+  state?: string,
+  stateCode?: string,
+  businessName?: string
 ): string {
   const cleanNotes = userNotes.trim();
-  if (!documents.length) return cleanNotes;
-  const docJson = JSON.stringify(
-    documents.map((d) => ({
+  const metaObj: Record<string, any> = {};
+
+  if (documents && documents.length) {
+    metaObj.documents = documents.map((d) => ({
       id: d.id,
       name: d.name,
       category: d.category,
@@ -97,11 +199,23 @@ export function serializeSiteNotesAndDocs(
       size: d.size || undefined,
       refNo: d.refNo || undefined,
       terms: d.terms || undefined,
-    }))
-  );
+    }));
+  }
+
+  if (gstin && gstin.trim()) metaObj.gstin = gstin.trim().toUpperCase();
+  if (state && state.trim()) metaObj.state = state.trim();
+  if (stateCode && stateCode.trim()) metaObj.stateCode = stateCode.trim();
+  if (businessName && businessName.trim())
+    metaObj.businessName = businessName.trim();
+
+  if (Object.keys(metaObj).length === 0) {
+    return cleanNotes;
+  }
+
+  const jsonStr = JSON.stringify(metaObj);
   return cleanNotes
-    ? `${cleanNotes}\n\n${DOC_MARKER}\n${docJson}`
-    : `${DOC_MARKER}\n${docJson}`;
+    ? `${cleanNotes}\n\n${META_MARKER}\n${jsonStr}`
+    : `${META_MARKER}\n${jsonStr}`;
 }
 
 const formatDatePretty = (isoDate: string) => {
@@ -124,7 +238,7 @@ export function SiteFormModal({
 }: SiteFormModalProps) {
   const isEdit = spec.action === 'site.update';
   const { width } = useWindowDimensions();
-  const isDesktop = width > 768;
+  const isMobile = width <= 600;
 
   // Initial parsed notes and documents
   const initialData = useMemo(() => {
@@ -135,6 +249,21 @@ export function SiteFormModal({
   const [ownerName, setOwnerName] = useState(spec.initial.owner_name || '');
   const [phone, setPhone] = useState(spec.initial.phone || '');
   const [address, setAddress] = useState(spec.initial.address || '');
+
+  // GST & State
+  const [isGstRegistered, setIsGstRegistered] = useState(
+    Boolean(initialData.gstin)
+  );
+  const [gstin, setGstin] = useState(initialData.gstin || '');
+  const [selectedState, setSelectedState] = useState(initialData.state || '');
+  const [selectedStateCode, setSelectedStateCode] = useState(
+    initialData.stateCode || ''
+  );
+  const [businessName, setBusinessName] = useState(
+    initialData.businessName || ''
+  );
+  const [isStatePickerOpen, setIsStatePickerOpen] = useState(false);
+  const [stateSearch, setStateSearch] = useState('');
 
   const [workType, setWorkType] = useState<'LABOUR' | 'MATERIAL'>(
     (spec.initial.work_type as any) || 'LABOUR'
@@ -182,6 +311,21 @@ export function SiteFormModal({
   const [localError, setLocalError] = useState('');
   const [activeSection, setActiveSection] = useState<number>(1);
 
+  // Handle GSTIN change with auto state detection
+  const handleGstinChange = (text: string) => {
+    const clean = text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15);
+    setGstin(clean);
+
+    if (clean.length >= 2) {
+      const code = clean.slice(0, 2);
+      const stateName = GST_STATE_MAP[code];
+      if (stateName) {
+        setSelectedState(stateName);
+        setSelectedStateCode(code);
+      }
+    }
+  };
+
   // Financial calculations
   const effectiveContractAmount = useMemo(() => {
     if (pricing === 'FIXED') {
@@ -210,7 +354,7 @@ export function SiteFormModal({
     if (!val || isNaN(val) || val <= 0) return '';
     if (val >= 10000000) return `₹ ${(val / 10000000).toFixed(2)} Cr`;
     if (val >= 100000) return `₹ ${(val / 100000).toFixed(2)} Lakh`;
-    if (val >= 1000) return `₹ ${(val / 1000).toFixed(1)} Thousand`;
+    if (val >= 1000) return `₹ ${(val / 1000).toFixed(1)} K`;
     return `₹ ${val.toLocaleString('en-IN')}`;
   };
 
@@ -231,7 +375,7 @@ export function SiteFormModal({
   // Add Document handler
   const handleAddDocument = () => {
     if (!newDocName.trim()) {
-      alert('Please enter a document or file name.');
+      alert('Please enter a document name.');
       return;
     }
     const today = new Date().toLocaleDateString('en-CA', {
@@ -290,9 +434,7 @@ export function SiteFormModal({
         };
         input.click();
         return;
-      } catch (err) {
-        // Fallback to manual entry
-      }
+      } catch (err) {}
     }
     setIsDocModalOpen(true);
   };
@@ -304,7 +446,7 @@ export function SiteFormModal({
       return;
     }
     if (!ownerName.trim()) {
-      setLocalError('Please enter the client / owner name.');
+      setLocalError('Please enter client / owner name.');
       return;
     }
     if (!startDate.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(startDate.trim())) {
@@ -322,12 +464,12 @@ export function SiteFormModal({
 
     if (pricing === 'FIXED') {
       if (!contractAmount.trim() || parseFloat(contractAmount) < 0) {
-        setLocalError('Please enter an agreed lumpsum contract amount.');
+        setLocalError('Please enter agreed lumpsum contract amount.');
         return;
       }
     } else {
       if (!unitRate.trim() || parseFloat(unitRate) <= 0) {
-        setLocalError('Please enter a valid unit or daily rate.');
+        setLocalError('Please enter a valid rate.');
         return;
       }
       if (!quantity.trim() || parseFloat(quantity) <= 0) {
@@ -336,8 +478,15 @@ export function SiteFormModal({
       }
     }
 
-    // Serialize notes and attached documents
-    const finalNotes = serializeSiteNotesAndDocs(notes, documents);
+    // Serialize notes, GSTIN, State and documents
+    const finalNotes = serializeSiteNotesAndDocs(
+      notes,
+      documents,
+      isGstRegistered ? gstin : '',
+      isGstRegistered ? selectedState : '',
+      isGstRegistered ? selectedStateCode : '',
+      isGstRegistered ? businessName : ''
+    );
 
     const payload: Record<string, string> = {
       name: name.trim(),
@@ -363,6 +512,14 @@ export function SiteFormModal({
     onSave(payload);
   };
 
+  const filteredStates = useMemo(() => {
+    if (!stateSearch.trim()) return INDIAN_STATES;
+    const q = stateSearch.toLowerCase();
+    return INDIAN_STATES.filter(
+      (s) => s.name.toLowerCase().includes(q) || s.code.includes(q)
+    );
+  }, [stateSearch]);
+
   const displayError = localError || error;
 
   return (
@@ -380,107 +537,107 @@ export function SiteFormModal({
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          {/* Header */}
+          {/* Mobile Optimized Header */}
           <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={styles.iconCircle}>
-                <AppIcon
-                  name={isEdit ? 'create' : 'business'}
-                  size={22}
-                  color="#FFFFFF"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={styles.headerTitleRow}>
-                  <Text style={styles.headerTitle}>
-                    {isEdit ? 'Edit Work Site' : 'New Work Site'}
-                  </Text>
-                  <View style={styles.thekaBadge}>
-                    <Text style={styles.thekaBadgeText}>
-                      {pricing === 'FIXED'
-                        ? 'Lumpsum'
-                        : pricing === 'UNIT'
-                        ? 'Unit Rate'
-                        : 'Daily Wage'}
-                    </Text>
-                  </View>
-                </View>
-                <Text style={styles.headerSubtitle}>
-                  {isEdit
-                    ? 'Update project scope, pricing model and timeline'
-                    : 'Configure contract pricing, client details & scope'}
-                </Text>
-              </View>
-            </View>
-
             <Pressable
               onPress={() => !busy && onClose()}
               style={({ pressed }) => [
                 styles.closeButton,
-                pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
+                pressed && { opacity: 0.7 },
               ]}
               accessibilityLabel="Close form"
             >
-              <AppIcon name="close" size={20} color={Colors.textPrimary} />
+              <AppIcon name="close" size={18} color={Colors.textPrimary} />
             </Pressable>
+
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {isEdit ? 'Edit Work Site' : 'New Work Site'}
+              </Text>
+              <Text style={styles.headerSubtitle}>
+                {pricing === 'FIXED'
+                  ? 'Lumpsum'
+                  : pricing === 'UNIT'
+                  ? 'Unit Rate'
+                  : 'Daily Rate'}{' '}
+                • {workType === 'LABOUR' ? 'Labour' : 'Material'}
+              </Text>
+            </View>
+
+            <View style={styles.headerRightPlaceholder} />
           </View>
 
           {/* Error Banner */}
           {displayError ? (
             <View style={styles.errorBanner}>
-              <AppIcon name="alert-circle" size={20} color={Colors.danger} />
+              <AppIcon name="alert-circle" size={16} color={Colors.danger} />
               <Text style={styles.errorBannerText}>{displayError}</Text>
             </View>
           ) : null}
 
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[
-              styles.scrollContent,
-              isDesktop && styles.desktopContainer,
-            ]}
-          >
-            {/* Quick Section Tabs */}
-            <View style={styles.navChipsRow}>
+          {/* Horizontal Section Indicator Tabs */}
+          <View style={styles.tabBarContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabBarScroll}
+            >
               {[
-                { id: 1, label: '1. Client & Site' },
-                { id: 2, label: '2. Scope & Pricing' },
-                { id: 3, label: '3. Budget & Profit' },
-                { id: 4, label: '4. Timeline & Status' },
-                { id: 5, label: `5. Agreements (${documents.length})` },
-              ].map((s) => (
-                <Pressable
-                  key={s.id}
-                  onPress={() => setActiveSection(s.id)}
-                  style={[
-                    styles.navChip,
-                    activeSection === s.id && styles.navChipActive,
-                  ]}
-                >
-                  <Text
+                { id: 1, label: 'Client & Site', icon: 'business' },
+                { id: 2, label: 'Scope & Rate', icon: 'calculator' },
+                { id: 3, label: 'Profit Forecast', icon: 'trending-up' },
+                { id: 4, label: 'Schedule', icon: 'calendar' },
+                {
+                  id: 5,
+                  label: `Documents (${documents.length})`,
+                  icon: 'document-text',
+                },
+              ].map((s) => {
+                const isActive = activeSection === s.id;
+                return (
+                  <Pressable
+                    key={s.id}
+                    onPress={() => setActiveSection(s.id)}
                     style={[
-                      styles.navChipText,
-                      activeSection === s.id && styles.navChipTextActive,
+                      styles.sectionTab,
+                      isActive && styles.sectionTabActive,
                     ]}
                   >
-                    {s.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+                    <AppIcon
+                      name={s.icon as any}
+                      size={13}
+                      color={isActive ? '#FFFFFF' : Colors.textMuted}
+                    />
+                    <Text
+                      style={[
+                        styles.sectionTabText,
+                        isActive && styles.sectionTabTextActive,
+                      ]}
+                    >
+                      {s.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
 
-            {/* SECTION 1: Client & Site Identity */}
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* SECTION 1: Client & Site Identity with GST Support */}
             <View style={styles.cardSection}>
               <View style={styles.sectionHeaderRow}>
                 <View style={styles.sectionBadge}>
-                  <Text style={styles.sectionBadgeNum}>01</Text>
+                  <Text style={styles.sectionBadgeNum}>1</Text>
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.sectionHeading}>
-                    Client & Work Site Details
+                    Client & Site Details
                   </Text>
                   <Text style={styles.sectionSub}>
-                    Client information and project site location
+                    Basic project identity, address and tax details
                   </Text>
                 </View>
               </View>
@@ -494,23 +651,25 @@ export function SiteFormModal({
                 <View style={styles.inputWrapper}>
                   <AppIcon
                     name="business-outline"
-                    size={19}
+                    size={16}
                     color={Colors.textMuted}
                   />
                   <TextInput
                     value={name}
                     onChangeText={setName}
-                    placeholder="e.g. Sharma Residence · Interior Painting"
+                    placeholder="e.g. Sharma Villa · Interior"
                     placeholderTextColor={Colors.textSubtle}
                     style={styles.textInput}
                     autoCapitalize="words"
                   />
                 </View>
-                {/* Suggestions */}
                 {!isEdit && !name && (
-                  <View style={styles.suggestionsRow}>
-                    <Text style={styles.suggestionTitle}>Suggestions:</Text>
-                    {SITE_SUGGESTIONS.slice(0, 3).map((item) => (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.suggestionsScroll}
+                  >
+                    {SITE_SUGGESTIONS.map((item) => (
                       <Pressable
                         key={item}
                         onPress={() => setName(item)}
@@ -519,7 +678,7 @@ export function SiteFormModal({
                         <Text style={styles.suggestionPillText}>+ {item}</Text>
                       </Pressable>
                     ))}
-                  </View>
+                  </ScrollView>
                 )}
               </View>
 
@@ -532,13 +691,13 @@ export function SiteFormModal({
                 <View style={styles.inputWrapper}>
                   <AppIcon
                     name="person-outline"
-                    size={19}
+                    size={16}
                     color={Colors.textMuted}
                   />
                   <TextInput
                     value={ownerName}
                     onChangeText={setOwnerName}
-                    placeholder="e.g. Rajesh Gupta"
+                    placeholder="e.g. Rajesh Sharma"
                     placeholderTextColor={Colors.textSubtle}
                     style={styles.textInput}
                     autoCapitalize="words"
@@ -546,43 +705,160 @@ export function SiteFormModal({
                 </View>
               </View>
 
-              {/* Client Phone & Address in two columns on desktop */}
-              <View style={isDesktop ? styles.desktopRow : { gap: 14 }}>
-                <View style={[styles.fieldGroup, isDesktop && { flex: 1 }]}>
-                  <Text style={styles.fieldLabel}>Client Mobile Number</Text>
-                  <View style={styles.inputWrapper}>
-                    <View style={styles.countryCodeBadge}>
-                      <Text style={styles.countryCodeText}>+91</Text>
-                    </View>
-                    <TextInput
-                      value={phone}
-                      onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, ''))}
-                      placeholder="10-digit mobile number"
-                      placeholderTextColor={Colors.textSubtle}
-                      style={styles.textInput}
-                      keyboardType="phone-pad"
-                      maxLength={12}
-                    />
+              {/* Phone */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Client Mobile Number</Text>
+                <View style={styles.inputWrapper}>
+                  <View style={styles.countryCodeBadge}>
+                    <Text style={styles.countryCodeText}>+91</Text>
                   </View>
+                  <TextInput
+                    value={phone}
+                    onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, ''))}
+                    placeholder="10-digit mobile number"
+                    placeholderTextColor={Colors.textSubtle}
+                    style={styles.textInput}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                  />
+                </View>
+              </View>
+
+              {/* Site Address */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Site Address / Location</Text>
+                <View style={styles.inputWrapper}>
+                  <AppIcon
+                    name="location-outline"
+                    size={16}
+                    color={Colors.textMuted}
+                  />
+                  <TextInput
+                    value={address}
+                    onChangeText={setAddress}
+                    placeholder="Plot No., Colony, City"
+                    placeholderTextColor={Colors.textSubtle}
+                    style={styles.textInput}
+                  />
+                </View>
+              </View>
+
+              {/* GST & State Tax Option Card */}
+              <View style={styles.gstCard}>
+                <View style={styles.gstToggleRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.gstToggleTitle}>
+                      Client is GST Registered
+                    </Text>
+                    <Text style={styles.gstToggleSub}>
+                      Enable for commercial clients, builder firms & GST bills
+                    </Text>
+                  </View>
+                  <Switch
+                    value={isGstRegistered}
+                    onValueChange={(val) => setIsGstRegistered(val)}
+                    trackColor={{ false: '#CBD5E1', true: Colors.primary }}
+                    thumbColor="#FFFFFF"
+                  />
                 </View>
 
-                <View style={[styles.fieldGroup, isDesktop && { flex: 1.4 }]}>
-                  <Text style={styles.fieldLabel}>Site Address / Location</Text>
-                  <View style={styles.inputWrapper}>
-                    <AppIcon
-                      name="location-outline"
-                      size={19}
-                      color={Colors.textMuted}
-                    />
-                    <TextInput
-                      value={address}
-                      onChangeText={setAddress}
-                      placeholder="Plot No., Colony, Street, City"
-                      placeholderTextColor={Colors.textSubtle}
-                      style={styles.textInput}
-                    />
+                {isGstRegistered && (
+                  <View style={styles.gstInputsBlock}>
+                    {/* GSTIN */}
+                    <View style={styles.fieldGroup}>
+                      <View style={styles.labelRow}>
+                        <Text style={styles.fieldLabel}>GSTIN Number</Text>
+                        {selectedState ? (
+                          <View style={styles.detectedStateBadge}>
+                            <Text style={styles.detectedStateText}>
+                              {selectedState} ({selectedStateCode})
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <View style={styles.inputWrapper}>
+                        <AppIcon
+                          name="card-outline"
+                          size={16}
+                          color={Colors.textMuted}
+                        />
+                        <TextInput
+                          value={gstin}
+                          onChangeText={handleGstinChange}
+                          placeholder="e.g. 07AAAAA0000A1Z5"
+                          placeholderTextColor={Colors.textSubtle}
+                          style={[
+                            styles.textInput,
+                            { fontWeight: '700', letterSpacing: 0.5 },
+                          ]}
+                          autoCapitalize="characters"
+                          maxLength={15}
+                        />
+                      </View>
+                    </View>
+
+                    {/* State Selector */}
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.fieldLabel}>
+                        State / Union Territory
+                      </Text>
+                      <Pressable
+                        onPress={() => setIsStatePickerOpen(true)}
+                        style={styles.stateSelectBtn}
+                      >
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 8,
+                          }}
+                        >
+                          <AppIcon
+                            name="map-outline"
+                            size={16}
+                            color={Colors.primary}
+                          />
+                          <Text
+                            style={[
+                              styles.stateSelectText,
+                              !selectedState && { color: Colors.textSubtle },
+                            ]}
+                          >
+                            {selectedState
+                              ? `${selectedState} (${selectedStateCode})`
+                              : 'Select State / UT'}
+                          </Text>
+                        </View>
+                        <AppIcon
+                          name="chevron-forward"
+                          size={16}
+                          color={Colors.textMuted}
+                        />
+                      </Pressable>
+                    </View>
+
+                    {/* Business Name */}
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.fieldLabel}>
+                        Firm / Legal Business Name (Optional)
+                      </Text>
+                      <View style={styles.inputWrapper}>
+                        <AppIcon
+                          name="briefcase-outline"
+                          size={16}
+                          color={Colors.textMuted}
+                        />
+                        <TextInput
+                          value={businessName}
+                          onChangeText={setBusinessName}
+                          placeholder="e.g. Rajesh Infrastructure Pvt Ltd"
+                          placeholderTextColor={Colors.textSubtle}
+                          style={styles.textInput}
+                        />
+                      </View>
+                    </View>
                   </View>
-                </View>
+                )}
               </View>
             </View>
 
@@ -598,146 +874,83 @@ export function SiteFormModal({
                   <Text
                     style={[styles.sectionBadgeNum, { color: Colors.accent }]}
                   >
-                    02
+                    2
                   </Text>
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.sectionHeading}>
                     Scope & Pricing Model
                   </Text>
                   <Text style={styles.sectionSub}>
-                    Contract inclusions and calculation structure
+                    What's included and how contract rates are calculated
                   </Text>
                 </View>
               </View>
 
-              {/* Contract Scope Selector */}
+              {/* Scope Radio Cards */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>
-                  What does the contract cover?
-                </Text>
-                <View style={styles.scopeCardsGrid}>
+                <Text style={styles.fieldLabel}>Contract Inclusions</Text>
+                <View style={styles.mobileScopeGrid}>
                   <Pressable
                     onPress={() => setWorkType('LABOUR')}
                     style={[
-                      styles.scopeCard,
-                      workType === 'LABOUR' && styles.scopeCardSelected,
+                      styles.mobileScopeCard,
+                      workType === 'LABOUR' && styles.mobileScopeCardActive,
                     ]}
                   >
                     <View
                       style={[
-                        styles.scopeIconBox,
-                        workType === 'LABOUR' && {
-                          backgroundColor: Colors.accentLight,
-                        },
+                        styles.radioDotCircle,
+                        workType === 'LABOUR' && styles.radioDotCircleActive,
                       ]}
                     >
-                      <AppIcon
-                        name="hammer-outline"
-                        size={22}
-                        color={
-                          workType === 'LABOUR'
-                            ? Colors.accent
-                            : Colors.textMuted
-                        }
-                      />
+                      {workType === 'LABOUR' && <View style={styles.radioDot} />}
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text
-                        style={[
-                          styles.scopeTitle,
-                          workType === 'LABOUR' && { color: Colors.primary },
-                        ]}
-                      >
-                        Labour Only
-                      </Text>
-                      <Text style={styles.scopeDesc}>
-                        Contractor provides skilled & unskilled labour. Client
-                        procures all materials.
+                      <Text style={styles.mobileScopeTitle}>Labour Only</Text>
+                      <Text style={styles.mobileScopeDesc}>
+                        Worker & mistri wages only. Client buys all materials.
                       </Text>
                     </View>
-                    {workType === 'LABOUR' && (
-                      <AppIcon
-                        name="checkmark-circle"
-                        size={20}
-                        color={Colors.accent}
-                      />
-                    )}
                   </Pressable>
 
                   <Pressable
                     onPress={() => setWorkType('MATERIAL')}
                     style={[
-                      styles.scopeCard,
-                      workType === 'MATERIAL' && styles.scopeCardSelected,
+                      styles.mobileScopeCard,
+                      workType === 'MATERIAL' && styles.mobileScopeCardActive,
                     ]}
                   >
                     <View
                       style={[
-                        styles.scopeIconBox,
-                        workType === 'MATERIAL' && {
-                          backgroundColor: Colors.primarySurface,
-                        },
+                        styles.radioDotCircle,
+                        workType === 'MATERIAL' && styles.radioDotCircleActive,
                       ]}
                     >
-                      <AppIcon
-                        name="construct-outline"
-                        size={22}
-                        color={
-                          workType === 'MATERIAL'
-                            ? Colors.primary
-                            : Colors.textMuted
-                        }
-                      />
+                      {workType === 'MATERIAL' && (
+                        <View style={styles.radioDot} />
+                      )}
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text
-                        style={[
-                          styles.scopeTitle,
-                          workType === 'MATERIAL' && { color: Colors.primary },
-                        ]}
-                      >
+                      <Text style={styles.mobileScopeTitle}>
                         Labour + Material
                       </Text>
-                      <Text style={styles.scopeDesc}>
-                        Contractor is responsible for material procurement and
-                        complete execution.
+                      <Text style={styles.mobileScopeDesc}>
+                        Contractor handles labour and material procurement.
                       </Text>
                     </View>
-                    {workType === 'MATERIAL' && (
-                      <AppIcon
-                        name="checkmark-circle"
-                        size={20}
-                        color={Colors.primary}
-                      />
-                    )}
                   </Pressable>
                 </View>
               </View>
 
-              {/* Pricing Basis Tabs */}
+              {/* Pricing Tabs */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Agreed Pricing Basis</Text>
-                <View style={styles.pricingTabsContainer}>
+                <Text style={styles.fieldLabel}>Pricing Basis</Text>
+                <View style={styles.pricingPillsRow}>
                   {[
-                    {
-                      id: 'FIXED',
-                      label: 'Fixed Contract',
-                      desc: 'Lumpsum Amount',
-                      icon: 'lock-closed-outline',
-                    },
-                    {
-                      id: 'UNIT',
-                      label: 'Unit / Area Rate',
-                      desc: 'Sq Ft / Brass / Unit',
-                      icon: 'cube-outline',
-                    },
-                    {
-                      id: 'DAILY',
-                      label: 'Daily Wage',
-                      desc: 'Per Working Day',
-                      icon: 'calendar-outline',
-                    },
+                    { id: 'FIXED', label: 'Fixed Lumpsum' },
+                    { id: 'UNIT', label: 'Unit Rate' },
+                    { id: 'DAILY', label: 'Daily Wage' },
                   ].map((p) => {
                     const isSelected = pricing === p.id;
                     return (
@@ -750,30 +963,17 @@ export function SiteFormModal({
                             setUnit('sq ft');
                         }}
                         style={[
-                          styles.pricingTab,
-                          isSelected && styles.pricingTabSelected,
+                          styles.pricingPillBtn,
+                          isSelected && styles.pricingPillBtnActive,
                         ]}
                       >
-                        <AppIcon
-                          name={p.icon}
-                          size={18}
-                          color={isSelected ? '#FFFFFF' : Colors.textMuted}
-                        />
                         <Text
                           style={[
-                            styles.pricingTabTitle,
-                            isSelected && styles.pricingTabTitleSelected,
+                            styles.pricingPillText,
+                            isSelected && styles.pricingPillTextActive,
                           ]}
                         >
                           {p.label}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.pricingTabDesc,
-                            isSelected && { color: '#E0E7FF' },
-                          ]}
-                        >
-                          {p.desc}
                         </Text>
                       </Pressable>
                     );
@@ -781,17 +981,15 @@ export function SiteFormModal({
                 </View>
               </View>
 
-              {/* Dynamic Pricing Inputs */}
+              {/* Dynamic Rates */}
               {pricing === 'FIXED' ? (
-                <View style={styles.highlightInputBox}>
+                <View style={styles.highlightBox}>
                   <View style={styles.labelRow}>
-                    <Text style={styles.fieldLabel}>
-                      Total Agreed Contract Amount (₹)
-                    </Text>
+                    <Text style={styles.fieldLabel}>Total Contract Amount (₹)</Text>
                     <Text style={styles.requiredStar}>*</Text>
                   </View>
-                  <View style={styles.bigCurrencyInputWrapper}>
-                    <Text style={styles.currencySymbol}>₹</Text>
+                  <View style={styles.currencyInputRow}>
+                    <Text style={styles.currencyPrefixText}>₹</Text>
                     <TextInput
                       value={contractAmount}
                       onChangeText={(t) =>
@@ -799,35 +997,23 @@ export function SiteFormModal({
                       }
                       placeholder="0"
                       placeholderTextColor={Colors.textSubtle}
-                      style={styles.bigCurrencyInput}
+                      style={styles.currencyInput}
                       keyboardType="decimal-pad"
                     />
                   </View>
                   {parseFloat(contractAmount) > 0 && (
-                    <View style={styles.amountHelperBox}>
-                      <AppIcon
-                        name="sparkles-outline"
-                        size={15}
-                        color={Colors.accent}
-                      />
-                      <Text style={styles.amountHelperText}>
-                        Total Contract Value:{' '}
-                        <Text style={{ fontWeight: '800' }}>
-                          {formatIndianWords(parseFloat(contractAmount))}
-                        </Text>{' '}
-                        (₹{' '}
-                        {parseFloat(contractAmount).toLocaleString('en-IN')})
-                      </Text>
-                    </View>
+                    <Text style={styles.wordsPreviewText}>
+                      ≈ {formatIndianWords(parseFloat(contractAmount))}
+                    </Text>
                   )}
                 </View>
               ) : pricing === 'UNIT' ? (
-                <View style={styles.highlightInputBox}>
-                  <View style={isDesktop ? styles.desktopRow : { gap: 12 }}>
-                    <View style={[styles.fieldGroup, { flex: 1 }]}>
+                <View style={styles.highlightBox}>
+                  <View style={{ gap: 10 }}>
+                    <View style={styles.fieldGroup}>
                       <Text style={styles.fieldLabel}>Rate Per Unit (₹) *</Text>
                       <View style={styles.inputWrapper}>
-                        <Text style={styles.inputCurrencyPrefix}>₹</Text>
+                        <Text style={styles.currencyPrefixTextSmall}>₹</Text>
                         <TextInput
                           value={unitRate}
                           onChangeText={(t) =>
@@ -841,7 +1027,7 @@ export function SiteFormModal({
                       </View>
                     </View>
 
-                    <View style={[styles.fieldGroup, { flex: 1 }]}>
+                    <View style={styles.fieldGroup}>
                       <Text style={styles.fieldLabel}>
                         Total Quantity / Measurement *
                       </Text>
@@ -860,25 +1046,22 @@ export function SiteFormModal({
                     </View>
                   </View>
 
-                  {/* Unit Pills */}
-                  <View style={{ marginTop: 10 }}>
-                    <Text style={styles.smallSubLabel}>
-                      Select Measurement Unit:
-                    </Text>
+                  <View style={{ marginTop: 8 }}>
+                    <Text style={styles.fieldLabelSmall}>Measurement Unit:</Text>
                     <View style={styles.unitPillsRow}>
                       {COMMON_UNITS.map((u) => (
                         <Pressable
                           key={u.value}
                           onPress={() => setUnit(u.value)}
                           style={[
-                            styles.unitPill,
-                            unit === u.value && styles.unitPillActive,
+                            styles.unitChip,
+                            unit === u.value && styles.unitChipActive,
                           ]}
                         >
                           <Text
                             style={[
-                              styles.unitPillText,
-                              unit === u.value && styles.unitPillTextActive,
+                              styles.unitChipText,
+                              unit === u.value && styles.unitChipTextActive,
                             ]}
                           >
                             {u.label}
@@ -888,36 +1071,25 @@ export function SiteFormModal({
                     </View>
                   </View>
 
-                  {/* Live Calculation Preview */}
-                  <View style={styles.calculatedValueCard}>
-                    <View style={styles.calculatedLeft}>
-                      <Text style={styles.calcTitle}>
-                        Calculated Total Contract Value
-                      </Text>
-                      <Text style={styles.calcFormula}>
-                        {quantity || '0'} {unit} × ₹ {unitRate || '0'}
-                      </Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.calcBigAmount}>
-                        ₹ {effectiveContractAmount.toLocaleString('en-IN')}
-                      </Text>
-                      <Text style={styles.calcWords}>
-                        {formatIndianWords(effectiveContractAmount)}
-                      </Text>
-                    </View>
+                  <View style={styles.calcPreviewRow}>
+                    <Text style={styles.calcFormulaText}>
+                      {quantity || '0'} {unit} × ₹ {unitRate || '0'}
+                    </Text>
+                    <Text style={styles.calcTotalText}>
+                      = ₹ {effectiveContractAmount.toLocaleString('en-IN')}
+                    </Text>
                   </View>
                 </View>
               ) : (
                 /* DAILY */
-                <View style={styles.highlightInputBox}>
-                  <View style={isDesktop ? styles.desktopRow : { gap: 12 }}>
-                    <View style={[styles.fieldGroup, { flex: 1 }]}>
+                <View style={styles.highlightBox}>
+                  <View style={{ gap: 10 }}>
+                    <View style={styles.fieldGroup}>
                       <Text style={styles.fieldLabel}>
                         Daily Wage Rate (₹) *
                       </Text>
                       <View style={styles.inputWrapper}>
-                        <Text style={styles.inputCurrencyPrefix}>₹</Text>
+                        <Text style={styles.currencyPrefixTextSmall}>₹</Text>
                         <TextInput
                           value={unitRate}
                           onChangeText={(t) =>
@@ -931,7 +1103,7 @@ export function SiteFormModal({
                       </View>
                     </View>
 
-                    <View style={[styles.fieldGroup, { flex: 1 }]}>
+                    <View style={styles.fieldGroup}>
                       <Text style={styles.fieldLabel}>
                         Estimated Working Days *
                       </Text>
@@ -950,29 +1122,19 @@ export function SiteFormModal({
                     </View>
                   </View>
 
-                  <View style={styles.calculatedValueCard}>
-                    <View style={styles.calculatedLeft}>
-                      <Text style={styles.calcTitle}>
-                        Estimated Total Daily Billing
-                      </Text>
-                      <Text style={styles.calcFormula}>
-                        {quantity || '0'} days × ₹ {unitRate || '0'} / day
-                      </Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.calcBigAmount}>
-                        ₹ {effectiveContractAmount.toLocaleString('en-IN')}
-                      </Text>
-                      <Text style={styles.calcWords}>
-                        {formatIndianWords(effectiveContractAmount)}
-                      </Text>
-                    </View>
+                  <View style={styles.calcPreviewRow}>
+                    <Text style={styles.calcFormulaText}>
+                      {quantity || '0'} days × ₹ {unitRate || '0'}
+                    </Text>
+                    <Text style={styles.calcTotalText}>
+                      = ₹ {effectiveContractAmount.toLocaleString('en-IN')}
+                    </Text>
                   </View>
                 </View>
               )}
             </View>
 
-            {/* SECTION 3: Cost Budget & Profit Margin Preview */}
+            {/* SECTION 3: Budget & Margin Forecast */}
             <View style={styles.cardSection}>
               <View style={styles.sectionHeaderRow}>
                 <View
@@ -984,15 +1146,15 @@ export function SiteFormModal({
                   <Text
                     style={[styles.sectionBadgeNum, { color: Colors.success }]}
                   >
-                    03
+                    3
                   </Text>
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.sectionHeading}>
-                    Budget & Profit Margin Forecast
+                    Budget & Margin Forecast
                   </Text>
                   <Text style={styles.sectionSub}>
-                    Anticipate remaining costs to forecast net contractor margin
+                    Anticipated costs to project contractor profitability
                   </Text>
                 </View>
               </View>
@@ -1002,7 +1164,7 @@ export function SiteFormModal({
                   Estimated Remaining Expenses to Incur (₹)
                 </Text>
                 <View style={styles.inputWrapper}>
-                  <Text style={styles.inputCurrencyPrefix}>₹</Text>
+                  <Text style={styles.currencyPrefixTextSmall}>₹</Text>
                   <TextInput
                     value={remainingEstimate}
                     onChangeText={(t) =>
@@ -1015,36 +1177,24 @@ export function SiteFormModal({
                   />
                 </View>
                 <Text style={styles.fieldHelper}>
-                  Anticipated pending costs for labour wages, materials, and
-                  subcontractor bills.
+                  Anticipated costs for pending wages, materials, and transport.
                 </Text>
               </View>
 
-              {/* LIVE PROFIT PREVIEW CARD */}
-              <View style={styles.profitForecastCard}>
-                <View style={styles.profitCardHeader}>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <AppIcon name="trending-up" size={20} color="#FFFFFF" />
-                    <Text style={styles.profitCardTitle}>
-                      Projected Profit Margin
-                    </Text>
-                  </View>
+              {/* Dark Mobile Profit Card */}
+              <View style={styles.mobileProfitCard}>
+                <View style={styles.mobileProfitTop}>
+                  <Text style={styles.mobileProfitTitle}>Projected Profit</Text>
                   <View
                     style={[
-                      styles.marginBadge,
+                      styles.marginPill,
                       {
                         backgroundColor:
-                          projectedMargin >= 0 ? '#10B981' : Colors.danger,
+                          projectedMargin >= 0 ? '#0D8A58' : Colors.danger,
                       },
                     ]}
                   >
-                    <Text style={styles.marginBadgeText}>
+                    <Text style={styles.marginPillText}>
                       {projectedMargin >= 0
                         ? `${marginPercentage}% Margin`
                         : 'Loss Warning'}
@@ -1052,31 +1202,29 @@ export function SiteFormModal({
                   </View>
                 </View>
 
-                <View style={styles.profitNumbersRow}>
-                  <View style={styles.profitCol}>
-                    <Text style={styles.profitColLabel}>Contract Value</Text>
-                    <Text style={styles.profitColValue}>
+                <View style={styles.mobileProfitStatsRow}>
+                  <View>
+                    <Text style={styles.profitStatLabel}>Contract</Text>
+                    <Text style={styles.profitStatVal}>
                       ₹ {effectiveContractAmount.toLocaleString('en-IN')}
                     </Text>
                   </View>
-                  <Text style={styles.profitColMinus}>−</Text>
-                  <View style={styles.profitCol}>
-                    <Text style={styles.profitColLabel}>Est. Remaining</Text>
-                    <Text style={styles.profitColValue}>
+                  <Text style={styles.profitStatDivider}>−</Text>
+                  <View>
+                    <Text style={styles.profitStatLabel}>Est. Cost</Text>
+                    <Text style={styles.profitStatVal}>
                       ₹ {estRemaining.toLocaleString('en-IN')}
                     </Text>
                   </View>
-                  <Text style={styles.profitColEquals}>=</Text>
-                  <View style={styles.profitCol}>
-                    <Text style={styles.profitColLabel}>Projected Profit</Text>
+                  <Text style={styles.profitStatDivider}>=</Text>
+                  <View>
+                    <Text style={styles.profitStatLabel}>Net Profit</Text>
                     <Text
                       style={[
-                        styles.profitColValue,
+                        styles.profitStatVal,
                         {
                           color:
                             projectedMargin >= 0 ? '#6EE7B7' : '#FCA5A5',
-                          fontWeight: '800',
-                          fontSize: 16,
                         },
                       ]}
                     >
@@ -1102,47 +1250,31 @@ export function SiteFormModal({
                       { color: Colors.warningText },
                     ]}
                   >
-                    04
+                    4
                   </Text>
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.sectionHeading}>
                     Timeline & Project Status
                   </Text>
                   <Text style={styles.sectionSub}>
-                    Schedule key dates, milestones, and project execution status
+                    Start dates, completion targets and execution status
                   </Text>
                 </View>
               </View>
 
               {/* Status Chips */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Current Project Status</Text>
-                <View style={styles.statusChipsGrid}>
+                <Text style={styles.fieldLabel}>Current Status</Text>
+                <View style={styles.mobileStatusGrid}>
                   {[
-                    {
-                      id: 'ONGOING',
-                      label: 'Ongoing (Active)',
-                      color: Colors.success,
-                      light: Colors.successLight,
-                    },
-                    {
-                      id: 'UPCOMING',
-                      label: 'Upcoming (Scheduled)',
-                      color: Colors.accent,
-                      light: Colors.accentLight,
-                    },
-                    {
-                      id: 'PAUSED',
-                      label: 'Paused (On Hold)',
-                      color: Colors.warning,
-                      light: Colors.warningLight,
-                    },
+                    { id: 'ONGOING', label: 'Ongoing', color: Colors.success },
+                    { id: 'UPCOMING', label: 'Upcoming', color: Colors.accent },
+                    { id: 'PAUSED', label: 'Paused', color: Colors.warning },
                     {
                       id: 'COMPLETED',
                       label: 'Completed',
-                      color: Colors.textSecondary,
-                      light: Colors.surfaceSubtle,
+                      color: Colors.textMuted,
                     },
                   ].map((s) => {
                     const isSelected = status === s.id;
@@ -1151,10 +1283,10 @@ export function SiteFormModal({
                         key={s.id}
                         onPress={() => setStatus(s.id)}
                         style={[
-                          styles.statusChip,
+                          styles.mobileStatusPill,
                           isSelected && {
                             borderColor: s.color,
-                            backgroundColor: s.light,
+                            backgroundColor: '#FFFFFF',
                           },
                         ]}
                       >
@@ -1166,7 +1298,7 @@ export function SiteFormModal({
                         />
                         <Text
                           style={[
-                            styles.statusChipText,
+                            styles.mobileStatusText,
                             isSelected && {
                               color: s.color,
                               fontWeight: '800',
@@ -1181,155 +1313,108 @@ export function SiteFormModal({
                 </View>
               </View>
 
-              {/* Dates with Interactive Calendar Pickers */}
-              <View style={isDesktop ? styles.desktopRow : { gap: 14 }}>
-                {/* Start Date */}
-                <View style={[styles.fieldGroup, isDesktop && { flex: 1 }]}>
-                  <View style={styles.labelRow}>
-                    <Text style={styles.fieldLabel}>Start Date</Text>
-                    <Text style={styles.requiredStar}>*</Text>
-                    <Pressable
-                      onPress={setTodayDate}
-                      style={styles.todayQuickBtn}
-                    >
-                      <Text style={styles.todayQuickBtnText}>Today</Text>
-                    </Pressable>
-                  </View>
-
-                  <Pressable
-                    onPress={() => setIsStartCalendarOpen(true)}
-                    style={({ pressed }) => [
-                      styles.datePickerTrigger,
-                      pressed && { opacity: 0.8 },
-                    ]}
-                  >
-                    <View style={styles.datePickerTriggerLeft}>
-                      <View style={styles.datePickerIconBox}>
-                        <AppIcon
-                          name="calendar"
-                          size={18}
-                          color={Colors.primary}
-                        />
-                      </View>
-                      <View>
-                        <Text style={styles.datePickerValueText}>
-                          {formatDatePretty(startDate)}
-                        </Text>
-                        <Text style={styles.datePickerSubtext}>
-                          {startDate || 'Tap to choose date'}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.datePickerPill}>
-                      <Text style={styles.datePickerPillText}>Select</Text>
-                    </View>
+              {/* Start Date */}
+              <View style={styles.fieldGroup}>
+                <View style={styles.labelRow}>
+                  <Text style={styles.fieldLabel}>Start Date</Text>
+                  <Text style={styles.requiredStar}>*</Text>
+                  <Pressable onPress={setTodayDate} style={styles.todaySmallBtn}>
+                    <Text style={styles.todaySmallBtnText}>Today</Text>
                   </Pressable>
                 </View>
 
-                {/* Expected End Date */}
-                <View style={[styles.fieldGroup, isDesktop && { flex: 1 }]}>
-                  <View style={styles.labelRow}>
-                    <Text style={styles.fieldLabel}>
-                      Target Completion Date (Optional)
+                <Pressable
+                  onPress={() => setIsStartCalendarOpen(true)}
+                  style={styles.mobileDateTrigger}
+                >
+                  <View style={styles.mobileDateTriggerLeft}>
+                    <AppIcon name="calendar" size={16} color={Colors.primary} />
+                    <Text style={styles.mobileDateValText}>
+                      {formatDatePretty(startDate)}
                     </Text>
                   </View>
-
-                  <Pressable
-                    onPress={() => setIsEndCalendarOpen(true)}
-                    style={({ pressed }) => [
-                      styles.datePickerTrigger,
-                      pressed && { opacity: 0.8 },
-                    ]}
-                  >
-                    <View style={styles.datePickerTriggerLeft}>
-                      <View
-                        style={[
-                          styles.datePickerIconBox,
-                          { backgroundColor: '#EEF2FF' },
-                        ]}
-                      >
-                        <AppIcon
-                          name="flag"
-                          size={18}
-                          color={Colors.accent}
-                        />
-                      </View>
-                      <View>
-                        <Text
-                          style={[
-                            styles.datePickerValueText,
-                            !endDate && { color: Colors.textMuted },
-                          ]}
-                        >
-                          {endDate ? formatDatePretty(endDate) : 'Not Specified'}
-                        </Text>
-                        <Text style={styles.datePickerSubtext}>
-                          {endDate || 'Optional completion target'}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.datePickerPill}>
-                      <Text style={styles.datePickerPillText}>
-                        {endDate ? 'Change' : 'Select'}
-                      </Text>
-                    </View>
-                  </Pressable>
-
-                  {/* Quick End Date shortcuts */}
-                  <View style={styles.quickDateRow}>
-                    <Pressable
-                      onPress={() => addMonthsToEndDate(1)}
-                      style={styles.quickDatePill}
-                    >
-                      <Text style={styles.quickDateText}>+1 Month</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => addMonthsToEndDate(3)}
-                      style={styles.quickDatePill}
-                    >
-                      <Text style={styles.quickDateText}>+3 Months</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => addMonthsToEndDate(6)}
-                      style={styles.quickDatePill}
-                    >
-                      <Text style={styles.quickDateText}>+6 Months</Text>
-                    </Pressable>
-                    {endDate ? (
-                      <Pressable
-                        onPress={() => setEndDate('')}
-                        style={[
-                          styles.quickDatePill,
-                          { backgroundColor: '#FEE2E2' },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.quickDateText,
-                            { color: Colors.danger },
-                          ]}
-                        >
-                          Clear
-                        </Text>
-                      </Pressable>
-                    ) : null}
+                  <View style={styles.dateChangeBadge}>
+                    <Text style={styles.dateChangeBadgeText}>Pick Date</Text>
                   </View>
+                </Pressable>
+              </View>
+
+              {/* Expected End Date */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>
+                  Target Completion Date (Optional)
+                </Text>
+                <Pressable
+                  onPress={() => setIsEndCalendarOpen(true)}
+                  style={styles.mobileDateTrigger}
+                >
+                  <View style={styles.mobileDateTriggerLeft}>
+                    <AppIcon name="flag" size={16} color={Colors.accent} />
+                    <Text
+                      style={[
+                        styles.mobileDateValText,
+                        !endDate && { color: Colors.textSubtle },
+                      ]}
+                    >
+                      {endDate ? formatDatePretty(endDate) : 'Not Specified'}
+                    </Text>
+                  </View>
+                  <View style={styles.dateChangeBadge}>
+                    <Text style={styles.dateChangeBadgeText}>
+                      {endDate ? 'Change' : 'Pick Date'}
+                    </Text>
+                  </View>
+                </Pressable>
+
+                {/* Quick Date Shortcuts */}
+                <View style={styles.mobileShortcutsRow}>
+                  <Pressable
+                    onPress={() => addMonthsToEndDate(1)}
+                    style={styles.shortcutChip}
+                  >
+                    <Text style={styles.shortcutChipText}>+1M</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => addMonthsToEndDate(3)}
+                    style={styles.shortcutChip}
+                  >
+                    <Text style={styles.shortcutChipText}>+3M</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => addMonthsToEndDate(6)}
+                    style={styles.shortcutChip}
+                  >
+                    <Text style={styles.shortcutChipText}>+6M</Text>
+                  </Pressable>
+                  {endDate ? (
+                    <Pressable
+                      onPress={() => setEndDate('')}
+                      style={[styles.shortcutChip, { backgroundColor: '#FEE2E2' }]}
+                    >
+                      <Text
+                        style={[
+                          styles.shortcutChipText,
+                          { color: Colors.danger },
+                        ]}
+                      >
+                        Clear
+                      </Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               </View>
 
-              {/* Notes & Terms */}
+              {/* Notes */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>
-                  Contract Terms, Scope Exclusions & Notes
-                </Text>
+                <Text style={styles.fieldLabel}>Contract Terms & Notes</Text>
                 <TextInput
                   value={notes}
                   onChangeText={setNotes}
-                  placeholder="e.g. Payment milestones: 25% booking, 50% midpoint, 25% handover. Client provides water & electricity."
+                  placeholder="e.g. 25% booking, 50% midpoint, 25% handover..."
                   placeholderTextColor={Colors.textSubtle}
                   style={[styles.textInput, styles.multilineInput]}
                   multiline
-                  numberOfLines={4}
+                  numberOfLines={3}
                 />
               </View>
             </View>
@@ -1343,137 +1428,63 @@ export function SiteFormModal({
                     { backgroundColor: '#EDE9FE' },
                   ]}
                 >
-                  <Text
-                    style={[styles.sectionBadgeNum, { color: '#7C3AED' }]}
-                  >
-                    05
+                  <Text style={[styles.sectionBadgeNum, { color: '#7C3AED' }]}>
+                    5
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.sectionHeading}>
-                    Work Agreements & Project Documents
+                    Agreements & Documents
                   </Text>
                   <Text style={styles.sectionSub}>
-                    Attach signed contracts, quotations, floor plans & site photos
+                    Signed contracts, floor plans, quotations & site photos
                   </Text>
                 </View>
               </View>
 
-              {/* Add Document Action Bar */}
-              <View style={styles.docActionBar}>
-                <Pressable
-                  onPress={triggerWebFilePicker}
-                  style={({ pressed }) => [
-                    styles.addDocBtn,
-                    pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-                  ]}
-                >
-                  <AppIcon name="cloud-upload" size={18} color="#FFFFFF" />
-                  <Text style={styles.addDocBtnText}>
-                    + Upload Agreement / Document
-                  </Text>
-                </Pressable>
-              </View>
+              {/* Upload Button */}
+              <Pressable
+                onPress={triggerWebFilePicker}
+                style={({ pressed }) => [
+                  styles.mobileUploadBtn,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <AppIcon name="cloud-upload" size={16} color="#FFFFFF" />
+                <Text style={styles.mobileUploadBtnText}>
+                  + Upload Agreement / Document
+                </Text>
+              </Pressable>
 
-              {/* Attached Documents List */}
+              {/* Attached List */}
               {documents.length > 0 ? (
-                <View style={styles.docList}>
+                <View style={{ gap: 8 }}>
                   {documents.map((doc) => {
                     const isAgreement = doc.category === 'AGREEMENT';
-                    const isDrawing = doc.category === 'DRAWING';
-                    const isQuotation = doc.category === 'QUOTATION';
                     return (
-                      <View key={doc.id} style={styles.docCard}>
-                        <View style={styles.docCardLeft}>
-                          <View
-                            style={[
-                              styles.docIconBox,
-                              {
-                                backgroundColor: isAgreement
-                                  ? '#DCFCE7'
-                                  : isDrawing
-                                  ? '#DBEAFE'
-                                  : isQuotation
-                                  ? '#FEF3C7'
-                                  : '#F3E8FF',
-                              },
-                            ]}
-                          >
-                            <AppIcon
-                              name={
-                                isAgreement
-                                  ? 'document-text'
-                                  : isDrawing
-                                  ? 'map'
-                                  : isQuotation
-                                  ? 'receipt'
-                                  : 'image'
-                              }
-                              size={20}
-                              color={
-                                isAgreement
-                                  ? '#16A34A'
-                                  : isDrawing
-                                  ? '#2563EB'
-                                  : isQuotation
-                                  ? '#D97706'
-                                  : '#9333EA'
-                              }
-                            />
-                          </View>
+                      <View key={doc.id} style={styles.mobileDocCard}>
+                        <View style={styles.mobileDocLeft}>
+                          <AppIcon
+                            name={isAgreement ? 'document-text' : 'image'}
+                            size={18}
+                            color={isAgreement ? '#16A34A' : '#7C3AED'}
+                          />
                           <View style={{ flex: 1 }}>
-                            <View style={styles.docTitleRow}>
-                              <Text style={styles.docName} numberOfLines={1}>
-                                {doc.name}
-                              </Text>
-                              <View
-                                style={[
-                                  styles.docCatBadge,
-                                  {
-                                    backgroundColor: isAgreement
-                                      ? '#DCFCE7'
-                                      : '#EFF6FF',
-                                  },
-                                ]}
-                              >
-                                <Text
-                                  style={[
-                                    styles.docCatBadgeText,
-                                    {
-                                      color: isAgreement
-                                        ? '#16A34A'
-                                        : '#2563EB',
-                                    },
-                                  ]}
-                                >
-                                  {doc.category}
-                                </Text>
-                              </View>
-                            </View>
-                            <Text style={styles.docMeta}>
-                              {doc.size ? `${doc.size} • ` : ''}
-                              Added on {doc.date}
-                              {doc.refNo ? ` • Ref: ${doc.refNo}` : ''}
+                            <Text style={styles.mobileDocName} numberOfLines={1}>
+                              {doc.name}
                             </Text>
-                            {doc.terms ? (
-                              <Text style={styles.docTermsNote} numberOfLines={2}>
-                                Terms: {doc.terms}
-                              </Text>
-                            ) : null}
+                            <Text style={styles.mobileDocMeta}>
+                              {doc.category} • {doc.date}
+                            </Text>
                           </View>
                         </View>
-
                         <Pressable
                           onPress={() => handleRemoveDocument(doc.id)}
-                          style={({ pressed }) => [
-                            styles.docDeleteBtn,
-                            pressed && { opacity: 0.6 },
-                          ]}
-                          accessibilityLabel="Delete document"
+                          style={styles.mobileDocDeleteBtn}
                         >
                           <AppIcon
                             name="trash-outline"
-                            size={18}
+                            size={15}
                             color={Colors.danger}
                           />
                         </Pressable>
@@ -1482,75 +1493,52 @@ export function SiteFormModal({
                   })}
                 </View>
               ) : (
-                <View style={styles.docEmptyPlaceholder}>
-                  <AppIcon
-                    name="document-attach-outline"
-                    size={28}
-                    color={Colors.textMuted}
-                  />
-                  <Text style={styles.docEmptyTitle}>
-                    No agreements or documents attached yet
-                  </Text>
-                  <Text style={styles.docEmptyDesc}>
-                    Keep signed stamp paper agreements, rate quotes, and drawings
-                    securely organized for this work site.
+                <View style={styles.mobileDocEmpty}>
+                  <Text style={styles.mobileDocEmptyText}>
+                    No agreements or blueprints attached yet.
                   </Text>
                 </View>
               )}
             </View>
 
-            <View style={{ height: 90 }} />
+            <View style={{ height: 80 }} />
           </ScrollView>
 
           {/* Sticky Bottom Action Bar */}
           <View style={styles.bottomBar}>
-            <View
-              style={[
-                styles.bottomBarInner,
-                isDesktop && styles.desktopContainer,
+            <Pressable
+              onPress={() => !busy && onClose()}
+              disabled={busy}
+              style={styles.cancelBtn}
+            >
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={handleSave}
+              disabled={busy}
+              style={({ pressed }) => [
+                styles.saveBtn,
+                busy && { opacity: 0.6 },
+                pressed && { opacity: 0.9 },
               ]}
             >
-              <Pressable
-                onPress={() => !busy && onClose()}
-                disabled={busy}
-                style={({ pressed }) => [
-                  styles.cancelButton,
-                  pressed && { opacity: 0.7 },
-                ]}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={handleSave}
-                disabled={busy}
-                style={({ pressed }) => [
-                  styles.submitButton,
-                  busy && { opacity: 0.6 },
-                  pressed && { transform: [{ scale: 0.99 }] },
-                ]}
-              >
-                {busy ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <AppIcon
-                      name="checkmark-circle"
-                      size={20}
-                      color="#FFFFFF"
-                    />
-                    <Text style={styles.submitButtonText}>
-                      {isEdit ? 'Update Site' : 'Save Site'}
-                    </Text>
-                  </>
-                )}
-              </Pressable>
-            </View>
+              {busy ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <AppIcon name="checkmark" size={17} color="#FFFFFF" />
+                  <Text style={styles.saveBtnText}>
+                    {isEdit ? 'Update Site' : 'Save Site'}
+                  </Text>
+                </>
+              )}
+            </Pressable>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      {/* START DATE CALENDAR PICKER MODAL */}
+      {/* START DATE CALENDAR PICKER */}
       <CalendarPickerModal
         visible={isStartCalendarOpen}
         title="Select Start Date"
@@ -1561,7 +1549,7 @@ export function SiteFormModal({
         onClose={() => setIsStartCalendarOpen(false)}
       />
 
-      {/* END DATE CALENDAR PICKER MODAL */}
+      {/* END DATE CALENDAR PICKER */}
       <CalendarPickerModal
         visible={isEndCalendarOpen}
         title="Target Completion Date"
@@ -1574,6 +1562,87 @@ export function SiteFormModal({
         onClose={() => setIsEndCalendarOpen(false)}
       />
 
+      {/* STATE PICKER MODAL */}
+      {isStatePickerOpen && (
+        <Modal
+          visible={isStatePickerOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsStatePickerOpen(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setIsStatePickerOpen(false)}
+            />
+            <View style={styles.stateModalSheet}>
+              <View style={styles.modalSheetHeader}>
+                <Text style={styles.modalSheetTitle}>
+                  Select State / Union Territory
+                </Text>
+                <Pressable
+                  onPress={() => setIsStatePickerOpen(false)}
+                  style={styles.sheetCloseBtn}
+                >
+                  <AppIcon name="close" size={16} color={Colors.textPrimary} />
+                </Pressable>
+              </View>
+
+              <View style={styles.stateSearchBox}>
+                <AppIcon name="search" size={16} color={Colors.textMuted} />
+                <TextInput
+                  value={stateSearch}
+                  onChangeText={setStateSearch}
+                  placeholder="Search state or code..."
+                  placeholderTextColor={Colors.textSubtle}
+                  style={styles.stateSearchInput}
+                />
+              </View>
+
+              <ScrollView style={{ maxHeight: 320 }}>
+                {filteredStates.map((st) => {
+                  const isSelected = selectedStateCode === st.code;
+                  return (
+                    <Pressable
+                      key={st.code}
+                      onPress={() => {
+                        setSelectedState(st.name);
+                        setSelectedStateCode(st.code);
+                        setIsStatePickerOpen(false);
+                        setStateSearch('');
+                      }}
+                      style={[
+                        styles.stateRowItem,
+                        isSelected && styles.stateRowItemActive,
+                      ]}
+                    >
+                      <View style={styles.stateCodePill}>
+                        <Text style={styles.stateCodePillText}>{st.code}</Text>
+                      </View>
+                      <Text
+                        style={[
+                          styles.stateRowName,
+                          isSelected && styles.stateRowNameActive,
+                        ]}
+                      >
+                        {st.name}
+                      </Text>
+                      {isSelected && (
+                        <AppIcon
+                          name="checkmark"
+                          size={16}
+                          color={Colors.primary}
+                        />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       {/* MANUAL ATTACH DOCUMENT MODAL */}
       {isDocModalOpen && (
         <Modal
@@ -1582,153 +1651,102 @@ export function SiteFormModal({
           animationType="fade"
           onRequestClose={() => setIsDocModalOpen(false)}
         >
-          <View style={styles.docModalOverlay}>
+          <View style={styles.modalBackdrop}>
             <Pressable
               style={StyleSheet.absoluteFill}
               onPress={() => setIsDocModalOpen(false)}
             />
-            <View
-              style={[
-                styles.docModalCard,
-                isDesktop && { maxWidth: 480 },
-              ]}
-            >
-              <View style={styles.docModalHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.docModalTitle}>
-                    Attach Agreement / Document
-                  </Text>
-                  <Text style={styles.docModalSub}>
-                    Record work contracts, drawings or estimates
-                  </Text>
-                </View>
+            <View style={styles.docModalSheet}>
+              <View style={styles.modalSheetHeader}>
+                <Text style={styles.modalSheetTitle}>
+                  Attach Project Document
+                </Text>
                 <Pressable
                   onPress={() => setIsDocModalOpen(false)}
-                  style={styles.closeIconBtn}
+                  style={styles.sheetCloseBtn}
                 >
-                  <AppIcon name="close" size={18} color={Colors.textPrimary} />
+                  <AppIcon name="close" size={16} color={Colors.textPrimary} />
                 </Pressable>
               </View>
 
-              {/* Document Category Selector */}
-              <View style={{ marginBottom: 12 }}>
-                <Text style={styles.smallSubLabel}>Document Category:</Text>
+              <View style={{ gap: 10, marginTop: 8 }}>
+                {/* Category Chips */}
                 <View style={styles.docCatRow}>
-                  {[
-                    { id: 'AGREEMENT', label: 'Agreement' },
-                    { id: 'QUOTATION', label: 'Quotation' },
-                    { id: 'DRAWING', label: 'Drawing' },
-                    { id: 'PHOTO', label: 'Photo' },
-                    { id: 'OTHER', label: 'Other' },
-                  ].map((cat) => (
-                    <Pressable
-                      key={cat.id}
-                      onPress={() => setNewDocCategory(cat.id as any)}
-                      style={[
-                        styles.docCatChip,
-                        newDocCategory === cat.id && styles.docCatChipActive,
-                      ]}
-                    >
-                      <Text
+                  {['AGREEMENT', 'QUOTATION', 'DRAWING', 'PHOTO', 'OTHER'].map(
+                    (cat) => (
+                      <Pressable
+                        key={cat}
+                        onPress={() => setNewDocCategory(cat as any)}
                         style={[
-                          styles.docCatChipText,
-                          newDocCategory === cat.id &&
-                            styles.docCatChipTextActive,
+                          styles.docCatChip,
+                          newDocCategory === cat && styles.docCatChipActive,
                         ]}
                       >
-                        {cat.label}
-                      </Text>
-                    </Pressable>
-                  ))}
+                        <Text
+                          style={[
+                            styles.docCatChipText,
+                            newDocCategory === cat &&
+                              styles.docCatChipTextActive,
+                          ]}
+                        >
+                          {cat}
+                        </Text>
+                      </Pressable>
+                    )
+                  )}
                 </View>
-              </View>
 
-              {/* Title / Name */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Document / File Name *</Text>
-                <View style={styles.inputWrapper}>
-                  <AppIcon
-                    name="document-outline"
-                    size={18}
-                    color={Colors.textMuted}
-                  />
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Document / File Name *</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      value={newDocName}
+                      onChangeText={setNewDocName}
+                      placeholder="e.g. Work_Agreement_Signed.pdf"
+                      placeholderTextColor={Colors.textSubtle}
+                      style={styles.textInput}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Reference No. (Optional)</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      value={newDocRef}
+                      onChangeText={setNewDocRef}
+                      placeholder="e.g. AGR-2026-01"
+                      placeholderTextColor={Colors.textSubtle}
+                      style={styles.textInput}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Notes / Terms</Text>
                   <TextInput
-                    value={newDocName}
-                    onChangeText={setNewDocName}
-                    placeholder="e.g. Work_Agreement_Signed.pdf"
+                    value={newDocTerms}
+                    onChangeText={setNewDocTerms}
+                    placeholder="Key terms or description..."
                     placeholderTextColor={Colors.textSubtle}
-                    style={styles.textInput}
+                    style={[styles.textInput, { height: 48 }]}
                   />
                 </View>
-              </View>
 
-              {/* Ref No */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>
-                  Agreement / Reference Number (Optional)
-                </Text>
-                <View style={styles.inputWrapper}>
-                  <AppIcon
-                    name="bookmark-outline"
-                    size={18}
-                    color={Colors.textMuted}
-                  />
-                  <TextInput
-                    value={newDocRef}
-                    onChangeText={setNewDocRef}
-                    placeholder="e.g. AGR-2026-09"
-                    placeholderTextColor={Colors.textSubtle}
-                    style={styles.textInput}
-                  />
+                <View style={styles.sheetActions}>
+                  <Pressable
+                    onPress={() => setIsDocModalOpen(false)}
+                    style={styles.sheetCancelBtn}
+                  >
+                    <Text style={styles.sheetCancelText}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleAddDocument}
+                    style={styles.sheetSaveBtn}
+                  >
+                    <Text style={styles.sheetSaveText}>Attach</Text>
+                  </Pressable>
                 </View>
-              </View>
-
-              {/* Agreement Terms Presets */}
-              <View style={{ marginBottom: 10 }}>
-                <Text style={styles.smallSubLabel}>
-                  Quick Terms / Conditions:
-                </Text>
-                <View style={{ gap: 6 }}>
-                  {AGREEMENT_TERMS_PRESETS.slice(0, 3).map((term) => (
-                    <Pressable
-                      key={term}
-                      onPress={() => setNewDocTerms(term)}
-                      style={styles.termPresetPill}
-                    >
-                      <Text style={styles.termPresetPillText}>+ {term}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-
-              {/* Terms Notes */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Agreement Terms & Scope</Text>
-                <TextInput
-                  value={newDocTerms}
-                  onChangeText={setNewDocTerms}
-                  placeholder="Key agreement clauses, advance % or warranty terms..."
-                  placeholderTextColor={Colors.textSubtle}
-                  style={[styles.textInput, { height: 60 }]}
-                  multiline
-                />
-              </View>
-
-              {/* Action Buttons */}
-              <View style={styles.docModalActions}>
-                <Pressable
-                  onPress={() => setIsDocModalOpen(false)}
-                  style={styles.cancelBtn}
-                >
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleAddDocument}
-                  style={styles.confirmBtn}
-                >
-                  <AppIcon name="checkmark" size={17} color="#FFFFFF" />
-                  <Text style={styles.confirmBtnText}>Add Document</Text>
-                </Pressable>
               </View>
             </View>
           </View>
@@ -1741,166 +1759,132 @@ export function SiteFormModal({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F8FAFC',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  headerCenter: {
     flex: 1,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '800',
     color: Colors.textPrimary,
   },
-  thekaBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    backgroundColor: Colors.primarySurface,
-  },
-  thekaBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: Colors.primary,
-    textTransform: 'uppercase',
-  },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.textMuted,
-    marginTop: 2,
+    marginTop: 1,
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.surfaceSubtle,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerRightPlaceholder: {
+    width: 32,
   },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     backgroundColor: '#FEE2E2',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#FCA5A5',
   },
   errorBannerText: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.danger,
     fontWeight: '700',
     flex: 1,
   },
-  scrollContent: {
-    padding: 16,
-    gap: 16,
+  tabBarContainer: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  desktopContainer: {
-    maxWidth: 760,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  navChipsRow: {
+  tabBarScroll: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 4,
-  },
-  navChip: {
+    gap: 6,
     paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  sectionTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
   },
-  navChipActive: {
+  sectionTabActive: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
-  navChipText: {
-    fontSize: 12,
+  sectionTabText: {
+    fontSize: 11,
     fontWeight: '700',
     color: Colors.textSecondary,
   },
-  navChipTextActive: {
+  sectionTabTextActive: {
     color: '#FFFFFF',
   },
+  scrollContent: {
+    padding: 12,
+    gap: 12,
+  },
   cardSection: {
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 18,
-    gap: 16,
-    shadowColor: Colors.shadowColor,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    gap: 12,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   sectionBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 8,
     backgroundColor: Colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionBadgeNum: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
     color: Colors.primary,
   },
   sectionHeading: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
     color: Colors.textPrimary,
   },
   sectionSub: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.textMuted,
-    marginTop: 2,
+    marginTop: 1,
   },
   fieldGroup: {
-    gap: 6,
+    gap: 5,
   },
   labelRow: {
     flexDirection: 'row',
@@ -1908,625 +1892,604 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   fieldLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: '#334155',
+  },
+  fieldLabelSmall: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    marginBottom: 4,
   },
   requiredStar: {
     color: Colors.danger,
     fontWeight: '800',
   },
   fieldHelper: {
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.textMuted,
-    marginTop: 2,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.background,
+    gap: 8,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    minHeight: 46,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 44,
   },
   textInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.textPrimary,
-    paddingVertical: 10,
+    paddingVertical: 6,
   },
   multilineInput: {
-    minHeight: 80,
+    height: 70,
     textAlignVertical: 'top',
+    paddingTop: 8,
   },
   countryCodeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: Colors.surfaceSubtle,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: '#E2E8F0',
   },
   countryCodeText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
     color: Colors.textPrimary,
   },
-  suggestionsRow: {
+  suggestionsScroll: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 6,
-    flexWrap: 'wrap',
-    marginTop: 6,
-  },
-  suggestionTitle: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    fontWeight: '600',
+    paddingTop: 4,
   },
   suggestionPill: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#BFDBFE',
   },
   suggestionPillText: {
     fontSize: 11,
     fontWeight: '600',
     color: Colors.primary,
   },
-  desktopRow: {
-    flexDirection: 'row',
-    gap: 14,
-  },
-  scopeCardsGrid: {
+  // GST Section styles
+  gstCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 10,
     gap: 10,
   },
-  scopeCard: {
+  gstToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
+    justifyContent: 'space-between',
   },
-  scopeCardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F8FAFF',
-  },
-  scopeIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: Colors.surfaceSubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scopeTitle: {
-    fontSize: 14,
+  gstToggleTitle: {
+    fontSize: 12,
     fontWeight: '800',
     color: Colors.textPrimary,
   },
-  scopeDesc: {
-    fontSize: 11,
+  gstToggleSub: {
+    fontSize: 10,
     color: Colors.textMuted,
-    marginTop: 2,
-    lineHeight: 16,
+    marginTop: 1,
   },
-  pricingTabsContainer: {
+  gstInputsBlock: {
+    gap: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  detectedStateBadge: {
+    marginLeft: 'auto',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: '#DCFCE7',
+  },
+  detectedStateText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#16A34A',
+  },
+  stateSelectBtn: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 44,
+  },
+  stateSelectText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  // Scope Cards (Mobile optimized)
+  mobileScopeGrid: {
     gap: 8,
   },
-  pricingTab: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 14,
+  mobileScopeCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 10,
+    borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    gap: 4,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
   },
-  pricingTabSelected: {
+  mobileScopeCardActive: {
+    borderColor: Colors.primary,
+    backgroundColor: '#EFF6FF',
+  },
+  radioDotCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#94A3B8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  radioDotCircleActive: {
+    borderColor: Colors.primary,
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary,
+  },
+  mobileScopeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+  },
+  mobileScopeDesc: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 1,
+  },
+  // Pricing Pills
+  pricingPillsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  pricingPillBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+  },
+  pricingPillBtnActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
-  pricingTabTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    textAlign: 'center',
+  pricingPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textSecondary,
   },
-  pricingTabTitleSelected: {
+  pricingPillTextActive: {
     color: '#FFFFFF',
+    fontWeight: '800',
   },
-  pricingTabDesc: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    textAlign: 'center',
+  highlightBox: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    padding: 10,
+    gap: 8,
   },
-  highlightInputBox: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    padding: 14,
-    gap: 10,
-  },
-  bigCurrencyInputWrapper: {
+  currencyInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: Colors.primary,
-    paddingHorizontal: 16,
-    height: 56,
+    paddingHorizontal: 12,
+    height: 48,
   },
-  currencySymbol: {
-    fontSize: 22,
+  currencyPrefixText: {
+    fontSize: 18,
     fontWeight: '800',
     color: Colors.primary,
-    marginRight: 8,
+    marginRight: 6,
   },
-  bigCurrencyInput: {
+  currencyPrefixTextSmall: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textMuted,
+  },
+  currencyInput: {
     flex: 1,
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '800',
     color: Colors.textPrimary,
   },
-  amountHelperBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 6,
-  },
-  amountHelperText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  inputCurrencyPrefix: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textMuted,
-  },
-  smallSubLabel: {
+  wordsPreviewText: {
     fontSize: 11,
     fontWeight: '700',
-    color: Colors.textMuted,
-    marginBottom: 6,
+    color: Colors.primary,
+    paddingLeft: 4,
   },
   unitPillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
   },
-  unitPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+  unitChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#CBD5E1',
   },
-  unitPillActive: {
+  unitChipActive: {
     backgroundColor: Colors.primarySurface,
     borderColor: Colors.primary,
   },
-  unitPillText: {
-    fontSize: 11,
+  unitChipText: {
+    fontSize: 10,
     fontWeight: '700',
     color: Colors.textSecondary,
   },
-  unitPillTextActive: {
+  unitChipTextActive: {
     color: Colors.primary,
   },
-  calculatedValueCard: {
+  calcPreviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#E0E7FF',
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  calcFormulaText: {
+    fontSize: 11,
+    color: '#3730A3',
+    fontWeight: '600',
+  },
+  calcTotalText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#312E81',
+  },
+  // Mobile Profit Card
+  mobileProfitCard: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+  },
+  mobileProfitTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#EFF6FF',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    marginTop: 6,
   },
-  calculatedLeft: {
-    flex: 1,
-  },
-  calcTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.primary,
+  mobileProfitTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#94A3B8',
     textTransform: 'uppercase',
   },
-  calcFormula: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  calcBigAmount: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: Colors.primary,
-  },
-  calcWords: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    fontWeight: '600',
-  },
-  profitForecastCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-  },
-  profitCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  profitCardTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  marginBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  marginBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  profitNumbersRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0F172A',
-    borderRadius: 10,
-    padding: 10,
-  },
-  profitCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  profitColLabel: {
-    fontSize: 10,
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  profitColValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginTop: 2,
-  },
-  profitColMinus: {
-    fontSize: 16,
-    color: '#94A3B8',
-    fontWeight: '800',
-  },
-  profitColEquals: {
-    fontSize: 16,
-    color: '#94A3B8',
-    fontWeight: '800',
-  },
-  statusChipsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  statusChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-  },
-  todayQuickBtn: {
-    marginLeft: 'auto',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    backgroundColor: Colors.primarySurface,
-  },
-  todayQuickBtnText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: Colors.primary,
-  },
-  datePickerTrigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.background,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    minHeight: 52,
-  },
-  datePickerTriggerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  datePickerIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Colors.primarySurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  datePickerValueText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  datePickerSubtext: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 1,
-  },
-  datePickerPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: Colors.surfaceSubtle,
-  },
-  datePickerPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: Colors.primary,
-  },
-  quickDateRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 6,
-  },
-  quickDatePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: Colors.surfaceSubtle,
-  },
-  quickDateText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-  },
-  // Document Upload Styles
-  docActionBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  addDocBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: '#7C3AED',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  addDocBtnText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  docList: {
-    gap: 10,
-    marginTop: 6,
-  },
-  docCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FAF5FF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E9D5FF',
-    padding: 12,
-    gap: 10,
-  },
-  docCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  docIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  docTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  docName: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    flexShrink: 1,
-  },
-  docCatBadge: {
+  marginPill: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 4,
   },
-  docCatBadgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  docMeta: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  docTermsNote: {
+  marginPillText: {
     fontSize: 10,
-    color: '#6B7280',
-    fontStyle: 'italic',
-    marginTop: 2,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
-  docDeleteBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#FEE2E2',
+  mobileProfitStatsRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
-  docEmptyPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-    backgroundColor: '#FDFBFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: '#D8B4FE',
-    gap: 6,
+  profitStatLabel: {
+    fontSize: 10,
+    color: '#64748B',
   },
-  docEmptyTitle: {
+  profitStatVal: {
     fontSize: 13,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#FFFFFF',
+    marginTop: 1,
   },
-  docEmptyDesc: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    maxWidth: 320,
-    lineHeight: 16,
-  },
-  bottomBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  bottomBarInner: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surfaceSubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButtonText: {
+  profitStatDivider: {
     fontSize: 14,
+    fontWeight: '800',
+    color: '#64748B',
+  },
+  // Mobile Status Grid
+  mobileStatusGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  mobileStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F8FAFC',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  mobileStatusText: {
+    fontSize: 11,
     fontWeight: '700',
     color: Colors.textSecondary,
   },
-  submitButton: {
-    flex: 2,
+  todaySmallBtn: {
+    marginLeft: 'auto',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: Colors.primarySurface,
+  },
+  todaySmallBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: Colors.primary,
+  },
+  mobileDateTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 44,
+  },
+  mobileDateTriggerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  mobileDateValText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  dateChangeBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: '#E2E8F0',
+  },
+  dateChangeBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  mobileShortcutsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 4,
+  },
+  shortcutChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#F1F5F9',
+  },
+  shortcutChipText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+  },
+  // Mobile Document Styles
+  mobileUploadBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    gap: 6,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#7C3AED',
   },
-  submitButtonText: {
-    fontSize: 15,
+  mobileUploadBtnText: {
+    fontSize: 12,
     fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: 0.2,
   },
-  // Doc modal styles
-  docModalOverlay: {
+  mobileDocCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F5F3FF',
+    borderRadius: 10,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+  },
+  mobileDocLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  mobileDocName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  mobileDocMeta: {
+    fontSize: 10,
+    color: Colors.textMuted,
+  },
+  mobileDocDeleteBtn: {
+    padding: 6,
+  },
+  mobileDocEmpty: {
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  mobileDocEmptyText: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    fontStyle: 'italic',
+  },
+  // Sticky Bottom Bar
+  bottomBar: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+  },
+  saveBtn: {
+    flex: 2,
+    height: 46,
+    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  saveBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  // Modal Backdrop & Sheets
+  modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
+    justifyContent: 'flex-end',
   },
-  docModalCard: {
-    width: '100%',
-    maxWidth: 420,
+  stateModalSheet: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    padding: 16,
+    maxHeight: '80%',
   },
-  docModalHeader: {
+  modalSheetHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 10,
   },
-  docModalTitle: {
-    fontSize: 16,
+  modalSheetTitle: {
+    fontSize: 14,
     fontWeight: '800',
     color: Colors.textPrimary,
   },
-  docModalSub: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  closeIconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.surfaceSubtle,
+  sheetCloseBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  stateSearchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 38,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  stateSearchInput: {
+    flex: 1,
+    fontSize: 12,
+    color: Colors.textPrimary,
+  },
+  stateRowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  stateRowItemActive: {
+    backgroundColor: '#F0F9FF',
+  },
+  stateCodePill: {
+    width: 28,
+    height: 22,
+    borderRadius: 4,
+    backgroundColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stateCodePillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+  },
+  stateRowName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    flex: 1,
+  },
+  stateRowNameActive: {
+    color: Colors.primary,
+    fontWeight: '800',
+  },
+  // Doc Modal Sheet
+  docModalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    padding: 16,
   },
   docCatRow: {
     flexDirection: 'row',
@@ -2534,70 +2497,47 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   docCatChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: Colors.surfaceSubtle,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#F1F5F9',
   },
   docCatChipActive: {
     backgroundColor: '#7C3AED',
-    borderColor: '#7C3AED',
   },
   docCatChipText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: Colors.textSecondary,
   },
   docCatChipTextActive: {
     color: '#FFFFFF',
   },
-  termPresetPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  termPresetPillText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    fontWeight: '600',
-  },
-  docModalActions: {
+  sheetActions: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 10,
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    gap: 8,
+    marginTop: 8,
   },
-  cancelBtn: {
+  sheetCancelBtn: {
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: 6,
+    backgroundColor: '#F1F5F9',
   },
-  cancelBtnText: {
-    fontSize: 13,
+  sheetCancelText: {
+    fontSize: 12,
     fontWeight: '700',
     color: Colors.textSecondary,
   },
-  confirmBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  sheetSaveBtn: {
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
+    borderRadius: 6,
     backgroundColor: '#7C3AED',
   },
-  confirmBtnText: {
-    fontSize: 13,
+  sheetSaveText: {
+    fontSize: 12,
     fontWeight: '800',
     color: '#FFFFFF',
   },
