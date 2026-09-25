@@ -9,6 +9,7 @@ import { Header } from './src/components/common/Header';
 import { BottomNav, TabItem } from './src/components/common/BottomNav';
 import { Button } from './src/components/common/Button';
 import { FormModal } from './src/ui';
+import { SiteFormModal } from './src/components/sites/SiteFormModal';
 
 // Pages
 import { AuthPage } from './src/pages/Auth';
@@ -362,7 +363,19 @@ function MainApp() {
       />
 
       {/* Form Modal */}
-      {form && (
+      {form && form.action.startsWith('site.') ? (
+        <SiteFormModal
+          key={form.action + (form.entity_id || '')}
+          spec={form}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setForm(null);
+            setError('');
+          }}
+          onSave={handleSaveForm}
+        />
+      ) : form ? (
         <FormModal
           key={form.action + (form.entity_id || '')}
           spec={form}
@@ -374,7 +387,7 @@ function MainApp() {
           }}
           onSave={handleSaveForm}
         />
-      )}
+      ) : null}
     </SafeAreaView>
   );
 }

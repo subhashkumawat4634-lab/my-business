@@ -283,6 +283,13 @@ export function SitesPage({
     return matchesQuery && matchesStatus;
   });
 
+  const totalSitesCount = data.sites.length;
+  const ongoingSitesCount = data.sites.filter((s) => s.status === 'ONGOING').length;
+  const totalContractVal = data.sites.reduce(
+    (acc, s) => acc + (Number(s.contract_amount) || 0),
+    0
+  );
+
   return (
     <ScrollView
       style={styles.root}
@@ -298,18 +305,44 @@ export function SitesPage({
       <View style={styles.container}>
         {/* Page Topbar */}
         <View style={styles.pageHeader}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.pageTitle}>Work Sites (Theke)</Text>
             <Text style={styles.pageSubtitle}>
-              Manage projects, scope & balances
+              Projects, client agreements & balances
             </Text>
           </View>
-          <Button
-            title="Naya Theka"
+          <Pressable
             onPress={onOpenNewSite}
-            icon="add"
-            size="sm"
-          />
+            style={({ pressed }) => [
+              styles.nayaThekaBtn,
+              pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+            ]}
+          >
+            <AppIcon name="add" size={19} color="#FFFFFF" />
+            <Text style={styles.nayaThekaBtnText}>Naya Theka</Text>
+          </Pressable>
+        </View>
+
+        {/* Quick Stats Overview Banner */}
+        <View style={styles.statsBanner}>
+          <View style={styles.statBannerItem}>
+            <Text style={styles.statBannerLabel}>Kul Theke</Text>
+            <Text style={styles.statBannerValue}>{totalSitesCount}</Text>
+          </View>
+          <View style={styles.statBannerDivider} />
+          <View style={styles.statBannerItem}>
+            <Text style={styles.statBannerLabel}>Chalu (Ongoing)</Text>
+            <Text style={[styles.statBannerValue, { color: Colors.success }]}>
+              {ongoingSitesCount}
+            </Text>
+          </View>
+          <View style={styles.statBannerDivider} />
+          <View style={styles.statBannerItem}>
+            <Text style={styles.statBannerLabel}>Kul Theka Rashi</Text>
+            <Text style={styles.statBannerValue}>
+              {money(totalContractVal)}
+            </Text>
+          </View>
         </View>
 
         {/* Search */}
@@ -426,9 +459,9 @@ export function SitesPage({
           </View>
         ) : (
           <EmptyState
-            title="Koi Site Nahi Mili"
-            description="Aapne abhi tak koi site add nahi ki ya search result khali hai."
-            actionTitle="Nayi Site Banayein"
+            title="Koi Theka Nahi Mila"
+            description="Aapne abhi tak koi site add nahi ki hai ya filter khali hai. Naya theka shuru karein aur hisab asan banayein."
+            actionTitle="+ Naya Theka Shuru Karein"
             onAction={onOpenNewSite}
           />
         )}
@@ -466,6 +499,66 @@ const styles = StyleSheet.create({
   pageSubtitle: {
     fontSize: 12,
     color: Colors.textMuted,
+    marginTop: 2,
+  },
+  nayaThekaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  nayaThekaBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  statsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 14,
+    shadowColor: Colors.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  statBannerItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statBannerLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  statBannerValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginTop: 2,
+  },
+  statBannerDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: Colors.border,
   },
   chipsRow: {
     flexDirection: 'row',

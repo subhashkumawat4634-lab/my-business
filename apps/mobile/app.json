@@ -23,7 +23,10 @@
       "expo-status-bar"
     ],
     "extra": {
-      "description": "Sites, people and every rupee. Contractor work ledger."
+      "description": "Sites, people and every rupee. Contractor work ledger.",
+      "eas": {
+        "projectId": "e270cfc6-36fa-420c-9a3a-14788827d3bf"
+      }
     }
   }
 }
