@@ -14,6 +14,7 @@ import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { MetricCard } from '../../components/common/MetricCard';
 import { EmptyState } from '../../components/common/EmptyState';
+import { TopNavBar } from '../../components/common/TopNavBar';
 import { Snapshot, Row } from '../../types';
 import { money, siteSummary, workerSummary } from '../../finance';
 
@@ -26,6 +27,7 @@ interface DashboardPageProps {
   onOpenAttendance: () => void;
   onOpenEntry: (kind: string) => void;
   onNavigateTab: (tabKey: string) => void;
+  onLogout?: () => void;
 }
 
 export function DashboardPage({
@@ -37,6 +39,7 @@ export function DashboardPage({
   onOpenAttendance,
   onOpenEntry,
   onNavigateTab,
+  onLogout,
 }: DashboardPageProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
@@ -72,18 +75,38 @@ export function DashboardPage({
     .slice(0, 4);
 
   return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={styles.scroll}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={Colors.primary}
-        />
-      }
-    >
-      <View style={styles.container}>
+    <View style={styles.pageWrapper}>
+      <TopNavBar
+        title="ThekaBook"
+        subtitle={data.organization.name}
+        icon="grid-outline"
+        userInitials={data.user.name}
+        onLogout={onLogout}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        actions={
+          <Pressable
+            onPress={onOpenNewSite}
+            style={styles.navNewSiteBtn}
+            accessibilityLabel="Create new work site"
+          >
+            <AppIcon name="add" size={17} color="#FFFFFF" />
+            <Text style={styles.navNewSiteBtnText}>New Site</Text>
+          </Pressable>
+        }
+      />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+          />
+        }
+      >
+        <View style={styles.container}>
         {/* Welcome Section */}
         <View style={styles.welcomeBox}>
           <Text style={styles.dateText}>
@@ -375,10 +398,34 @@ export function DashboardPage({
         </View>
       </View>
     </ScrollView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  pageWrapper: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  navNewSiteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  navNewSiteBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
   root: {
     flex: 1,
     backgroundColor: Colors.background,

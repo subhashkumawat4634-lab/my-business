@@ -16,9 +16,11 @@ import { Button } from '../../components/common/Button';
 import { MetricCard } from '../../components/common/MetricCard';
 import { SearchBar } from '../../components/common/SearchBar';
 import { EmptyState } from '../../components/common/EmptyState';
+import { TopNavBar } from '../../components/common/TopNavBar';
 import { Snapshot, Row } from '../../types';
 import { money, siteSummary } from '../../finance';
 import { parseSiteNotesAndDocs } from '../../components/sites/SiteFormModal';
+import { downloadSiteDocument } from '../../report';
 
 interface SitesPageProps {
   data: Snapshot;
@@ -64,112 +66,216 @@ export function SitesPage({
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
     return (
-      <ScrollView
-        style={styles.root}
-        contentContainerStyle={styles.scroll}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.primary}
-          />
-        }
-      >
-        <View style={styles.container}>
-          {/* Back Action */}
-          <Pressable
-            onPress={() => onSelectSite(null)}
-            style={styles.backRow}
-            accessibilityLabel="Back to all sites"
-          >
-            <AppIcon name="arrow-back" size={18} color={Colors.primary} />
-            <Text style={styles.backText}>All Work Sites</Text>
-          </Pressable>
+      <View style={styles.pageWrapper}>
+        <TopNavBar
+          title={site.name}
+          subtitle={`${site.owner_name} • ${site.phone || 'No phone'}`}
+          onBack={() => onSelectSite(null)}
+          backText="All Sites"
+          badge={{
+            label: site.status,
+            tone:
+              site.status === 'PAUSED'
+                ? 'orange'
+                : site.status === 'COMPLETED'
+                ? 'blue'
+                : 'green',
+          }}
+          onRefresh={onRefresh}
+          refreshing={refreshing}
+        />
+        <ScrollView
+          style={styles.root}
+          contentContainerStyle={styles.scroll}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.primary}
+            />
+          }
+        >
+          <View style={styles.container}>
+            {/* Executive Site Overview Card */}
+            <View style={styles.siteHeaderCard}>
+              {/* Header Top: Icon + Title + Edit Pencil + Client */}
+              <View style={styles.siteHeaderTop}>
+                <View style={styles.siteIconBox}>
+                  <AppIcon name="business" size={24} color="#2563EB" />
+                </View>
 
-          {/* Site Overview Header Card */}
-          <Card style={styles.siteHeaderCard}>
-            <View style={styles.siteHeaderTop}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.siteTitle}>{site.name}</Text>
-                <Text style={styles.siteClient}>
-                  {site.owner_name} • {site.phone || 'No phone'}
-                </Text>
-                {businessName ? (
-                  <Text style={styles.siteBusinessText}>
-                    🏢 {businessName}
+                <View style={{ flex: 1, gap: 5 }}>
+                  <View style={styles.siteTitleRow}>
+                    <Text style={styles.siteTitle} numberOfLines={1}>
+                      {site.name}
+                    </Text>
+                    <Pressable
+                      onPress={() => onEditSite(site)}
+                      style={({ pressed }) => [
+                        styles.editPencilBtn,
+                        pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] },
+                      ]}
+                      accessibilityLabel="Edit site details"
+                    >
+                      <AppIcon name="create-outline" size={17} color={Colors.primary} />
+                    </Pressable>
+                  </View>
+
+                  {/* Client & Phone */}
+                  <View style={styles.clientRow}>
+                    <View style={styles.clientTag}>
+                      <AppIcon name="person" size={13} color={Colors.textSecondary} />
+                      <Text style={styles.clientTagText}>{site.owner_name}</Text>
+                    </View>
+                    {site.phone ? (
+                      <View style={styles.clientPhoneTag}>
+                        <AppIcon name="call" size={12} color="#16A34A" />
+                        <Text style={styles.clientPhoneText}>{site.phone}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+              </View>
+
+              {/* Legal Business / Firm Name */}
+              {businessName ? (
+                <View style={styles.legalEntityBanner}>
+                  <AppIcon name="shield-checkmark" size={15} color="#2563EB" />
+                  <Text style={styles.legalEntityText}>{businessName}</Text>
+                </View>
+              ) : null}
+
+              {/* Status & Scope Badges Row */}
+              <View style={styles.badgeRow}>
+                <View
+                  style={[
+                    styles.statusPill,
+                    site.status === 'ONGOING'
+                      ? styles.statusPillOngoing
+                      : site.status === 'COMPLETED'
+                      ? styles.statusPillCompleted
+                      : styles.statusPillPaused,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.statusDot,
+                      site.status === 'ONGOING'
+                        ? styles.statusDotOngoing
+                        : site.status === 'COMPLETED'
+                        ? styles.statusDotCompleted
+                        : styles.statusDotPaused,
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.statusPillText,
+                      site.status === 'ONGOING'
+                        ? styles.statusTextOngoing
+                        : site.status === 'COMPLETED'
+                        ? styles.statusTextCompleted
+                        : styles.statusTextPaused,
+                    ]}
+                  >
+                    {site.status}
                   </Text>
+                </View>
+
+                <View style={styles.metaPill}>
+                  <AppIcon
+                    name={site.work_type === 'LABOUR' ? 'people' : 'construct'}
+                    size={12}
+                    color="#475569"
+                  />
+                  <Text style={styles.metaPillText}>
+                    {site.work_type === 'LABOUR' ? 'Labour Only' : 'Labour + Material'}
+                  </Text>
+                </View>
+
+                <View style={styles.metaPill}>
+                  <AppIcon name="pricetag" size={12} color="#475569" />
+                  <Text style={styles.metaPillText}>
+                    {site.pricing === 'FIXED' ? 'Fixed Lumpsum' : site.pricing === 'UNIT' ? 'Unit Rate' : 'Daily Rate'}
+                  </Text>
+                </View>
+
+                {gstin ? (
+                  <View style={styles.gstPill}>
+                    <AppIcon name="shield-checkmark" size={12} color="#16A34A" />
+                    <Text style={styles.gstPillText}>GST: {gstin}</Text>
+                  </View>
+                ) : null}
+
+                {state ? (
+                  <View style={styles.statePill}>
+                    <AppIcon name="location" size={12} color="#2563EB" />
+                    <Text style={styles.statePillText}>
+                      {state}{stateCode ? ` (${stateCode})` : ''}
+                    </Text>
+                  </View>
                 ) : null}
               </View>
-              <Button
-                title="Edit"
-                variant="secondary"
-                size="sm"
-                onPress={() => onEditSite(site)}
-                icon="create-outline"
-              />
-            </View>
 
-            <View style={styles.badgeRow}>
-              <Badge
-                label={site.status}
-                tone={site.status === 'PAUSED' ? 'orange' : 'green'}
-              />
-              <Badge
-                label={
-                  site.work_type === 'LABOUR'
-                    ? 'LABOUR ONLY'
-                    : 'LABOUR + MATERIAL'
-                }
-                tone="blue"
-              />
-              <Badge label={site.pricing} tone="gray" />
-              {gstin ? (
-                <Badge label={`GST: ${gstin}`} tone="green" />
-              ) : null}
-              {state ? (
-                <Badge
-                  label={`${state}${stateCode ? ` (${stateCode})` : ''}`}
-                  tone="blue"
-                />
+              {/* Location & Dates */}
+              {(site.address || site.start_date) && (
+                <View style={styles.infoMetaBox}>
+                  {site.address ? (
+                    <View style={styles.infoMetaRow}>
+                      <AppIcon name="location-outline" size={15} color="#EA580C" />
+                      <Text style={styles.infoMetaText} numberOfLines={2}>
+                        {site.address}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {site.start_date ? (
+                    <View style={styles.infoMetaRow}>
+                      <AppIcon name="calendar-outline" size={15} color="#2563EB" />
+                      <Text style={styles.infoMetaText}>
+                        Started: {site.start_date}{site.end_date ? ` • Target: ${site.end_date}` : ''}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+
+              {/* Notes */}
+              {userNotes ? (
+                <View style={styles.notesBox}>
+                  <AppIcon name="information-circle-outline" size={15} color="#64748B" />
+                  <Text style={styles.notesText}>{userNotes}</Text>
+                </View>
               ) : null}
             </View>
-
-            {site.address ? (
-              <Text style={styles.siteAddress}>
-                <AppIcon name="location-outline" size={14} color={Colors.textMuted} />{' '}
-                {site.address}
-              </Text>
-            ) : null}
-            {userNotes ? (
-              <Text style={styles.siteNotes}>Notes: {userNotes}</Text>
-            ) : null}
-          </Card>
 
           {/* Financial Stat Cards */}
           <View style={styles.metricsGrid}>
             <MetricCard
               label="Agreed Contract"
               value={money(f.contract)}
-              foot="Incl. approved extras"
+              foot="Total project value"
+              icon="business-outline"
             />
             <MetricCard
               label="Received"
               value={money(f.received)}
               foot="Collected so far"
               tone="success"
+              icon="cash-outline"
             />
             <MetricCard
               label="Client Balance"
               value={money(f.ownerBalance)}
-              foot={f.ownerBalance < 0 ? 'Overpaid' : 'To collect'}
+              foot={f.ownerBalance < 0 ? 'Overpaid' : 'Pending to collect'}
               tone={f.ownerBalance < 0 ? 'danger' : 'warning'}
+              icon="wallet-outline"
             />
             <MetricCard
               label={f.final ? 'Final Margin' : 'Est. Margin'}
               value={money(f.profit)}
-              foot="Before common overhead"
+              foot="Projected contractor margin"
               accent
               tone={f.profit >= 0 ? 'success' : 'danger'}
+              icon="trending-up"
             />
           </View>
 
@@ -238,6 +344,28 @@ export function SitesPage({
                         </Text>
                       ) : null}
                     </View>
+                    <Pressable
+                      onPress={() => downloadSiteDocument(d, {
+                        name: site.name,
+                        owner_name: site.owner_name,
+                        phone: site.phone,
+                        address: site.address,
+                        gstin,
+                        state,
+                        stateCode,
+                        businessName,
+                        work_type: site.work_type,
+                        pricing: site.pricing,
+                      })}
+                      style={({ pressed }) => [
+                        styles.docItemDownloadBtn,
+                        pressed && { opacity: 0.8 },
+                      ]}
+                      accessibilityLabel={`Download ${d.name}`}
+                    >
+                      <AppIcon name="download-outline" size={14} color="#1E40AF" />
+                      <Text style={styles.docItemDownloadBtnText}>Download</Text>
+                    </Pressable>
                   </View>
                 ))}
               </View>
@@ -364,8 +492,9 @@ export function SitesPage({
           </View>
         </View>
       </ScrollView>
-    );
-  }
+    </View>
+  );
+}
 
   // Render All Sites List View
   const query = search.trim().toLowerCase();
@@ -383,37 +512,39 @@ export function SitesPage({
   );
 
   return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={styles.scroll}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={Colors.primary}
-        />
-      }
-    >
-      <View style={styles.container}>
-        {/* Page Topbar */}
-        <View style={styles.pageHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.pageTitle}>Work Sites</Text>
-            <Text style={styles.pageSubtitle}>
-              Projects, client agreements & balances
-            </Text>
-          </View>
+    <View style={styles.pageWrapper}>
+      <TopNavBar
+        title="Work Sites"
+        subtitle={`${totalSitesCount} Total • ${ongoingSitesCount} Active Sites`}
+        icon="business-outline"
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        actions={
           <Pressable
             onPress={onOpenNewSite}
             style={({ pressed }) => [
-              styles.nayaThekaBtn,
+              styles.navNewSiteBtn,
               pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
             ]}
+            accessibilityLabel="Create new work site"
           >
-            <AppIcon name="add" size={19} color="#FFFFFF" />
-            <Text style={styles.nayaThekaBtnText}>+ New Site</Text>
+            <AppIcon name="add" size={18} color="#FFFFFF" />
+            <Text style={styles.navNewSiteBtnText}>New Site</Text>
           </Pressable>
-        </View>
+        }
+      />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+          />
+        }
+      >
+        <View style={styles.container}>
 
         {/* Quick Stats Overview Banner */}
         <View style={styles.statsBanner}>
@@ -559,10 +690,34 @@ export function SitesPage({
         )}
       </View>
     </ScrollView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  pageWrapper: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  navNewSiteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  navNewSiteBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
   root: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -771,44 +926,259 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   siteHeaderCard: {
-    padding: 18,
-    gap: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   siteHeaderTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 12,
+  },
+  siteIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  siteTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   siteTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0F172A',
+    flex: 1,
   },
-  siteClient: {
-    fontSize: 13,
-    color: Colors.textMuted,
+  editPencilBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
     marginTop: 2,
   },
-  siteBusinessText: {
+  clientTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  clientTagText: {
     fontSize: 12,
     fontWeight: '700',
-    color: Colors.primary,
-    marginTop: 2,
+    color: '#334155',
+  },
+  clientPhoneTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  clientPhoneText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#15803D',
+  },
+  legalEntityBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  legalEntityText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E40AF',
   },
   badgeRow: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
     flexWrap: 'wrap',
+    gap: 6,
+    paddingTop: 2,
   },
-  siteAddress: {
-    fontSize: 12,
-    color: Colors.textSecondary,
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
   },
-  siteNotes: {
+  statusPillOngoing: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#86EFAC',
+  },
+  statusPillCompleted: {
+    backgroundColor: '#DBEAFE',
+    borderColor: '#93C5FD',
+  },
+  statusPillPaused: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusDotOngoing: {
+    backgroundColor: '#16A34A',
+  },
+  statusDotCompleted: {
+    backgroundColor: '#2563EB',
+  },
+  statusDotPaused: {
+    backgroundColor: '#D97706',
+  },
+  statusPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  statusTextOngoing: {
+    color: '#15803D',
+  },
+  statusTextCompleted: {
+    color: '#1D4ED8',
+  },
+  statusTextPaused: {
+    color: '#B45309',
+  },
+  metaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  metaPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  gstPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  gstPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#065F46',
+  },
+  statePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  statePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1E40AF',
+  },
+  infoMetaBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 10,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  infoMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  infoMetaText: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: '#475569',
+    flex: 1,
+    lineHeight: 16,
+  },
+  notesBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: '#FFFBEB',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  notesText: {
+    fontSize: 12,
+    color: '#92400E',
+    flex: 1,
+    lineHeight: 16,
     fontStyle: 'italic',
+  },
+  navEditIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -972,4 +1342,24 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontStyle: 'italic',
   },
+  docItemDownloadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    marginLeft: 4,
+  },
+  docItemDownloadBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1E40AF',
+  },
 });
+
+export { NewSitePage } from './NewSitePage';
+

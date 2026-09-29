@@ -15,6 +15,7 @@ import { Button } from '../../components/common/Button';
 import { MetricCard } from '../../components/common/MetricCard';
 import { SearchBar } from '../../components/common/SearchBar';
 import { EmptyState } from '../../components/common/EmptyState';
+import { TopNavBar } from '../../components/common/TopNavBar';
 import { Snapshot, Row } from '../../types';
 import { money, workerSummary } from '../../finance';
 
@@ -56,31 +57,37 @@ export function LabourPage({
   );
 
   return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={styles.scroll}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={Colors.primary}
-        />
-      }
-    >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Labour & Team</Text>
-            <Text style={styles.subtitle}>Daily wages, overtime & clear balances</Text>
-          </View>
-          <Button
-            title="+ Add Worker"
+    <View style={styles.pageWrapper}>
+      <TopNavBar
+        title="Labour & Team"
+        subtitle="Daily wages, overtime & clear balances"
+        icon="people-outline"
+        badge={{ label: `${filteredWorkers.length} Workers`, tone: 'blue' }}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        actions={
+          <Pressable
             onPress={() => onOpenWorkerModal()}
-            icon="add"
-            size="sm"
+            style={styles.navActionBtn}
+            accessibilityLabel="Add new worker"
+          >
+            <AppIcon name="add" size={17} color="#FFFFFF" />
+            <Text style={styles.navActionBtnText}>Add Worker</Text>
+          </Pressable>
+        }
+      />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
           />
-        </View>
+        }
+      >
+        <View style={styles.container}>
 
         {/* Stats */}
         <View style={styles.statsRow}>
@@ -182,10 +189,34 @@ export function LabourPage({
         </View>
       </View>
     </ScrollView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  pageWrapper: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  navActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  navActionBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
   root: {
     flex: 1,
     backgroundColor: Colors.background,

@@ -1,20 +1,23 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 // Theme & Common Components
 import { Colors } from './src/theme/colors';
-import { Header } from './src/components/common/Header';
 import { BottomNav, TabItem } from './src/components/common/BottomNav';
 import { Button } from './src/components/common/Button';
 import { FormModal } from './src/ui';
 import { SiteFormModal } from './src/components/sites/SiteFormModal';
+import { AttendanceModal } from './src/components/attendance/AttendanceModal';
+import { MaterialBillModal } from './src/components/bills/MaterialBillModal';
+import { ExtraWorkModal } from './src/components/bills/ExtraWorkModal';
+import { ReceivePaymentModal } from './src/components/bills/ReceivePaymentModal';
 
 // Pages
 import { AuthPage } from './src/pages/Auth';
 import { DashboardPage } from './src/pages/Dashboard';
-import { SitesPage } from './src/pages/Sites';
+import { SitesPage, NewSitePage } from './src/pages/Sites';
 import { AttendancePage } from './src/pages/Attendance';
 import { LabourPage } from './src/pages/Labour';
 import { HisabPage } from './src/pages/Hisab';
@@ -40,8 +43,39 @@ function MainApp() {
   const [ready, setReady] = useState(false);
   const [data, setData] = useState<Snapshot | null>(null);
 
-  const [tab, setTab] = useState('home');
-  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
+  // Check initial browser path on Web
+  const getInitialRouteState = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path === '/sites/new') {
+        return { tab: 'sites', selectedSiteId: null, isNewSite: true };
+      }
+      if (path.startsWith('/sites/') && path.length > 7) {
+        return { tab: 'sites', selectedSiteId: path.replace('/sites/', ''), isNewSite: false };
+      }
+      if (path === '/sites') {
+        return { tab: 'sites', selectedSiteId: null, isNewSite: false };
+      }
+      if (path === '/attendance') {
+        return { tab: 'attendance', selectedSiteId: null, isNewSite: false };
+      }
+      if (path === '/team' || path === '/labour') {
+        return { tab: 'team', selectedSiteId: null, isNewSite: false };
+      }
+      if (path === '/ledger' || path === '/hisab') {
+        return { tab: 'ledger', selectedSiteId: null, isNewSite: false };
+      }
+      if (path === '/reports') {
+        return { tab: 'reports', selectedSiteId: null, isNewSite: false };
+      }
+    }
+    return { tab: 'home', selectedSiteId: null, isNewSite: false };
+  };
+
+  const initialRoute = useRef(getInitialRouteState()).current;
+  const [tab, setTab] = useState(initialRoute.tab);
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(initialRoute.selectedSiteId);
+  const [isNewSite, setIsNewSite] = useState<boolean>(initialRoute.isNewSite);
 
   const [form, setForm] = useState<FormSpec | null>(null);
   const [busy, setBusy] = useState(false);
@@ -104,7 +138,11 @@ function MainApp() {
       setToken(null);
       setData(null);
       setSelectedSiteId(null);
+      setIsNewSite(false);
       setTab('home');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.history.pushState(null, '', '/');
+      }
     }
   }
 
@@ -143,10 +181,108 @@ function MainApp() {
     }
   }
 
-  function handleNavigate(targetTab: string) {
-    setTab(targetTab);
-    setSelectedSiteId(null);
+  function navigate(
+    newTab: string,
+    urlPath?: string,
+    siteId: string | null = null,
+    newSite = false
+  ) {
+    setTab(newTab);
+    setSelectedSiteId(siteId);
+    setIsNewSite(newSite);
     setError('');
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const targetUrl =
+        urlPath ||
+        (newSite
+          ? '/sites/new'
+          : siteId
+          ? `/sites/${siteId}`
+          : newTab === 'home'
+          ? '/'
+          : `/${newTab}`);
+      if (window.location.pathname !== targetUrl) {
+        window.history.pushState(null, '', targetUrl);
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const onPopState = () => {
+        const path = window.location.pathname;
+        if (path === '/sites/new') {
+          setTab('sites');
+          setIsNewSite(true);
+          setSelectedSiteId(null);
+        } else if (path.startsWith('/sites/') && path.length > 7) {
+          setTab('sites');
+          setIsNewSite(false);
+          setSelectedSiteId(path.replace('/sites/', ''));
+        } else if (path === '/sites') {
+          setTab('sites');
+          setIsNewSite(false);
+          setSelectedSiteId(null);
+        } else if (path === '/attendance') {
+          setTab('attendance');
+          setIsNewSite(false);
+          setSelectedSiteId(null);
+        } else if (path === '/team' || path === '/labour') {
+          setTab('team');
+          setIsNewSite(false);
+          setSelectedSiteId(null);
+        } else if (path === '/ledger' || path === '/hisab') {
+          setTab('ledger');
+          setIsNewSite(false);
+          setSelectedSiteId(null);
+        } else if (path === '/reports') {
+          setTab('reports');
+          setIsNewSite(false);
+          setSelectedSiteId(null);
+        } else {
+          setTab('home');
+          setIsNewSite(false);
+          setSelectedSiteId(null);
+        }
+      };
+      window.addEventListener('popstate', onPopState);
+      return () => window.removeEventListener('popstate', onPopState);
+    }
+  }, []);
+
+  function handleNavigate(targetTab: string) {
+    navigate(targetTab, targetTab === 'home' ? '/' : `/${targetTab}`, null, false);
+  }
+
+  async function handleCreateNewSite(values: Record<string, string>) {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const spec = siteForm();
+      const body = {
+        action: spec.action,
+        entity_id: commandKey(),
+        data: spec.transform(values),
+      };
+      const signature = JSON.stringify(body);
+      if (pendingRef.current?.signature !== signature) {
+        pendingRef.current = { signature, key: commandKey() };
+      }
+      await request('/commands', token, {
+        ...body,
+        key: pendingRef.current.key,
+      });
+      pendingRef.current = null;
+      setToast('Site successfully created');
+      await refresh();
+      navigate('sites', '/sites', null, false);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleShareReport(pdf = false, siteId?: string) {
@@ -230,49 +366,9 @@ function MainApp() {
     );
   }
 
-  // Determine current page header details
-  const currentSite = selectedSiteId
-    ? data.sites.find((s) => s.id === selectedSiteId)
-    : null;
-
-  const headerTitle =
-    tab === 'sites' && currentSite
-      ? currentSite.name
-      : tab === 'home'
-      ? 'ThekaBook'
-      : tab === 'sites'
-      ? 'Work Sites'
-      : tab === 'attendance'
-      ? 'Daily Haziri'
-      : tab === 'team'
-      ? 'Labour & Team'
-      : tab === 'ledger'
-      ? 'Hisab & Ledger'
-      : 'Reports';
-
-  const headerSubtitle =
-    tab === 'sites' && currentSite
-      ? currentSite.owner_name
-      : data.organization.name;
-
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <StatusBar style="dark" />
-
-      {/* BHIM UPI Style Header */}
-      <Header
-        title={headerTitle}
-        subtitle={headerSubtitle}
-        onBack={
-          tab === 'sites' && selectedSiteId
-            ? () => setSelectedSiteId(null)
-            : undefined
-        }
-        onRefresh={() => refresh()}
-        onLogout={handleLogout}
-        refreshing={refreshing}
-        userInitials={data.user.name}
-      />
 
       {/* Toast notification */}
       {toast ? (
@@ -283,36 +379,44 @@ function MainApp() {
 
       {/* Main Screen Content */}
       <View style={styles.content}>
-        {tab === 'home' && (
-          <DashboardPage
+        {isNewSite ? (
+          <NewSitePage
             data={data}
-            refreshing={refreshing}
-            onRefresh={() => refresh()}
-            onOpenSite={(sId) => {
-              setSelectedSiteId(sId);
-              setTab('sites');
-            }}
-            onOpenNewSite={() => openForm(siteForm())}
-            onOpenAttendance={() => openAttendanceModal()}
-            onOpenEntry={(kind) => openEntryModal(kind)}
-            onNavigateTab={handleNavigate}
+            busy={busy}
+            error={error}
+            onBack={() => navigate('sites', '/sites', null, false)}
+            onSave={handleCreateNewSite}
           />
-        )}
+        ) : (
+          <>
+            {tab === 'home' && (
+              <DashboardPage
+                data={data}
+                refreshing={refreshing}
+                onRefresh={() => refresh()}
+                onOpenSite={(sId) => navigate('sites', `/sites/${sId}`, sId, false)}
+                onOpenNewSite={() => navigate('sites', '/sites/new', null, true)}
+                onOpenAttendance={() => openAttendanceModal()}
+                onOpenEntry={(kind) => openEntryModal(kind)}
+                onNavigateTab={handleNavigate}
+                onLogout={handleLogout}
+              />
+            )}
 
-        {tab === 'sites' && (
-          <SitesPage
-            data={data}
-            selectedSiteId={selectedSiteId}
-            onSelectSite={setSelectedSiteId}
-            onOpenNewSite={() => openForm(siteForm())}
-            onEditSite={(s) => openForm(siteForm(s))}
-            onOpenEntry={openEntryModal}
-            onOpenAttendance={openAttendanceModal}
-            onShareReport={(sId) => handleShareReport(false, sId)}
-            refreshing={refreshing}
-            onRefresh={() => refresh()}
-          />
-        )}
+            {tab === 'sites' && (
+              <SitesPage
+                data={data}
+                selectedSiteId={selectedSiteId}
+                onSelectSite={(sId) => navigate('sites', sId ? `/sites/${sId}` : '/sites', sId, false)}
+                onOpenNewSite={() => navigate('sites', '/sites/new', null, true)}
+                onEditSite={(s) => openForm(siteForm(s))}
+                onOpenEntry={openEntryModal}
+                onOpenAttendance={openAttendanceModal}
+                onShareReport={(sId) => handleShareReport(false, sId)}
+                refreshing={refreshing}
+                onRefresh={() => refresh()}
+              />
+            )}
 
         {tab === 'attendance' && (
           <AttendancePage
@@ -353,6 +457,8 @@ function MainApp() {
             onRefresh={() => refresh()}
           />
         )}
+          </>
+        )}
       </View>
 
       {/* BHIM UPI Style Footer Bottom Navigation */}
@@ -367,6 +473,58 @@ function MainApp() {
         <SiteFormModal
           key={form.action + (form.entity_id || '')}
           spec={form}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setForm(null);
+            setError('');
+          }}
+          onSave={handleSaveForm}
+        />
+      ) : form && form.action === 'attendance.save' && data ? (
+        <AttendanceModal
+          key={form.action + (form.entity_id || '')}
+          spec={form}
+          data={data}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setForm(null);
+            setError('');
+          }}
+          onSave={handleSaveForm}
+        />
+      ) : form && form.action === 'entry.create' && form.title.toLowerCase().includes('material') && data ? (
+        <MaterialBillModal
+          key={form.action + (form.entity_id || '')}
+          spec={form}
+          data={data}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setForm(null);
+            setError('');
+          }}
+          onSave={handleSaveForm}
+        />
+      ) : form && form.action === 'entry.create' && form.title.toLowerCase().includes('extra') && data ? (
+        <ExtraWorkModal
+          key={form.action + (form.entity_id || '')}
+          spec={form}
+          data={data}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setForm(null);
+            setError('');
+          }}
+          onSave={handleSaveForm}
+        />
+      ) : form && form.action === 'entry.create' && (form.title.toLowerCase().includes('client payment') || form.title.toLowerCase().includes('receipt')) && data ? (
+        <ReceivePaymentModal
+          key={form.action + (form.entity_id || '')}
+          spec={form}
+          data={data}
           busy={busy}
           error={error}
           onClose={() => {

@@ -14,6 +14,7 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { SearchBar } from '../../components/common/SearchBar';
 import { EmptyState } from '../../components/common/EmptyState';
+import { TopNavBar } from '../../components/common/TopNavBar';
 import { Snapshot, Row } from '../../types';
 import { money } from '../../finance';
 import { entryLabels } from '../../forms';
@@ -48,23 +49,36 @@ export function HisabPage({
     });
 
   return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={styles.scroll}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={Colors.primary}
-        />
-      }
-    >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Hisab & Ledger</Text>
-          <Text style={styles.subtitle}>Money in, costs incurred & cash paid out</Text>
-        </View>
+    <View style={styles.pageWrapper}>
+      <TopNavBar
+        title="Hisab & Ledger"
+        subtitle="Money in, costs incurred & cash paid out"
+        icon="wallet-outline"
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        actions={
+          <Pressable
+            onPress={() => onOpenEntry('RECEIPT')}
+            style={styles.navActionBtn}
+            accessibilityLabel="Record money received"
+          >
+            <AppIcon name="arrow-down" size={16} color="#FFFFFF" />
+            <Text style={styles.navActionBtnText}>Paisa Aaya</Text>
+          </Pressable>
+        }
+      />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+          />
+        }
+      >
+        <View style={styles.container}>
 
         {/* Quick Add Buttons */}
         <View style={styles.actionsWrap}>
@@ -263,10 +277,34 @@ export function HisabPage({
         </View>
       </View>
     </ScrollView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  pageWrapper: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  navActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  navActionBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
   root: {
     flex: 1,
     backgroundColor: Colors.background,

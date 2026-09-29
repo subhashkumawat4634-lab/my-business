@@ -18,6 +18,9 @@ import { Colors } from '../../theme/colors';
 import { AppIcon } from '../icons/AppIcon';
 import { FormSpec } from '../../types';
 import { CalendarPickerModal } from '../common/CalendarPickerModal';
+import { downloadSiteDocument } from '../../report';
+import { siteForm } from '../../forms';
+import { TopNavBar } from '../common/TopNavBar';
 
 export interface SiteDocument {
   id: string;
@@ -27,6 +30,7 @@ export interface SiteDocument {
   size?: string;
   refNo?: string;
   terms?: string;
+  dataUrl?: string;
 }
 
 export interface SiteMetadata {
@@ -38,12 +42,13 @@ export interface SiteMetadata {
   businessName?: string;
 }
 
-interface SiteFormModalProps {
-  spec: FormSpec;
+export interface SiteFormModalProps {
+  spec?: FormSpec;
   busy: boolean;
   error: string;
   onClose: () => void;
   onSave: (values: Record<string, string>) => void;
+  asPage?: boolean;
 }
 
 export const INDIAN_STATES: Array<{ code: string; name: string }> = [
@@ -235,20 +240,22 @@ export function SiteFormModal({
   error,
   onClose,
   onSave,
+  asPage = false,
 }: SiteFormModalProps) {
-  const isEdit = spec.action === 'site.update';
+  const activeSpec = spec || siteForm();
+  const isEdit = activeSpec.action === 'site.update';
   const { width } = useWindowDimensions();
   const isMobile = width <= 600;
 
   // Initial parsed notes and documents
   const initialData = useMemo(() => {
-    return parseSiteNotesAndDocs(spec.initial.notes || '');
-  }, [spec.initial.notes]);
+    return parseSiteNotesAndDocs(activeSpec.initial.notes || '');
+  }, [activeSpec.initial.notes]);
 
-  const [name, setName] = useState(spec.initial.name || '');
-  const [ownerName, setOwnerName] = useState(spec.initial.owner_name || '');
-  const [phone, setPhone] = useState(spec.initial.phone || '');
-  const [address, setAddress] = useState(spec.initial.address || '');
+  const [name, setName] = useState(activeSpec.initial.name || '');
+  const [ownerName, setOwnerName] = useState(activeSpec.initial.owner_name || '');
+  const [phone, setPhone] = useState(activeSpec.initial.phone || '');
+  const [address, setAddress] = useState(activeSpec.initial.address || '');
 
   // GST & State
   const [isGstRegistered, setIsGstRegistered] = useState(
@@ -266,30 +273,30 @@ export function SiteFormModal({
   const [stateSearch, setStateSearch] = useState('');
 
   const [workType, setWorkType] = useState<'LABOUR' | 'MATERIAL'>(
-    (spec.initial.work_type as any) || 'LABOUR'
+    (activeSpec.initial.work_type as any) || 'LABOUR'
   );
   const [pricing, setPricing] = useState<'FIXED' | 'UNIT' | 'DAILY'>(
-    (spec.initial.pricing as any) || 'FIXED'
+    (activeSpec.initial.pricing as any) || 'FIXED'
   );
 
   const [contractAmount, setContractAmount] = useState(
-    spec.initial.contract_amount || ''
+    activeSpec.initial.contract_amount || ''
   );
-  const [quantity, setQuantity] = useState(spec.initial.quantity || '1');
+  const [quantity, setQuantity] = useState(activeSpec.initial.quantity || '1');
   const [unit, setUnit] = useState(
-    spec.initial.unit || (pricing === 'DAILY' ? 'days' : 'sq ft')
+    activeSpec.initial.unit || (pricing === 'DAILY' ? 'days' : 'sq ft')
   );
-  const [unitRate, setUnitRate] = useState(spec.initial.unit_rate || '');
+  const [unitRate, setUnitRate] = useState(activeSpec.initial.unit_rate || '');
 
   const [remainingEstimate, setRemainingEstimate] = useState(
-    spec.initial.remaining_estimate || ''
+    activeSpec.initial.remaining_estimate || ''
   );
   const [startDate, setStartDate] = useState(
-    spec.initial.start_date ||
+    activeSpec.initial.start_date ||
       new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
   );
-  const [endDate, setEndDate] = useState(spec.initial.end_date || '');
-  const [status, setStatus] = useState(spec.initial.status || 'ONGOING');
+  const [endDate, setEndDate] = useState(activeSpec.initial.end_date || '');
+  const [status, setStatus] = useState(activeSpec.initial.status || 'ONGOING');
   const [notes, setNotes] = useState(initialData.userNotes);
 
   // Documents state
@@ -319,12 +326,47 @@ export function SiteFormModal({
     if (clean.length >= 2) {
       const code = clean.slice(0, 2);
       const stateName = GST_STATE_MAP[code];
-      if (stateName) {
+      if (stateName && !selectedStateCode) {
         setSelectedState(stateName);
         setSelectedStateCode(code);
       }
     }
   };
+
+  // Real-time GST State & Format Validation
+  const gstValidation = useMemo(() => {
+    if (!isGstRegistered || !gstin.trim()) return null;
+    const clean = gstin.trim().toUpperCase();
+    const code = clean.slice(0, 2);
+    const gstStateName = GST_STATE_MAP[code];
+
+    let mismatchError = '';
+    if (clean.length >= 2) {
+      if (!gstStateName) {
+        mismatchError = `GST code "${code}" is not a valid Indian state code.`;
+      } else if (selectedStateCode && selectedStateCode !== code) {
+        mismatchError = 'State code does not match GSTIN';
+      }
+    }
+
+    let formatError = '';
+    if (clean.length > 0 && clean.length < 15) {
+      formatError = `GSTIN must be 15 characters (${clean.length}/15 entered).`;
+    } else if (clean.length === 15) {
+      const pattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      if (!pattern.test(clean)) {
+        formatError = 'Invalid GSTIN format (e.g. 08AAAAA0000A1Z5).';
+      }
+    }
+
+    return {
+      isValid: !mismatchError && !formatError && clean.length === 15,
+      mismatchError,
+      formatError,
+      gstStateCode: code,
+      gstStateName,
+    };
+  }, [isGstRegistered, gstin, selectedState, selectedStateCode]);
 
   // Financial calculations
   const effectiveContractAmount = useMemo(() => {
@@ -401,6 +443,26 @@ export function SiteFormModal({
     setDocuments((prev) => prev.filter((d) => d.id !== id));
   };
 
+  // Download Document handler
+  const handleDownloadDoc = async (doc: SiteDocument) => {
+    try {
+      await downloadSiteDocument(doc, {
+        name: name || 'Site Project',
+        owner_name: ownerName || 'Client',
+        phone,
+        address,
+        gstin: isGstRegistered ? gstin : '',
+        state: isGstRegistered ? selectedState : '',
+        stateCode: isGstRegistered ? selectedStateCode : '',
+        businessName: isGstRegistered ? businessName : '',
+        work_type: workType,
+        pricing,
+      });
+    } catch (err: any) {
+      alert(err?.message || 'Could not download document.');
+    }
+  };
+
   // Web File Picker Trigger
   const triggerWebFilePicker = () => {
     if (Platform.OS === 'web') {
@@ -422,14 +484,20 @@ export function SiteFormModal({
               : file.name.toLowerCase().includes('quote')
               ? 'QUOTATION'
               : 'OTHER';
-            const doc: SiteDocument = {
-              id: `doc-${Date.now()}`,
-              name: file.name,
-              category: cat,
-              date: today,
-              size: sizeInMb,
+
+            const reader = new FileReader();
+            reader.onload = () => {
+              const doc: SiteDocument = {
+                id: `doc-${Date.now()}`,
+                name: file.name,
+                category: cat,
+                date: today,
+                size: sizeInMb,
+                dataUrl: typeof reader.result === 'string' ? reader.result : undefined,
+              };
+              setDocuments((prev) => [...prev, doc]);
             };
-            setDocuments((prev) => [...prev, doc]);
+            reader.readAsDataURL(file);
           }
         };
         input.click();
@@ -478,6 +546,21 @@ export function SiteFormModal({
       }
     }
 
+    if (isGstRegistered) {
+      if (!gstin.trim()) {
+        setLocalError('Please enter client GSTIN number or turn off GST registration.');
+        return;
+      }
+      if (gstValidation?.mismatchError) {
+        setLocalError(gstValidation.mismatchError);
+        return;
+      }
+      if (gstValidation?.formatError) {
+        setLocalError(gstValidation.formatError);
+        return;
+      }
+    }
+
     // Serialize notes, GSTIN, State and documents
     const finalNotes = serializeSiteNotesAndDocs(
       notes,
@@ -522,22 +605,30 @@ export function SiteFormModal({
 
   const displayError = localError || error;
 
-  return (
-    <Modal
-      visible
-      animationType="slide"
-      onRequestClose={() => !busy && onClose()}
-      presentationStyle="pageSheet"
-    >
+  const content = (
+    <>
       <SafeAreaView
-        style={styles.safeArea}
+        style={[styles.safeArea, asPage && styles.pageSafeArea]}
         edges={['top', 'left', 'right', 'bottom']}
       >
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          {/* Mobile Optimized Header */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* Mobile / Page Header */}
+        {asPage ? (
+          <TopNavBar
+            title={isEdit ? 'Edit Work Site' : 'Create New Work Site'}
+            subtitle={
+              isEdit
+                ? `${pricing === 'FIXED' ? 'Lumpsum' : pricing === 'UNIT' ? 'Unit Rate' : 'Daily Rate'} • ${workType === 'LABOUR' ? 'Labour' : 'Material'}`
+                : 'Add a new project or construction contract'
+            }
+            icon="business-outline"
+            onBack={() => !busy && onClose()}
+            backText="Work Sites"
+          />
+        ) : (
           <View style={styles.header}>
             <Pressable
               onPress={() => !busy && onClose()}
@@ -547,7 +638,11 @@ export function SiteFormModal({
               ]}
               accessibilityLabel="Close form"
             >
-              <AppIcon name="close" size={18} color={Colors.textPrimary} />
+              <AppIcon
+                name="close"
+                size={18}
+                color={Colors.textPrimary}
+              />
             </Pressable>
 
             <View style={styles.headerCenter}>
@@ -555,17 +650,13 @@ export function SiteFormModal({
                 {isEdit ? 'Edit Work Site' : 'New Work Site'}
               </Text>
               <Text style={styles.headerSubtitle}>
-                {pricing === 'FIXED'
-                  ? 'Lumpsum'
-                  : pricing === 'UNIT'
-                  ? 'Unit Rate'
-                  : 'Daily Rate'}{' '}
-                • {workType === 'LABOUR' ? 'Labour' : 'Material'}
+                {`${pricing === 'FIXED' ? 'Lumpsum' : pricing === 'UNIT' ? 'Unit Rate' : 'Daily Rate'} • ${workType === 'LABOUR' ? 'Labour' : 'Material'}`}
               </Text>
             </View>
 
             <View style={styles.headerRightPlaceholder} />
           </View>
+        )}
 
           {/* Error Banner */}
           {displayError ? (
@@ -767,34 +858,77 @@ export function SiteFormModal({
                     {/* GSTIN */}
                     <View style={styles.fieldGroup}>
                       <View style={styles.labelRow}>
-                        <Text style={styles.fieldLabel}>GSTIN Number</Text>
+                        <Text style={styles.fieldLabel}>Client GSTIN Number</Text>
                         {selectedState ? (
-                          <View style={styles.detectedStateBadge}>
-                            <Text style={styles.detectedStateText}>
+                          <View
+                            style={[
+                              styles.detectedStateBadge,
+                              Boolean(gstValidation?.mismatchError) && styles.detectedStateBadgeError,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.detectedStateText,
+                                Boolean(gstValidation?.mismatchError) && styles.detectedStateTextError,
+                              ]}
+                            >
                               {selectedState} ({selectedStateCode})
                             </Text>
                           </View>
                         ) : null}
                       </View>
-                      <View style={styles.inputWrapper}>
+                      <View
+                        style={[
+                          styles.inputWrapper,
+                          Boolean(gstValidation?.mismatchError) && styles.inputWrapperError,
+                          Boolean(gstValidation?.isValid) && styles.inputWrapperSuccess,
+                        ]}
+                      >
                         <AppIcon
                           name="card-outline"
                           size={16}
-                          color={Colors.textMuted}
+                          color={
+                            gstValidation?.mismatchError
+                              ? Colors.danger
+                              : gstValidation?.isValid
+                              ? '#16A34A'
+                              : Colors.textMuted
+                          }
                         />
                         <TextInput
                           value={gstin}
                           onChangeText={handleGstinChange}
-                          placeholder="e.g. 07AAAAA0000A1Z5"
+                          placeholder="e.g. 08AAAAA0000A1Z5"
                           placeholderTextColor={Colors.textSubtle}
                           style={[
                             styles.textInput,
                             { fontWeight: '700', letterSpacing: 0.5 },
+                            Boolean(gstValidation?.mismatchError) && { color: Colors.danger },
                           ]}
                           autoCapitalize="characters"
                           maxLength={15}
                         />
+                        {Boolean(gstValidation?.isValid) && (
+                          <AppIcon name="checkmark-circle" size={18} color="#16A34A" />
+                        )}
                       </View>
+
+                      {/* Simple Red Indication - No popup/notification banner */}
+                      {Boolean(gstValidation?.mismatchError) && (
+                        <Text style={styles.simpleRedNotice}>
+                          {gstValidation!.mismatchError}
+                        </Text>
+                      )}
+
+                      {/* Verified Badge */}
+                      {Boolean(gstValidation?.isValid) && (
+                        <View style={styles.gstValidNotice}>
+                          <AppIcon name="shield-checkmark" size={14} color="#16A34A" />
+                          <Text style={styles.gstValidNoticeText}>
+                            GSTIN Verified for {gstValidation!.gstStateName} (State Code {gstValidation!.gstStateCode})
+                          </Text>
+                        </View>
+                      )}
                     </View>
 
                     {/* State Selector */}
@@ -804,7 +938,10 @@ export function SiteFormModal({
                       </Text>
                       <Pressable
                         onPress={() => setIsStatePickerOpen(true)}
-                        style={styles.stateSelectBtn}
+                        style={[
+                          styles.stateSelectBtn,
+                          Boolean(gstValidation?.mismatchError) && styles.stateSelectBtnWarn,
+                        ]}
                       >
                         <View
                           style={{
@@ -816,12 +953,17 @@ export function SiteFormModal({
                           <AppIcon
                             name="map-outline"
                             size={16}
-                            color={Colors.primary}
+                            color={
+                              Boolean(gstValidation?.mismatchError)
+                                ? Colors.danger
+                                : Colors.primary
+                            }
                           />
                           <Text
                             style={[
                               styles.stateSelectText,
                               !selectedState && { color: Colors.textSubtle },
+                              Boolean(gstValidation?.mismatchError) && { color: Colors.danger },
                             ]}
                           >
                             {selectedState
@@ -832,9 +974,18 @@ export function SiteFormModal({
                         <AppIcon
                           name="chevron-forward"
                           size={16}
-                          color={Colors.textMuted}
+                          color={
+                            Boolean(gstValidation?.mismatchError)
+                              ? Colors.danger
+                              : Colors.textMuted
+                          }
                         />
                       </Pressable>
+                      {Boolean(gstValidation?.mismatchError) && (
+                        <Text style={styles.simpleRedNotice}>
+                          {gstValidation!.mismatchError}
+                        </Text>
+                      )}
                     </View>
 
                     {/* Business Name */}
@@ -1134,108 +1285,7 @@ export function SiteFormModal({
               )}
             </View>
 
-            {/* SECTION 3: Budget & Margin Forecast */}
-            <View style={styles.cardSection}>
-              <View style={styles.sectionHeaderRow}>
-                <View
-                  style={[
-                    styles.sectionBadge,
-                    { backgroundColor: Colors.successLight },
-                  ]}
-                >
-                  <Text
-                    style={[styles.sectionBadgeNum, { color: Colors.success }]}
-                  >
-                    3
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.sectionHeading}>
-                    Budget & Margin Forecast
-                  </Text>
-                  <Text style={styles.sectionSub}>
-                    Anticipated costs to project contractor profitability
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>
-                  Estimated Remaining Expenses to Incur (₹)
-                </Text>
-                <View style={styles.inputWrapper}>
-                  <Text style={styles.currencyPrefixTextSmall}>₹</Text>
-                  <TextInput
-                    value={remainingEstimate}
-                    onChangeText={(t) =>
-                      setRemainingEstimate(t.replace(/[^0-9.]/g, ''))
-                    }
-                    placeholder="e.g. 45000"
-                    placeholderTextColor={Colors.textSubtle}
-                    style={styles.textInput}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-                <Text style={styles.fieldHelper}>
-                  Anticipated costs for pending wages, materials, and transport.
-                </Text>
-              </View>
-
-              {/* Dark Mobile Profit Card */}
-              <View style={styles.mobileProfitCard}>
-                <View style={styles.mobileProfitTop}>
-                  <Text style={styles.mobileProfitTitle}>Projected Profit</Text>
-                  <View
-                    style={[
-                      styles.marginPill,
-                      {
-                        backgroundColor:
-                          projectedMargin >= 0 ? '#0D8A58' : Colors.danger,
-                      },
-                    ]}
-                  >
-                    <Text style={styles.marginPillText}>
-                      {projectedMargin >= 0
-                        ? `${marginPercentage}% Margin`
-                        : 'Loss Warning'}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.mobileProfitStatsRow}>
-                  <View>
-                    <Text style={styles.profitStatLabel}>Contract</Text>
-                    <Text style={styles.profitStatVal}>
-                      ₹ {effectiveContractAmount.toLocaleString('en-IN')}
-                    </Text>
-                  </View>
-                  <Text style={styles.profitStatDivider}>−</Text>
-                  <View>
-                    <Text style={styles.profitStatLabel}>Est. Cost</Text>
-                    <Text style={styles.profitStatVal}>
-                      ₹ {estRemaining.toLocaleString('en-IN')}
-                    </Text>
-                  </View>
-                  <Text style={styles.profitStatDivider}>=</Text>
-                  <View>
-                    <Text style={styles.profitStatLabel}>Net Profit</Text>
-                    <Text
-                      style={[
-                        styles.profitStatVal,
-                        {
-                          color:
-                            projectedMargin >= 0 ? '#6EE7B7' : '#FCA5A5',
-                        },
-                      ]}
-                    >
-                      ₹ {projectedMargin.toLocaleString('en-IN')}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* SECTION 4: Timeline & Status */}
+            {/* SECTION 3: Timeline & Project Status */}
             <View style={styles.cardSection}>
               <View style={styles.sectionHeaderRow}>
                 <View
@@ -1250,7 +1300,7 @@ export function SiteFormModal({
                       { color: Colors.warningText },
                     ]}
                   >
-                    4
+                    3
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
@@ -1325,16 +1375,17 @@ export function SiteFormModal({
 
                 <Pressable
                   onPress={() => setIsStartCalendarOpen(true)}
-                  style={styles.mobileDateTrigger}
+                  style={styles.fintechDateInput}
+                  accessibilityLabel="Pick start date from calendar"
                 >
-                  <View style={styles.mobileDateTriggerLeft}>
-                    <AppIcon name="calendar" size={16} color={Colors.primary} />
-                    <Text style={styles.mobileDateValText}>
+                  <View style={styles.fintechDateLeft}>
+                    <Text style={styles.fintechDateSub}>Project Start Date</Text>
+                    <Text style={styles.fintechDateMain}>
                       {formatDatePretty(startDate)}
                     </Text>
                   </View>
-                  <View style={styles.dateChangeBadge}>
-                    <Text style={styles.dateChangeBadgeText}>Pick Date</Text>
+                  <View style={styles.calendarActionBtn}>
+                    <AppIcon name="calendar-outline" size={18} color={Colors.primary} />
                   </View>
                 </Pressable>
               </View>
@@ -1346,23 +1397,31 @@ export function SiteFormModal({
                 </Text>
                 <Pressable
                   onPress={() => setIsEndCalendarOpen(true)}
-                  style={styles.mobileDateTrigger}
+                  style={styles.fintechDateInput}
+                  accessibilityLabel="Pick target completion date from calendar"
                 >
-                  <View style={styles.mobileDateTriggerLeft}>
-                    <AppIcon name="flag" size={16} color={Colors.accent} />
+                  <View style={styles.fintechDateLeft}>
+                    <Text style={styles.fintechDateSub}>Target Handover</Text>
                     <Text
                       style={[
-                        styles.mobileDateValText,
+                        styles.fintechDateMain,
                         !endDate && { color: Colors.textSubtle },
                       ]}
                     >
-                      {endDate ? formatDatePretty(endDate) : 'Not Specified'}
+                      {endDate ? formatDatePretty(endDate) : 'Tap calendar to select date'}
                     </Text>
                   </View>
-                  <View style={styles.dateChangeBadge}>
-                    <Text style={styles.dateChangeBadgeText}>
-                      {endDate ? 'Change' : 'Pick Date'}
-                    </Text>
+                  <View
+                    style={[
+                      styles.calendarActionBtn,
+                      endDate && { backgroundColor: '#DCFCE7', borderColor: '#86EFAC' },
+                    ]}
+                  >
+                    <AppIcon
+                      name="calendar-outline"
+                      size={18}
+                      color={endDate ? '#16A34A' : Colors.primary}
+                    />
                   </View>
                 </Pressable>
 
@@ -1389,7 +1448,10 @@ export function SiteFormModal({
                   {endDate ? (
                     <Pressable
                       onPress={() => setEndDate('')}
-                      style={[styles.shortcutChip, { backgroundColor: '#FEE2E2' }]}
+                      style={[
+                        styles.shortcutChip,
+                        { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' },
+                      ]}
                     >
                       <Text
                         style={[
@@ -1416,6 +1478,127 @@ export function SiteFormModal({
                   multiline
                   numberOfLines={3}
                 />
+              </View>
+            </View>
+
+            {/* SECTION 4: Budget & Margin Forecast */}
+            <View style={styles.cardSection}>
+              <View style={styles.sectionHeaderRow}>
+                <View
+                  style={[
+                    styles.sectionBadge,
+                    { backgroundColor: Colors.successLight },
+                  ]}
+                >
+                  <Text
+                    style={[styles.sectionBadgeNum, { color: Colors.success }]}
+                  >
+                    4
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sectionHeading}>
+                    Budget & Margin Forecast
+                  </Text>
+                  <Text style={styles.sectionSub}>
+                    Anticipated costs to project contractor profitability
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>
+                  Estimated Remaining Expenses to Incur (₹)
+                </Text>
+                <View style={styles.inputWrapper}>
+                  <Text style={styles.currencyPrefixTextSmall}>₹</Text>
+                  <TextInput
+                    value={remainingEstimate}
+                    onChangeText={(t) =>
+                      setRemainingEstimate(t.replace(/[^0-9.]/g, ''))
+                    }
+                    placeholder="e.g. 45000"
+                    placeholderTextColor={Colors.textSubtle}
+                    style={styles.textInput}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+                <Text style={styles.fieldHelper}>
+                  Anticipated costs for pending wages, materials, and transport.
+                </Text>
+              </View>
+
+              {/* Modern Light Budget & Profit Forecast Card */}
+              <View
+                style={[
+                  styles.mobileProfitCard,
+                  projectedMargin >= 0
+                    ? styles.mobileProfitCardProfit
+                    : styles.mobileProfitCardLoss,
+                ]}
+              >
+                <View style={styles.mobileProfitTop}>
+                  <View style={styles.mobileProfitHeadingRow}>
+                    <AppIcon
+                      name={projectedMargin >= 0 ? 'trending-up' : 'trending-down'}
+                      size={17}
+                      color={projectedMargin >= 0 ? '#16A34A' : Colors.danger}
+                    />
+                    <Text style={styles.mobileProfitTitle}>Projected Profit</Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.marginPill,
+                      projectedMargin >= 0
+                        ? styles.marginPillProfit
+                        : styles.marginPillLoss,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.marginPillText,
+                        projectedMargin >= 0
+                          ? styles.marginPillTextProfit
+                          : styles.marginPillTextLoss,
+                      ]}
+                    >
+                      {projectedMargin >= 0
+                        ? `${marginPercentage}% Margin`
+                        : 'Loss Warning'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.mobileProfitStatsRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.profitStatLabel}>Contract</Text>
+                    <Text style={styles.profitStatVal}>
+                      ₹ {effectiveContractAmount.toLocaleString('en-IN')}
+                    </Text>
+                  </View>
+                  <Text style={styles.profitStatDivider}>−</Text>
+                  <View style={{ flex: 1, alignItems: 'center' }}>
+                    <Text style={styles.profitStatLabel}>Est. Cost</Text>
+                    <Text style={styles.profitStatVal}>
+                      ₹ {estRemaining.toLocaleString('en-IN')}
+                    </Text>
+                  </View>
+                  <Text style={styles.profitStatDivider}>=</Text>
+                  <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                    <Text style={styles.profitStatLabel}>Net Profit</Text>
+                    <Text
+                      style={[
+                        styles.profitStatVal,
+                        {
+                          color:
+                            projectedMargin >= 0 ? '#15803D' : Colors.danger,
+                        },
+                      ]}
+                    >
+                      ₹ {projectedMargin.toLocaleString('en-IN')}
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
 
@@ -1464,11 +1647,22 @@ export function SiteFormModal({
                     return (
                       <View key={doc.id} style={styles.mobileDocCard}>
                         <View style={styles.mobileDocLeft}>
-                          <AppIcon
-                            name={isAgreement ? 'document-text' : 'image'}
-                            size={18}
-                            color={isAgreement ? '#16A34A' : '#7C3AED'}
-                          />
+                          <View
+                            style={[
+                              styles.docBadgeBox,
+                              {
+                                backgroundColor: isAgreement
+                                  ? '#DCFCE7'
+                                  : '#EDE9FE',
+                              },
+                            ]}
+                          >
+                            <AppIcon
+                              name={isAgreement ? 'document-text' : 'image'}
+                              size={18}
+                              color={isAgreement ? '#16A34A' : '#7C3AED'}
+                            />
+                          </View>
                           <View style={{ flex: 1 }}>
                             <Text style={styles.mobileDocName} numberOfLines={1}>
                               {doc.name}
@@ -1478,16 +1672,31 @@ export function SiteFormModal({
                             </Text>
                           </View>
                         </View>
-                        <Pressable
-                          onPress={() => handleRemoveDocument(doc.id)}
-                          style={styles.mobileDocDeleteBtn}
-                        >
-                          <AppIcon
-                            name="trash-outline"
-                            size={15}
-                            color={Colors.danger}
-                          />
-                        </Pressable>
+                        <View style={styles.mobileDocActions}>
+                          <Pressable
+                            onPress={() => handleDownloadDoc(doc)}
+                            style={styles.docDownloadBtn}
+                            accessibilityLabel={`Download ${doc.name}`}
+                          >
+                            <AppIcon
+                              name="download-outline"
+                              size={14}
+                              color={Colors.primary}
+                            />
+                            <Text style={styles.docDownloadBtnText}>Download</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => handleRemoveDocument(doc.id)}
+                            style={styles.mobileDocDeleteBtn}
+                            accessibilityLabel={`Delete ${doc.name}`}
+                          >
+                            <AppIcon
+                              name="trash-outline"
+                              size={15}
+                              color={Colors.danger}
+                            />
+                          </Pressable>
+                        </View>
                       </View>
                     );
                   })}
@@ -1505,7 +1714,7 @@ export function SiteFormModal({
           </ScrollView>
 
           {/* Sticky Bottom Action Bar */}
-          <View style={styles.bottomBar}>
+          <View style={[styles.bottomBar, asPage && styles.pageActionBar]}>
             <Pressable
               onPress={() => !busy && onClose()}
               disabled={busy}
@@ -1529,7 +1738,7 @@ export function SiteFormModal({
                 <>
                   <AppIcon name="checkmark" size={17} color="#FFFFFF" />
                   <Text style={styles.saveBtnText}>
-                    {isEdit ? 'Update Site' : 'Save Site'}
+                    {isEdit ? 'Update Site' : asPage ? 'Create Site' : 'Save Site'}
                   </Text>
                 </>
               )}
@@ -1752,11 +1961,64 @@ export function SiteFormModal({
           </View>
         </Modal>
       )}
+    </>
+  );
+
+  if (asPage) {
+    return <View style={styles.pageRoot}>{content}</View>;
+  }
+
+  return (
+    <Modal
+      visible
+      animationType="slide"
+      onRequestClose={() => !busy && onClose()}
+      presentationStyle="pageSheet"
+    >
+      {content}
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  pageRoot: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  pageSafeArea: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  pageHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  pageBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  pageBackText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  pageActionBar: {
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -2176,53 +2438,90 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#312E81',
   },
-  // Mobile Profit Card
+  // Mobile Profit Card - Modern Light UI
   mobileProfitCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    padding: 12,
-    gap: 8,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    gap: 12,
+  },
+  mobileProfitCardProfit: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  mobileProfitCardLoss: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
   },
   mobileProfitTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  mobileProfitHeadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   mobileProfitTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#94A3B8',
+    color: '#334155',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   marginPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  marginPillProfit: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#86EFAC',
+  },
+  marginPillLoss: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
   },
   marginPillText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
-    color: '#FFFFFF',
+  },
+  marginPillTextProfit: {
+    color: '#15803D',
+  },
+  marginPillTextLoss: {
+    color: '#B91C1C',
   },
   mobileProfitStatsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   profitStatLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#64748B',
+    fontWeight: '600',
   },
   profitStatVal: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#FFFFFF',
-    marginTop: 1,
+    color: '#0F172A',
+    marginTop: 2,
   },
   profitStatDivider: {
     fontSize: 14,
-    fontWeight: '800',
-    color: '#64748B',
+    fontWeight: '700',
+    color: '#94A3B8',
   },
   // Mobile Status Grid
   mobileStatusGrid: {
@@ -2263,6 +2562,46 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.primary,
   },
+  // Fintech Date Input & Calendar Trigger
+  fintechDateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 52,
+  },
+  fintechDateLeft: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  fintechDateSub: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  fintechDateMain: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginTop: 1,
+  },
+  calendarActionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   mobileDateTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2298,31 +2637,96 @@ const styles = StyleSheet.create({
   mobileShortcutsRow: {
     flexDirection: 'row',
     gap: 6,
-    marginTop: 4,
+    marginTop: 6,
   },
   shortcutChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
     backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   shortcutChipText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: Colors.textSecondary,
+  },
+  // GST Section styles & Real-time validation
+  inputWrapperError: {
+    borderColor: Colors.danger,
+    backgroundColor: '#FEF2F2',
+  },
+  inputWrapperSuccess: {
+    borderColor: '#16A34A',
+    backgroundColor: '#F0FDF4',
+  },
+  simpleRedNotice: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.danger,
+    marginTop: 4,
+    marginLeft: 2,
+  },
+  detectedStateBadgeError: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+  },
+  detectedStateTextError: {
+    color: Colors.danger,
+  },
+  stateSelectBtnWarn: {
+    borderColor: Colors.danger,
+    backgroundColor: '#FEF2F2',
+  },
+  gstFormatNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    marginTop: 4,
+  },
+  gstFormatNoteText: {
+    fontSize: 11,
+    color: '#B45309',
+    fontWeight: '600',
+    flex: 1,
+  },
+  gstValidNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    marginTop: 4,
+  },
+  gstValidNoticeText: {
+    fontSize: 11,
+    color: '#15803D',
+    fontWeight: '700',
   },
   // Mobile Document Styles
   mobileUploadBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    height: 40,
+    gap: 8,
+    height: 44,
     borderRadius: 10,
     backgroundColor: '#7C3AED',
   },
   mobileUploadBtnText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -2330,36 +2734,75 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F5F3FF',
-    borderRadius: 10,
-    padding: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 10,
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   mobileDocLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     flex: 1,
+    marginRight: 6,
+  },
+  docBadgeBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   mobileDocName: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
   mobileDocMeta: {
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.textMuted,
+    marginTop: 1,
+  },
+  mobileDocActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  docDownloadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  docDownloadBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: Colors.primary,
   },
   mobileDocDeleteBtn: {
     padding: 6,
+    borderRadius: 6,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
   mobileDocEmpty: {
-    paddingVertical: 14,
+    paddingVertical: 18,
     alignItems: 'center',
   },
   mobileDocEmptyText: {
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.textMuted,
     fontStyle: 'italic',
   },

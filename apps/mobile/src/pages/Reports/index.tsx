@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Colors } from '../../theme/colors';
 import { AppIcon } from '../../components/icons/AppIcon';
+import { TopNavBar } from '../../components/common/TopNavBar';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { MetricCard } from '../../components/common/MetricCard';
@@ -39,25 +40,26 @@ export function ReportsPage({
   const totalCashMovement = summaries.reduce((s, f) => s + f.cash, 0);
 
   return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={styles.scroll}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={Colors.primary}
-        />
-      }
-    >
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Reports & Statements</Text>
-          <Text style={styles.subtitle}>
-            Business performance, site margins & audit history
-          </Text>
-        </View>
+    <View style={styles.pageWrapper}>
+      <TopNavBar
+        title="Reports & Statements"
+        subtitle="Business performance, site margins & audit history"
+        icon="bar-chart-outline"
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+      />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+          />
+        }
+      >
+        <View style={styles.container}>
 
         {/* Financial Metrics */}
         <View style={styles.metricsGrid}>
@@ -172,10 +174,15 @@ export function ReportsPage({
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  pageWrapper: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   root: {
     flex: 1,
     backgroundColor: Colors.background,
