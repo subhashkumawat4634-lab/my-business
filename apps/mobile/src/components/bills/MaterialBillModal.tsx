@@ -73,7 +73,7 @@ export function MaterialBillModal({
   const [dueDate, setDueDate] = useState<string>(spec.initial.due_date || '');
 
   // Modal / Picker States
-  const [isSitePickerOpen, setIsSitePickerOpen] = useState(false);
+  const [isSiteDropdownOpen, setIsSiteDropdownOpen] = useState(false);
   const [siteSearch, setSiteSearch] = useState('');
   const [calendarTarget, setCalendarTarget] = useState<'billDate' | 'dueDate' | null>(null);
   const [localError, setLocalError] = useState('');
@@ -109,15 +109,6 @@ export function MaterialBillModal({
 
   // Date helpers
   const isToday = date === today();
-
-  const getYesterday = () => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    const yr = d.getFullYear();
-    const mo = String(d.getMonth() + 1).padStart(2, '0');
-    const da = String(d.getDate()).padStart(2, '0');
-    return `${yr}-${mo}-${da}`;
-  };
 
   const getFutureDate = (days: number) => {
     const d = new Date();
@@ -256,7 +247,7 @@ export function MaterialBillModal({
             contentContainerStyle={styles.scrollBody}
           >
             {/* 1. WORK SITE & BILL DATE (Top Row Card) */}
-            <View style={styles.sectionCard}>
+            <View style={[styles.sectionCard, { zIndex: 20 }]}>
               <View style={styles.sectionHeadingRow}>
                 <AppIcon name="business-outline" size={16} color="#0284C7" />
                 <Text style={styles.sectionTitle}>Site & Bill Date</Text>
@@ -266,13 +257,11 @@ export function MaterialBillModal({
               <View style={{ gap: 4 }}>
                 <Text style={styles.fieldLabel}>Work Site *</Text>
                 <Pressable
-                  onPress={() => {
-                    setSiteSearch('');
-                    setIsSitePickerOpen(true);
-                  }}
+                  onPress={() => setIsSiteDropdownOpen((prev) => !prev)}
                   style={({ pressed }) => [
                     styles.siteDropdownBtn,
-                    pressed && { opacity: 0.85, borderColor: '#2563EB' },
+                    isSiteDropdownOpen && { borderColor: '#0284C7', backgroundColor: '#EFF6FF' },
+                    pressed && { opacity: 0.85 },
                   ]}
                   accessibilityLabel="Select site"
                 >
@@ -291,8 +280,86 @@ export function MaterialBillModal({
                       <Text style={styles.siteSubText}>Tap to change work site</Text>
                     )}
                   </View>
-                  <AppIcon name="chevron-down" size={16} color="#64748B" />
+                  <AppIcon
+                    name={isSiteDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color="#64748B"
+                  />
                 </Pressable>
+
+                {/* Inline Work Site Dropdown Menu */}
+                {isSiteDropdownOpen && (
+                  <View style={styles.siteDropdownMenu}>
+                    {data.sites.length > 5 && (
+                      <View style={styles.inlineSearchBox}>
+                        <AppIcon name="search" size={13} color={Colors.textMuted} />
+                        <TextInput
+                          value={siteSearch}
+                          onChangeText={setSiteSearch}
+                          placeholder="Search site or client..."
+                          placeholderTextColor={Colors.textSubtle}
+                          style={styles.inlineSearchInput}
+                        />
+                      </View>
+                    )}
+                    <ScrollView
+                      style={{ maxHeight: 220 }}
+                      nestedScrollEnabled
+                      showsVerticalScrollIndicator
+                    >
+                      {filteredSites.map((s) => {
+                        const isSelected = s.id === siteId;
+                        return (
+                          <Pressable
+                            key={s.id}
+                            onPress={() => {
+                              setSiteId(s.id);
+                              setIsSiteDropdownOpen(false);
+                            }}
+                            style={({ pressed }) => [
+                              styles.siteMenuItem,
+                              isSelected && styles.siteMenuItemActive,
+                              pressed && { opacity: 0.8 },
+                            ]}
+                          >
+                            <View
+                              style={[
+                                styles.siteMenuItemIcon,
+                                { backgroundColor: isSelected ? '#E0F2FE' : '#F1F5F9' },
+                              ]}
+                            >
+                              <AppIcon
+                                name="business"
+                                size={14}
+                                color={isSelected ? '#0284C7' : '#64748B'}
+                              />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={[
+                                  styles.siteMenuItemTitle,
+                                  isSelected && { color: '#0284C7', fontWeight: '800' },
+                                ]}
+                                numberOfLines={1}
+                              >
+                                {s.name}
+                              </Text>
+                              <Text style={styles.siteMenuItemDesc} numberOfLines={1}>
+                                {s.owner_name ? `Client: ${s.owner_name}` : 'No client specified'}
+                              </Text>
+                            </View>
+                            {isSelected && (
+                              <AppIcon name="checkmark" size={14} color="#0284C7" />
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                      {!filteredSites.length && (
+                        <Text style={styles.pickerEmptyText}>No sites found.</Text>
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
 
               {/* Bill Date */}
@@ -305,7 +372,6 @@ export function MaterialBillModal({
                     pressed && { opacity: 0.8 },
                   ]}
                 >
-                  <AppIcon name="calendar" size={16} color="#2563EB" />
                   <Text style={styles.datePickerText}>{formatDateDisplay(date)}</Text>
                   {isToday ? (
                     <View style={styles.todayPill}>
@@ -313,50 +379,9 @@ export function MaterialBillModal({
                     </View>
                   ) : null}
                   <View style={{ marginLeft: 'auto' }}>
-                    <AppIcon name="chevron-forward" size={16} color={Colors.textMuted} />
+                    <AppIcon name="calendar" size={16} color="#2563EB" />
                   </View>
                 </Pressable>
-
-                <View style={styles.quickDateRow}>
-                  <Pressable
-                    onPress={() => setDate(today())}
-                    style={[styles.quickDateChip, isToday && styles.quickDateChipActive]}
-                  >
-                    <Text
-                      style={[
-                        styles.quickDateChipText,
-                        isToday && styles.quickDateChipTextActive,
-                      ]}
-                    >
-                      Today
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => setDate(getYesterday())}
-                    style={[
-                      styles.quickDateChip,
-                      date === getYesterday() && styles.quickDateChipActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.quickDateChipText,
-                        date === getYesterday() && styles.quickDateChipTextActive,
-                      ]}
-                    >
-                      Yesterday
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => setCalendarTarget('billDate')}
-                    style={styles.pickCalendarChip}
-                  >
-                    <AppIcon name="calendar-outline" size={13} color="#2563EB" />
-                    <Text style={styles.pickCalendarChipText}>Choose Date</Text>
-                  </Pressable>
-                </View>
               </View>
             </View>
 
@@ -784,107 +809,6 @@ export function MaterialBillModal({
         }}
         onClose={() => setCalendarTarget(null)}
       />
-
-      {/* Work Site Picker Modal */}
-      <Modal
-        visible={isSitePickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsSitePickerOpen(false)}
-      >
-        <View style={styles.pickerBackdrop}>
-          <View style={styles.pickerSheet}>
-            <View style={styles.pickerHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <AppIcon name="business" size={18} color="#0284C7" />
-                <Text style={styles.pickerTitle}>Select Work Site</Text>
-              </View>
-              <Pressable
-                onPress={() => setIsSitePickerOpen(false)}
-                style={styles.pickerCloseBtn}
-              >
-                <AppIcon name="close" size={18} color={Colors.textPrimary} />
-              </Pressable>
-            </View>
-
-            {data.sites.length > 3 && (
-              <View style={styles.pickerSearchBox}>
-                <AppIcon name="search" size={15} color={Colors.textMuted} />
-                <TextInput
-                  value={siteSearch}
-                  onChangeText={setSiteSearch}
-                  placeholder="Search work site or client..."
-                  placeholderTextColor={Colors.textSubtle}
-                  style={styles.pickerSearchInput}
-                />
-                {siteSearch ? (
-                  <Pressable onPress={() => setSiteSearch('')}>
-                    <AppIcon name="close-circle" size={15} color={Colors.textMuted} />
-                  </Pressable>
-                ) : null}
-              </View>
-            )}
-
-            <ScrollView style={styles.pickerListScroll}>
-              {filteredSites.map((s) => {
-                const isSelected = s.id === siteId;
-                return (
-                  <Pressable
-                    key={s.id}
-                    onPress={() => {
-                      setSiteId(s.id);
-                      setIsSitePickerOpen(false);
-                    }}
-                    style={[
-                      styles.pickerListItem,
-                      isSelected && styles.pickerListItemActive,
-                    ]}
-                  >
-                    <View style={styles.pickerListLeft}>
-                      <View
-                        style={[
-                          styles.pickerAvatarSite,
-                          isSelected && { backgroundColor: '#DBEAFE' },
-                        ]}
-                      >
-                        <AppIcon
-                          name="business"
-                          size={16}
-                          color={isSelected ? '#2563EB' : '#0284C7'}
-                        />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={[
-                            styles.pickerItemTitle,
-                            isSelected && { color: '#1D4ED8', fontWeight: '800' },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {s.name}
-                        </Text>
-                        {s.owner_name ? (
-                          <Text style={styles.pickerItemSub} numberOfLines={1}>
-                            Client: {s.owner_name}
-                          </Text>
-                        ) : null}
-                      </View>
-                    </View>
-
-                    {isSelected && (
-                      <AppIcon name="checkmark-circle" size={18} color="#2563EB" />
-                    )}
-                  </Pressable>
-                );
-              })}
-
-              {!filteredSites.length && (
-                <Text style={styles.pickerEmptyText}>No sites found.</Text>
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </Modal>
   );
 }
@@ -1392,99 +1316,64 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
   },
-  pickerBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  pickerSheet: {
-    width: '100%',
-    maxWidth: 440,
-    maxHeight: '80%',
+  siteDropdownMenu: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: 4,
+    overflow: 'hidden',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  pickerHeader: {
+  inlineSearchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  pickerTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  pickerCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickerSearchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    gap: 6,
     backgroundColor: '#F8FAFC',
     borderRadius: 8,
-    paddingHorizontal: 10,
-    height: 38,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    margin: 6,
+    marginBottom: 4,
   },
-  pickerSearchInput: {
+  inlineSearchInput: {
     flex: 1,
     fontSize: 12,
     color: '#0F172A',
-    paddingVertical: 4,
+    padding: 0,
   },
-  pickerListScroll: {
-    maxHeight: 340,
-  },
-  pickerListItem: {
+  siteMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    gap: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  pickerListItemActive: {
-    backgroundColor: '#F8FAFC',
+  siteMenuItemActive: {
+    backgroundColor: '#F0F9FF',
   },
-  pickerListLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  pickerAvatarSite: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    backgroundColor: '#E0F2FE',
+  siteMenuItemIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pickerItemTitle: {
+  siteMenuItemTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#1E293B',
   },
-  pickerItemSub: {
-    fontSize: 11,
+  siteMenuItemDesc: {
+    fontSize: 10,
     color: '#64748B',
     marginTop: 1,
   },

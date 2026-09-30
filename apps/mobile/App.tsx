@@ -13,6 +13,8 @@ import { AttendanceModal } from './src/components/attendance/AttendanceModal';
 import { MaterialBillModal } from './src/components/bills/MaterialBillModal';
 import { ExtraWorkModal } from './src/components/bills/ExtraWorkModal';
 import { ReceivePaymentModal } from './src/components/bills/ReceivePaymentModal';
+import { WorkerFormModal } from './src/components/workers/WorkerFormModal';
+import { LabourPaymentModal } from './src/components/workers/LabourPaymentModal';
 
 // Pages
 import { AuthPage } from './src/pages/Auth';
@@ -532,6 +534,41 @@ function MainApp() {
             setError('');
           }}
           onSave={handleSaveForm}
+        />
+      ) : form && form.action === 'entry.create' && (form.title.toLowerCase().includes('labour payment') || form.title.toLowerCase().includes('advance') || form.title.toLowerCase().includes('wage')) && data ? (
+        <LabourPaymentModal
+          key={form.action + (form.entity_id || '')}
+          spec={form}
+          data={data}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setForm(null);
+            setError('');
+          }}
+          onSave={handleSaveForm}
+        />
+      ) : form && form.action.startsWith('worker.') && data ? (
+        <WorkerFormModal
+          key={form.action + (form.entity_id || '')}
+          spec={form}
+          data={data}
+          worker={form.entity_id ? data.workers.find((w) => w.id === form.entity_id) : undefined}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setForm(null);
+            setError('');
+          }}
+          onSave={handleSaveForm}
+          onOpenPaymentModal={(wId) => {
+            setForm(null);
+            openEntryModal('WAGE_PAYMENT', undefined, wId);
+          }}
+          onOpenAttendanceModal={(wId) => {
+            setForm(null);
+            openAttendanceModal(undefined, wId);
+          }}
         />
       ) : form ? (
         <FormModal

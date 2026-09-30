@@ -49,6 +49,7 @@ export function SitesPage({
 }: SitesPageProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [termsExpanded, setTermsExpanded] = useState(false);
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
 
@@ -61,6 +62,10 @@ export function SitesPage({
     const f = siteSummary(site, data.attendance, data.entries);
     const { userNotes, documents, gstin, state, stateCode, businessName } =
       parseSiteNotesAndDocs(site.notes || '');
+    const noteLines = userNotes
+      ? userNotes.split('\n').filter((l) => l.trim().length > 0)
+      : [];
+    const isLongNotes = noteLines.length > 4 || userNotes.length > 250;
     const siteEntries = data.entries
       .filter((e) => e.site_id === site.id)
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -98,151 +103,208 @@ export function SitesPage({
           <View style={styles.container}>
             {/* Executive Site Overview Card */}
             <View style={styles.siteHeaderCard}>
-              {/* Header Top: Icon + Title + Edit Pencil + Client */}
-              <View style={styles.siteHeaderTop}>
-                <View style={styles.siteIconBox}>
-                  <AppIcon name="business" size={24} color="#2563EB" />
+              {/* Primary Header: Avatar + Title & Meta + Status & Edit Button */}
+              <View style={styles.headerPrimaryRow}>
+                <View style={styles.siteAvatar}>
+                  <AppIcon name="business" size={24} color={Colors.primary} />
                 </View>
 
-                <View style={{ flex: 1, gap: 5 }}>
-                  <View style={styles.siteTitleRow}>
+                <View style={styles.headerMainCol}>
+                  <View style={styles.titleActionRow}>
                     <Text style={styles.siteTitle} numberOfLines={1}>
                       {site.name}
                     </Text>
-                    <Pressable
-                      onPress={() => onEditSite(site)}
-                      style={({ pressed }) => [
-                        styles.editPencilBtn,
-                        pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] },
-                      ]}
-                      accessibilityLabel="Edit site details"
-                    >
-                      <AppIcon name="create-outline" size={17} color={Colors.primary} />
-                    </Pressable>
+
+                    <View style={styles.statusAndEditGroup}>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          site.status === 'ONGOING'
+                            ? styles.statusBadgeOngoing
+                            : site.status === 'COMPLETED'
+                            ? styles.statusBadgeCompleted
+                            : styles.statusBadgePaused,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.statusDot,
+                            site.status === 'ONGOING'
+                              ? styles.statusDotOngoing
+                              : site.status === 'COMPLETED'
+                              ? styles.statusDotCompleted
+                              : styles.statusDotPaused,
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.statusBadgeText,
+                            site.status === 'ONGOING'
+                              ? styles.statusTextOngoing
+                              : site.status === 'COMPLETED'
+                              ? styles.statusTextCompleted
+                              : styles.statusTextPaused,
+                          ]}
+                        >
+                          {site.status === 'ONGOING'
+                            ? 'Ongoing'
+                            : site.status === 'COMPLETED'
+                            ? 'Completed'
+                            : 'Paused'}
+                        </Text>
+                      </View>
+
+                      <Pressable
+                        onPress={() => onEditSite(site)}
+                        style={({ pressed }) => [
+                          styles.editSiteBtn,
+                          pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] },
+                        ]}
+                        accessibilityLabel="Edit site details"
+                      >
+                        <AppIcon name="create-outline" size={13} color="#334155" />
+                        <Text style={styles.editSiteBtnText}>Edit</Text>
+                      </Pressable>
+                    </View>
                   </View>
 
-                  {/* Client & Phone */}
-                  <View style={styles.clientRow}>
-                    <View style={styles.clientTag}>
-                      <AppIcon name="person" size={13} color={Colors.textSecondary} />
-                      <Text style={styles.clientTagText}>{site.owner_name}</Text>
+                  {/* Clean Client & Firm Subtitle */}
+                  <View style={styles.headerMetaRow}>
+                    <View style={styles.clientInlineGroup}>
+                      <AppIcon name="person" size={12} color="#64748B" />
+                      <Text style={styles.clientInlineName}>{site.owner_name}</Text>
                     </View>
+
+                    {businessName ? (
+                      <>
+                        <Text style={styles.metaDotDivider}>•</Text>
+                        <Text style={styles.businessInlineText} numberOfLines={1}>
+                          {businessName}
+                        </Text>
+                      </>
+                    ) : null}
+
                     {site.phone ? (
-                      <View style={styles.clientPhoneTag}>
-                        <AppIcon name="call" size={12} color="#16A34A" />
-                        <Text style={styles.clientPhoneText}>{site.phone}</Text>
-                      </View>
+                      <>
+                        <Text style={styles.metaDotDivider}>•</Text>
+                        <View style={styles.phoneInlineGroup}>
+                          <AppIcon name="call" size={12} color="#16A34A" />
+                          <Text style={styles.phoneInlineText}>{site.phone}</Text>
+                        </View>
+                      </>
                     ) : null}
                   </View>
                 </View>
               </View>
 
-              {/* Legal Business / Firm Name */}
-              {businessName ? (
-                <View style={styles.legalEntityBanner}>
-                  <AppIcon name="shield-checkmark" size={15} color="#2563EB" />
-                  <Text style={styles.legalEntityText}>{businessName}</Text>
-                </View>
-              ) : null}
+              {/* Clean hairline separator */}
+              <View style={styles.cardDivider} />
 
-              {/* Status & Scope Badges Row */}
-              <View style={styles.badgeRow}>
-                <View
-                  style={[
-                    styles.statusPill,
-                    site.status === 'ONGOING'
-                      ? styles.statusPillOngoing
-                      : site.status === 'COMPLETED'
-                      ? styles.statusPillCompleted
-                      : styles.statusPillPaused,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.statusDot,
-                      site.status === 'ONGOING'
-                        ? styles.statusDotOngoing
-                        : site.status === 'COMPLETED'
-                        ? styles.statusDotCompleted
-                        : styles.statusDotPaused,
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.statusPillText,
-                      site.status === 'ONGOING'
-                        ? styles.statusTextOngoing
-                        : site.status === 'COMPLETED'
-                        ? styles.statusTextCompleted
-                        : styles.statusTextPaused,
-                    ]}
-                  >
-                    {site.status}
-                  </Text>
+              {/* Key Project Specs Row */}
+              <View style={[styles.specsRow, !isDesktop && styles.specsRowMobile]}>
+                {/* Scope & Contract */}
+                <View style={styles.specItem}>
+                  <View style={styles.specIconBox}>
+                    <AppIcon
+                      name={site.work_type === 'LABOUR' ? 'people' : 'construct'}
+                      size={15}
+                      color="#475569"
+                    />
+                  </View>
+                  <View style={styles.specContent}>
+                    <Text style={styles.specLabel}>Scope & Rate</Text>
+                    <Text style={styles.specValue} numberOfLines={1}>
+                      {site.work_type === 'LABOUR' ? 'Labour Only' : 'Labour + Material'}
+                      {' • '}
+                      {site.pricing === 'FIXED'
+                        ? 'Fixed Lumpsum'
+                        : site.pricing === 'UNIT'
+                        ? 'Unit Rate'
+                        : 'Daily'}
+                    </Text>
+                  </View>
                 </View>
 
-                <View style={styles.metaPill}>
-                  <AppIcon
-                    name={site.work_type === 'LABOUR' ? 'people' : 'construct'}
-                    size={12}
-                    color="#475569"
-                  />
-                  <Text style={styles.metaPillText}>
-                    {site.work_type === 'LABOUR' ? 'Labour Only' : 'Labour + Material'}
-                  </Text>
-                </View>
-
-                <View style={styles.metaPill}>
-                  <AppIcon name="pricetag" size={12} color="#475569" />
-                  <Text style={styles.metaPillText}>
-                    {site.pricing === 'FIXED' ? 'Fixed Lumpsum' : site.pricing === 'UNIT' ? 'Unit Rate' : 'Daily Rate'}
-                  </Text>
-                </View>
-
-                {gstin ? (
-                  <View style={styles.gstPill}>
-                    <AppIcon name="shield-checkmark" size={12} color="#16A34A" />
-                    <Text style={styles.gstPillText}>GST: {gstin}</Text>
+                {/* Timeline */}
+                {(site.start_date || site.end_date) ? (
+                  <View style={styles.specItem}>
+                    <View style={styles.specIconBox}>
+                      <AppIcon name="calendar-outline" size={15} color="#475569" />
+                    </View>
+                    <View style={styles.specContent}>
+                      <Text style={styles.specLabel}>Timeline</Text>
+                      <Text style={styles.specValue} numberOfLines={1}>
+                        {site.start_date}{site.end_date ? ` → ${site.end_date}` : ' (Active)'}
+                      </Text>
+                    </View>
                   </View>
                 ) : null}
 
-                {state ? (
-                  <View style={styles.statePill}>
-                    <AppIcon name="location" size={12} color="#2563EB" />
-                    <Text style={styles.statePillText}>
-                      {state}{stateCode ? ` (${stateCode})` : ''}
-                    </Text>
+                {/* Location */}
+                {site.address ? (
+                  <View style={styles.specItem}>
+                    <View style={styles.specIconBox}>
+                      <AppIcon name="location-outline" size={15} color="#475569" />
+                    </View>
+                    <View style={styles.specContent}>
+                      <Text style={styles.specLabel}>Location</Text>
+                      <Text style={styles.specValue} numberOfLines={1}>
+                        {site.address}{state ? `, ${state}` : ''}
+                      </Text>
+                    </View>
                   </View>
                 ) : null}
               </View>
 
-              {/* Location & Dates */}
-              {(site.address || site.start_date) && (
-                <View style={styles.infoMetaBox}>
-                  {site.address ? (
-                    <View style={styles.infoMetaRow}>
-                      <AppIcon name="location-outline" size={15} color="#EA580C" />
-                      <Text style={styles.infoMetaText} numberOfLines={2}>
-                        {site.address}
-                      </Text>
-                    </View>
-                  ) : null}
-                  {site.start_date ? (
-                    <View style={styles.infoMetaRow}>
-                      <AppIcon name="calendar-outline" size={15} color="#2563EB" />
-                      <Text style={styles.infoMetaText}>
-                        Started: {site.start_date}{site.end_date ? ` • Target: ${site.end_date}` : ''}
-                      </Text>
-                    </View>
-                  ) : null}
+              {/* GST Verification Banner (if registered) */}
+              {gstin ? (
+                <View style={styles.gstStrip}>
+                  <AppIcon name="shield-checkmark" size={13} color="#16A34A" />
+                  <Text style={styles.gstStripText}>
+                    GSTIN: <Text style={styles.gstCodeText}>{gstin}</Text>
+                    {state ? ` • ${state}${stateCode ? ` (${stateCode})` : ''}` : ''}
+                  </Text>
                 </View>
-              )}
+              ) : null}
 
-              {/* Notes */}
+              {/* Contract Terms & Notes Section */}
               {userNotes ? (
-                <View style={styles.notesBox}>
-                  <AppIcon name="information-circle-outline" size={15} color="#64748B" />
-                  <Text style={styles.notesText}>{userNotes}</Text>
+                <View style={styles.termsBox}>
+                  <View style={styles.termsHeaderRow}>
+                    <View style={styles.termsTitleGroup}>
+                      <AppIcon name="document-text-outline" size={15} color="#0F2851" />
+                      <Text style={styles.termsTitleText}>Contract Terms & Notes</Text>
+                    </View>
+                    {isLongNotes && (
+                      <Pressable
+                        onPress={() => setTermsExpanded((v) => !v)}
+                        style={({ pressed }) => [
+                          styles.termsToggleBtn,
+                          pressed && { opacity: 0.7 },
+                        ]}
+                        hitSlop={8}
+                        accessibilityLabel={termsExpanded ? 'Show less terms' : 'Show all terms'}
+                      >
+                        <Text style={styles.termsToggleBtnText}>
+                          {termsExpanded
+                            ? 'Show Less'
+                            : `Show All (${noteLines.length} lines)`}
+                        </Text>
+                        <AppIcon
+                          name={termsExpanded ? 'chevron-up' : 'chevron-down'}
+                          size={13}
+                          color="#1D4ED8"
+                        />
+                      </Pressable>
+                    )}
+                  </View>
+
+                  <Text
+                    style={styles.termsBodyText}
+                    numberOfLines={isLongNotes && !termsExpanded ? 4 : undefined}
+                  >
+                    {userNotes}
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -399,37 +461,93 @@ export function SitesPage({
           </Card>
 
           {/* Site Action Buttons */}
-          <View style={styles.actionsWrap}>
-            <Button
-              title="Receive Payment"
-              onPress={() => onOpenEntry('RECEIPT', site.id)}
-              icon="arrow-down"
-            />
-            <Button
-              title="Attendance"
-              variant="secondary"
-              onPress={() => onOpenAttendance(site.id)}
-              icon="calendar"
-            />
-            <Button
-              title="Material Bill"
-              variant="secondary"
-              onPress={() => onOpenEntry('MATERIAL', site.id)}
-              icon="cube"
-            />
-            <Button
-              title="Extra Work"
-              variant="secondary"
-              onPress={() => onOpenEntry('EXTRA', site.id)}
-              icon="add-circle"
-            />
-            <Button
-              title="Share Statement"
-              variant="secondary"
-              onPress={() => onShareReport(site.id)}
-              icon="share-social"
-            />
-          </View>
+          {isDesktop ? (
+            <View style={styles.actionsWrapDesktop}>
+              <Button
+                title="Receive Payment"
+                onPress={() => onOpenEntry('RECEIPT', site.id)}
+                icon="arrow-down"
+              />
+              <Button
+                title="Attendance"
+                variant="secondary"
+                onPress={() => onOpenAttendance(site.id)}
+                icon="calendar"
+              />
+              <Button
+                title="Material Bill"
+                variant="secondary"
+                onPress={() => onOpenEntry('MATERIAL', site.id)}
+                icon="cube"
+              />
+              <Button
+                title="Extra Work"
+                variant="secondary"
+                onPress={() => onOpenEntry('EXTRA', site.id)}
+                icon="add-circle"
+              />
+              <Button
+                title="Share Statement"
+                variant="secondary"
+                onPress={() => onShareReport(site.id)}
+                icon="share-social"
+              />
+            </View>
+          ) : (
+            <View style={styles.actionsWrapMobile}>
+              {/* Row 1: Primary Receive Payment (Full Width) */}
+              <Button
+                title="Receive Payment"
+                onPress={() => onOpenEntry('RECEIPT', site.id)}
+                icon="arrow-down"
+                style={styles.fullWidthActionBtn}
+              />
+
+              {/* Row 2: Attendance & Material Bill (50% each) */}
+              <View style={styles.actionGridRow}>
+                <View style={styles.actionGridCol}>
+                  <Button
+                    title="Attendance"
+                    variant="secondary"
+                    onPress={() => onOpenAttendance(site.id)}
+                    icon="calendar"
+                    style={styles.gridActionBtn}
+                  />
+                </View>
+                <View style={styles.actionGridCol}>
+                  <Button
+                    title="Material Bill"
+                    variant="secondary"
+                    onPress={() => onOpenEntry('MATERIAL', site.id)}
+                    icon="cube"
+                    style={styles.gridActionBtn}
+                  />
+                </View>
+              </View>
+
+              {/* Row 3: Extra Work & Share Statement (50% each) */}
+              <View style={styles.actionGridRow}>
+                <View style={styles.actionGridCol}>
+                  <Button
+                    title="Extra Work"
+                    variant="secondary"
+                    onPress={() => onOpenEntry('EXTRA', site.id)}
+                    icon="add-circle"
+                    style={styles.gridActionBtn}
+                  />
+                </View>
+                <View style={styles.actionGridCol}>
+                  <Button
+                    title="Share Statement"
+                    variant="secondary"
+                    onPress={() => onShareReport(site.id)}
+                    icon="share-social"
+                    style={styles.gridActionBtn}
+                  />
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* Site Ledger Entries */}
           <View style={styles.sectionHeader}>
@@ -929,135 +1047,79 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
-    gap: 12,
+    gap: 14,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
   },
-  siteHeaderTop: {
+  headerPrimaryRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
   },
-  siteIconBox: {
-    width: 44,
-    height: 44,
+  siteAvatar: {
+    width: 46,
+    height: 46,
     borderRadius: 12,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2,
   },
-  siteTitleRow: {
+  headerMainCol: {
+    flex: 1,
+    gap: 5,
+  },
+  titleActionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 8,
   },
   siteTitle: {
     fontSize: 20,
     fontWeight: '800',
     color: '#0F172A',
-    flex: 1,
+    letterSpacing: -0.3,
+    flexShrink: 1,
   },
-  editPencilBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clientRow: {
+  statusAndEditGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
     gap: 8,
-    marginTop: 2,
   },
-  clientTag: {
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  clientTagText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#334155',
-  },
-  clientPhoneTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-  },
-  clientPhoneText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#15803D',
-  },
-  legalEntityBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  legalEntityText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1E40AF',
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-    paddingTop: 2,
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
   },
-  statusPillOngoing: {
-    backgroundColor: '#DCFCE7',
-    borderColor: '#86EFAC',
+  statusBadgeOngoing: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
   },
-  statusPillCompleted: {
-    backgroundColor: '#DBEAFE',
-    borderColor: '#93C5FD',
+  statusBadgeCompleted: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
   },
-  statusPillPaused: {
-    backgroundColor: '#FEF3C7',
+  statusBadgePaused: {
+    backgroundColor: '#FFFBEB',
     borderColor: '#FDE68A',
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   statusDot: {
     width: 6,
@@ -1073,10 +1135,6 @@ const styles = StyleSheet.create({
   statusDotPaused: {
     backgroundColor: '#D97706',
   },
-  statusPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
   statusTextOngoing: {
     color: '#15803D',
   },
@@ -1086,89 +1144,178 @@ const styles = StyleSheet.create({
   statusTextPaused: {
     color: '#B45309',
   },
-  metaPill: {
+  editSiteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 6,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  metaPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  gstPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
-  },
-  gstPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#065F46',
-  },
-  statePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
-  statePillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#1E40AF',
-  },
-  infoMetaBox: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 10,
-    padding: 10,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  infoMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  infoMetaText: {
+  editSiteBtnText: {
     fontSize: 12,
-    color: '#475569',
-    flex: 1,
-    lineHeight: 16,
+    fontWeight: '600',
+    color: '#334155',
   },
-  notesBox: {
+  headerMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  clientInlineGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  clientInlineName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  businessInlineText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#475569',
+  },
+  phoneInlineGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  phoneInlineText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#16A34A',
+  },
+  metaDotDivider: {
+    fontSize: 12,
+    color: '#94A3B8',
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+  },
+  specsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    gap: 12,
+  },
+  specsRowMobile: {
+    flexDirection: 'column',
+    gap: 10,
+  },
+  specItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  specIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  specContent: {
+    flex: 1,
+    gap: 1,
+  },
+  specLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  specValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  gstStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFFBEB',
-    padding: 10,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: '#DCFCE7',
+    alignSelf: 'flex-start',
   },
-  notesText: {
+  gstStripText: {
     fontSize: 12,
-    color: '#92400E',
-    flex: 1,
-    lineHeight: 16,
-    fontStyle: 'italic',
+    color: '#166534',
+    fontWeight: '500',
+  },
+  gstCodeText: {
+    fontFamily: 'monospace',
+    fontWeight: '700',
+    color: '#14532D',
+  },
+  termsBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderLeftWidth: 3.5,
+    borderLeftColor: '#0F2851',
+    padding: 12,
+    gap: 8,
+  },
+  termsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  termsTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  termsTitleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F2851',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  termsToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  termsToggleBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1D4ED8',
+  },
+  termsBodyText: {
+    fontSize: 13,
+    color: '#1E293B',
+    lineHeight: 20,
   },
   navEditIconBtn: {
     width: 36,
@@ -1216,11 +1363,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
   },
-  actionsWrap: {
+  actionsWrapDesktop: {
     flexDirection: 'row',
+    alignItems: 'center',
     flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  actionsWrapMobile: {
     gap: 8,
     marginBottom: 20,
+  },
+  fullWidthActionBtn: {
+    width: '100%',
+  },
+  actionGridRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionGridCol: {
+    flex: 1,
+  },
+  gridActionBtn: {
+    width: '100%',
+    paddingHorizontal: 8,
   },
   sectionHeader: {
     marginBottom: 10,

@@ -21,6 +21,7 @@ import { CalendarPickerModal } from '../common/CalendarPickerModal';
 import { downloadSiteDocument } from '../../report';
 import { siteForm } from '../../forms';
 import { TopNavBar } from '../common/TopNavBar';
+import { saveDocToIndexedDB, uploadDocToServer } from '../../storage/docStorage';
 
 export interface SiteDocument {
   id: string;
@@ -486,16 +487,23 @@ export function SiteFormModal({
               : 'OTHER';
 
             const reader = new FileReader();
-            reader.onload = () => {
+            reader.onload = async () => {
+              const dataUrl = typeof reader.result === 'string' ? reader.result : undefined;
+              const docId = `doc-${Date.now()}`;
               const doc: SiteDocument = {
-                id: `doc-${Date.now()}`,
+                id: docId,
                 name: file.name,
                 category: cat,
                 date: today,
                 size: sizeInMb,
-                dataUrl: typeof reader.result === 'string' ? reader.result : undefined,
+                dataUrl: dataUrl,
               };
               setDocuments((prev) => [...prev, doc]);
+
+              if (dataUrl) {
+                await saveDocToIndexedDB(docId, file.name, dataUrl, file.type);
+                uploadDocToServer(docId, file.name, dataUrl, file.type).catch(() => {});
+              }
             };
             reader.readAsDataURL(file);
           }

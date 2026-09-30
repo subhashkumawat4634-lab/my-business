@@ -6,7 +6,14 @@ import { randomUUID, randomBytes, scrypt as _scrypt, timingSafeEqual, createHash
 import { promisify } from 'node:util';
 import { z } from 'zod';
 import { wages } from '../../../shared/finance.js';
+import fs from 'node:fs';
+import path from 'node:path';
 const scrypt = promisify(_scrypt);
+
+const uploadsDir = path.resolve(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 const hash = value => createHash('sha256').update(value).digest('hex');
 const id = z.uuid(), text = z.string().trim().min(1).max(200);
 const short = z.string().trim().max(300).default('');
@@ -97,7 +104,8 @@ export function createApp(db, { testing = false } = {}) {
     },
     credentials: true,
   }));
-  app.use(express.json({ limit: '100kb' }));
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
   if (!testing) app.use(rateLimit({ windowMs: 60000, limit: 180, standardHeaders: 'draft-8', legacyHeaders: false }));
   app.get('/health', async (_req,res) => { await db.query('SELECT 1'); res.json({ ok: true, database: 'postgresql' }); });
   const authLimiter = rateLimit({ windowMs: 15*60000, limit: 20, skip: () => testing, standardHeaders: 'draft-8', legacyHeaders: false });
@@ -118,13 +126,99 @@ export function createApp(db, { testing = false } = {}) {
     res.json(await session(db,user));
   });
   app.use(async (req,res,next) => {
-    const token = req.headers.authorization?.replace(/^Bearer /,'');
+    const token = req.headers.authorization?.replace(/^Bearer /,'') || (typeof req.query.token === 'string' ? req.query.token : undefined);
     requireThat(token && /^[a-f0-9]{64}$/.test(token),'Please sign in',401);
     const user = await one(db,'SELECT u.id,u.org_id,u.name,u.email FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now()',[hash(token)]);
     requireThat(user,'Session expired. Please sign in again.',401);
     req.user = user; req.token = token; next();
   });
   app.post('/auth/logout', async (req,res) => { await db.query('DELETE FROM sessions WHERE token_hash=$1',[hash(req.token)]); res.json({ok:true}); });
+  app.post('/documents/upload', async (req, res) => {
+    const { id: docId, name, mimeType, dataUrl } = req.body || {};
+    if (!docId || !dataUrl) {
+      return res.status(400).json({ error: 'Missing document id or dataUrl' });
+    }
+    try {
+      const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+      const base64Content = match ? match[2] : dataUrl;
+      const detectedMime = match ? match[1] : (mimeType || 'application/pdf');
+      const buffer = Buffer.from(base64Content, 'base64');
+      const filePath = path.join(uploadsDir, `${docId}.bin`);
+      const metaPath = path.join(uploadsDir, `${docId}.json`);
+      fs.writeFileSync(filePath, buffer);
+      fs.writeFileSync(metaPath, JSON.stringify({
+        id: docId,
+        orgId: req.user.org_id,
+        name: name || 'document.pdf',
+        mimeType: detectedMime,
+        size: buffer.length,
+        createdAt: new Date().toISOString(),
+      }));
+      res.json({ ok: true, id: docId });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to save document' });
+    }
+  });
+
+  app.get('/documents/:id', async (req, res) => {
+    const rawId = req.params.id;
+    const decodedId = decodeURIComponent(rawId);
+    let filePath = path.join(uploadsDir, `${rawId}.bin`);
+    let metaPath = path.join(uploadsDir, `${rawId}.json`);
+
+    if (!fs.existsSync(filePath)) {
+      // Try with decodedId
+      const testPath = path.join(uploadsDir, `${decodedId}.bin`);
+      if (fs.existsSync(testPath)) {
+        filePath = testPath;
+        metaPath = path.join(uploadsDir, `${decodedId}.json`);
+      }
+    }
+
+    if (!fs.existsSync(filePath) && fs.existsSync(uploadsDir)) {
+      // Search all metadata JSONs for matching document name or ID
+      try {
+        const files = fs.readdirSync(uploadsDir);
+        for (const f of files) {
+          if (f.endsWith('.json')) {
+            try {
+              const metaContent = JSON.parse(fs.readFileSync(path.join(uploadsDir, f), 'utf8'));
+              if (
+                metaContent.id === rawId ||
+                metaContent.id === decodedId ||
+                metaContent.name === rawId ||
+                metaContent.name === decodedId
+              ) {
+                const baseKey = f.replace(/\.json$/, '');
+                const candBin = path.join(uploadsDir, `${baseKey}.bin`);
+                if (fs.existsSync(candBin)) {
+                  filePath = candBin;
+                  metaPath = path.join(uploadsDir, f);
+                  break;
+                }
+              }
+            } catch {}
+          }
+        }
+      } catch {}
+    }
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    let meta = { name: decodedId || 'document.pdf', mimeType: 'application/pdf' };
+    if (fs.existsSync(metaPath)) {
+      try {
+        meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+      } catch {}
+    }
+    const filename = meta.name || decodedId || 'document.pdf';
+    res.setHeader('Content-Type', meta.mimeType || 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  });
+
   app.get('/snapshot', async (req,res) => {
     const result = await db.transaction(async tx => {
       // Serialize snapshot with writes to avoid mixed financial revisions.

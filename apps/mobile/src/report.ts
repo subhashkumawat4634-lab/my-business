@@ -3,6 +3,11 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { reportText } from '../../../shared/finance';
 import { Snapshot } from './types';
+import {
+  getDocFromIndexedDB,
+  fetchDocFromServer,
+  triggerBrowserDownload,
+} from './storage/docStorage';
 const escape = (v:string) => v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export async function shareReport(data:Snapshot,siteId?:string) {
   const message = reportText(data,siteId);
@@ -18,6 +23,7 @@ export async function pdfReport(data:Snapshot,siteId?:string) {
 }
 
 export interface SiteDocInfo {
+  id?: string;
   name: string;
   category: string;
   date: string;
@@ -40,16 +46,38 @@ export interface SiteInfoForDoc {
   pricing?: string;
 }
 
-export async function downloadSiteDocument(doc: SiteDocInfo, site: SiteInfoForDoc) {
-  if (Platform.OS === 'web' && doc.dataUrl) {
-    try {
-      const a = document.createElement('a');
-      a.href = doc.dataUrl;
-      a.download = doc.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+export async function downloadSiteDocument(
+  doc: SiteDocInfo,
+  site: SiteInfoForDoc,
+  token?: string
+) {
+  if (Platform.OS === 'web') {
+    // 1. In-memory dataUrl (freshly uploaded or present on doc object)
+    if (doc.dataUrl) {
+      triggerBrowserDownload(doc.dataUrl, doc.name);
       return;
+    }
+
+    // 2. Check local client IndexedDB by doc id or file name
+    try {
+      const local =
+        (doc.id ? await getDocFromIndexedDB(doc.id) : null) ||
+        (await getDocFromIndexedDB(doc.name));
+      if (local && local.dataUrl) {
+        triggerBrowserDownload(local.dataUrl, doc.name);
+        return;
+      }
+    } catch {}
+
+    // 3. Fetch original uploaded binary from server /documents/:id
+    try {
+      const serverDoc =
+        (doc.id ? await fetchDocFromServer(doc.id, token) : null) ||
+        (await fetchDocFromServer(doc.name, token));
+      if (serverDoc && serverDoc.blobUrl) {
+        triggerBrowserDownload(serverDoc.blobUrl, doc.name);
+        return;
+      }
     } catch {}
   }
 
