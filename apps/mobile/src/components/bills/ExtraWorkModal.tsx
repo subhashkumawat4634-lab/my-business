@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../theme/colors';
@@ -54,6 +55,9 @@ export function ExtraWorkModal({
   onClose,
   onSave,
 }: ExtraWorkModalProps) {
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
+
   // Form State
   const [siteId, setSiteId] = useState<string>(
     spec.initial.site_id || data.sites[0]?.id || ''
@@ -184,13 +188,18 @@ export function ExtraWorkModal({
       animationType="slide"
       onRequestClose={() => !busy && onClose()}
       presentationStyle="pageSheet"
+      transparent={isDesktop}
     >
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
+        <SafeAreaView
+          style={[styles.modalCard, isDesktop && styles.modalCardDesktop]}
+          edges={['top', 'bottom']}
         >
-          {/* Header */}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.headerIconBadge}>
@@ -714,29 +723,59 @@ export function ExtraWorkModal({
             </Pressable>
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
 
-      {/* Calendar Picker Modal */}
-      <CalendarPickerModal
-        visible={calendarTarget !== null}
-        title={calendarTarget === 'dueDate' ? 'Select Payment Due Date' : 'Select Work Date'}
-        selectedDate={calendarTarget === 'dueDate' ? dueDate || today() : date}
-        onSelect={(newDate) => {
-          if (newDate) {
-            if (calendarTarget === 'dueDate') {
-              setDueDate(newDate);
-            } else {
-              setDate(newDate);
-            }
-          }
-        }}
-        onClose={() => setCalendarTarget(null)}
-      />
+        {/* Calendar Picker Modal */}
+        {calendarTarget !== null && (
+          <CalendarPickerModal
+            visible={calendarTarget !== null}
+            title={calendarTarget === 'dueDate' ? 'Select Payment Due Date' : 'Select Work Date'}
+            selectedDate={calendarTarget === 'dueDate' ? dueDate || today() : date}
+            onSelect={(newDate) => {
+              if (newDate) {
+                if (calendarTarget === 'dueDate') {
+                  setDueDate(newDate);
+                } else {
+                  setDate(newDate);
+                }
+              }
+            }}
+            onClose={() => setCalendarTarget(null)}
+          />
+        )}
+        </SafeAreaView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  modalOverlayDesktop: {
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    width: '100%',
+  },
+  modalCardDesktop: {
+    maxWidth: 680,
+    width: '100%',
+    maxHeight: '94%',
+    borderRadius: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+    overflow: 'hidden',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',

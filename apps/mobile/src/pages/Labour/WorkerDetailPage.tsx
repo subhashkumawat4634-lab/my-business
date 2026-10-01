@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -26,12 +26,13 @@ export interface WorkerDetailPageProps {
 type PageTab = 'OVERVIEW' | 'ATTENDANCE' | 'PAYMENTS';
 
 const AVATAR_PALETTES = [
-  { bg: '#EFF6FF', text: '#1E40AF' },
-  { bg: '#ECFDF5', text: '#065F46' },
-  { bg: '#F5F3FF', text: '#5B21B6' },
-  { bg: '#FFFBEB', text: '#92400E' },
-  { bg: '#FFF1F2', text: '#9F1239' },
-  { bg: '#F0FDF4', text: '#166534' },
+  { bg: '#1E40AF', text: '#FFFFFF' },
+  { bg: '#065F46', text: '#FFFFFF' },
+  { bg: '#5B21B6', text: '#FFFFFF' },
+  { bg: '#92400E', text: '#FFFFFF' },
+  { bg: '#9F1239', text: '#FFFFFF' },
+  { bg: '#166534', text: '#FFFFFF' },
+  { bg: '#0F2851', text: '#FFFFFF' },
 ];
 
 function getAvatarStyle(name: string = '') {
@@ -65,18 +66,19 @@ function getInitials(name: string = '') {
 }
 
 function formatDateSafely(dateVal: any) {
-  if (!dateVal) return { day: '--', month: '', full: '' };
+  if (!dateVal) return { day: '--', month: '', full: '', weekday: '' };
   const str = String(dateVal);
   try {
     const d = new Date(str.length === 10 ? str + 'T00:00:00' : str);
-    if (isNaN(d.getTime())) return { day: str.slice(-2) || '--', month: '', full: str };
+    if (isNaN(d.getTime())) return { day: str.slice(-2) || '--', month: '', full: str, weekday: '' };
     return {
       day: String(d.getDate()).padStart(2, '0'),
       month: d.toLocaleDateString('en-IN', { month: 'short' }),
       full: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      weekday: d.toLocaleDateString('en-IN', { weekday: 'short' }),
     };
   } catch {
-    return { day: str.slice(-2) || '--', month: '', full: str };
+    return { day: str.slice(-2) || '--', month: '', full: str, weekday: '' };
   }
 }
 
@@ -90,7 +92,6 @@ export function WorkerDetailPage({
   const [activeTab, setActiveTab] = useState<PageTab>('OVERVIEW');
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
-
   const avatarTheme = getAvatarStyle(worker.name);
 
   const summary = useMemo(
@@ -125,7 +126,6 @@ export function WorkerDetailPage({
     () => workerAttendance.reduce((s, a) => s + Number(a.overtime_minutes || 0), 0),
     [workerAttendance]
   );
-
   const totalOtHours = (totalOtMinutes / 60).toFixed(1).replace(/\.0$/, '');
   const otEarnings = useMemo(() => {
     const otRate = Number(worker.overtime_rate || 0);
@@ -133,9 +133,7 @@ export function WorkerDetailPage({
   }, [totalOtMinutes, worker.overtime_rate]);
 
   const avgDayEarning =
-    totalUnits > 0
-      ? Math.round(summary.earned / totalUnits)
-      : Number(worker.daily_rate || 0);
+    totalUnits > 0 ? Math.round(summary.earned / totalUnits) : Number(worker.daily_rate || 0);
 
   const sitesBreakdown = useMemo(() => {
     const map = new Map<string, { siteName: string; days: number; earned: number }>();
@@ -161,161 +159,124 @@ export function WorkerDetailPage({
   const handleCall = () => {
     if (worker?.phone) {
       const cleaned = worker.phone.replace(/[^0-9+]/g, '');
-      if (cleaned) Linking.openURL(	el:).catch(() => {});
+      if (cleaned) Linking.openURL(`tel:${cleaned}`).catch(() => {});
     }
   };
 
+  const TABS = [
+    { key: 'OVERVIEW' as PageTab, icon: 'bar-chart', label: 'Overview' },
+    { key: 'ATTENDANCE' as PageTab, icon: 'calendar', label: `Haziri (${workerAttendance.length})` },
+    { key: 'PAYMENTS' as PageTab, icon: 'wallet', label: `Payments (${workerPayments.length})` },
+  ];
+
+  const balanceColor = isPending ? '#D97706' : isAdvance ? '#2563EB' : '#16A34A';
+  const balanceBg = isPending ? '#FFFBEB' : isAdvance ? '#EFF6FF' : '#F0FDF4';
+  const balanceBorder = isPending ? '#FDE68A' : isAdvance ? '#BFDBFE' : '#BBF7D0';
+
   return (
     <SafeAreaView style={styles.pageRoot} edges={['top', 'bottom']}>
-      <View style={styles.topBar}>
-        <Pressable
-          onPress={onBack}
-          style={({ pressed }) => [
-            styles.backBtn,
-            pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] },
-          ]}
-          accessibilityLabel="Go back to Labour list"
-        >
-          <AppIcon name="arrow-back" size={20} color="#0F2851" />
-        </Pressable>
-        <Text style={styles.topBarTitle} numberOfLines={1}>
-          Worker Profile
-        </Text>
-        <Pressable
-          onPress={() => onOpenWorkerModal(worker)}
-          style={({ pressed }) => [styles.editTopBtn, pressed && { opacity: 0.7 }]}
-          accessibilityLabel="Edit worker profile"
-        >
-          <AppIcon name="create-outline" size={16} color="#0F2851" />
-          <Text style={styles.editTopBtnText}>Edit</Text>
-        </Pressable>
+      <View style={styles.topBarWrapper}>
+        <View style={[styles.topBar, isDesktop && styles.topBarDesktop]}>
+          <Pressable
+            onPress={onBack}
+            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7, transform: [{ scale: 0.93 }] }]}
+            accessibilityLabel="Go back"
+          >
+            <AppIcon name="arrow-back" size={18} color="#0F2851" />
+          </Pressable>
+          <Text style={styles.topBarTitle} numberOfLines={1}>Worker Profile</Text>
+          <Pressable
+            onPress={() => onOpenWorkerModal(worker)}
+            style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.75 }]}
+            accessibilityLabel="Edit worker"
+          >
+            <AppIcon name="create-outline" size={15} color="#0F2851" />
+            <Text style={styles.editBtnText}>Edit</Text>
+          </Pressable>
+        </View>
       </View>
 
-      <View style={[styles.heroCard, isDesktop && styles.heroCardDesktop]}>
-        <View style={styles.heroProfileRow}>
-          <View style={[styles.avatarLarge, { backgroundColor: avatarTheme.bg }]}>
-            <Text style={[styles.avatarLargeText, { color: avatarTheme.text }]}>
-              {getInitials(worker.name)}
-            </Text>
-            <View
-              style={[
-                styles.activeRing,
-                { backgroundColor: worker.active ? '#16A34A' : '#94A3B8' },
-              ]}
-            />
-          </View>
-          <View style={styles.heroTextCol}>
-            <View style={styles.heroNameRow}>
-              <Text style={styles.heroWorkerName} numberOfLines={1}>
-                {worker.name}
+      <View style={styles.heroWrapper}>
+        <View style={[styles.heroCard, isDesktop && styles.heroCardDesktop]}>
+          <View style={styles.heroTop}>
+            <View style={[styles.avatar, { backgroundColor: avatarTheme.bg }]}>
+              <Text style={[styles.avatarText, { color: avatarTheme.text }]}>
+                {getInitials(worker.name)}
               </Text>
-              {!worker.active ? <Badge label="INACTIVE" tone="gray" /> : null}
+              <View style={[styles.statusDot, { backgroundColor: worker.active ? '#22C55E' : '#94A3B8' }]} />
             </View>
-            <View style={styles.heroDesignationRow}>
-              <View style={styles.skillBadge}>
-                <AppIcon name={getSkillIcon(worker.skill) as any} size={12} color="#1E40AF" />
-                <Text style={styles.skillBadgeText}>
-                  {worker.skill || 'General Labour'}
+            <View style={styles.heroInfo}>
+              <View style={styles.heroNameRow}>
+                <Text style={styles.heroName} numberOfLines={1}>{worker.name}</Text>
+                {!worker.active && <Badge label="INACTIVE" tone="gray" />}
+              </View>
+              <View style={styles.heroBadgeRow}>
+                <View style={styles.skillChip}>
+                  <AppIcon name={getSkillIcon(worker.skill) as any} size={11} color="#1E40AF" />
+                  <Text style={styles.skillChipText}>{worker.skill || 'General Labour'}</Text>
+                </View>
+                <Text style={styles.rateChip}>{money(worker.daily_rate)}/day</Text>
+                {worker.overtime_rate ? (
+                  <Text style={styles.otChip}>OT: {money(worker.overtime_rate)}/hr</Text>
+                ) : null}
+              </View>
+              {worker.phone ? (
+                <Pressable onPress={handleCall} style={({ pressed }) => [styles.phoneRow, pressed && { opacity: 0.75 }]}>
+                  <AppIcon name="call" size={12} color="#16A34A" />
+                  <Text style={styles.phoneText}>{worker.phone}</Text>
+                  <View style={styles.callBadge}><Text style={styles.callBadgeText}>Call</Text></View>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+          <View style={[styles.balanceRow, { backgroundColor: balanceBg, borderColor: balanceBorder }]}>
+            <View style={styles.balanceLeft}>
+              <View style={[styles.balanceDot, { backgroundColor: balanceColor }]} />
+              <View>
+                <Text style={styles.balanceLabel}>
+                  {isPending ? 'Unpaid Balance' : isAdvance ? 'Advance Given' : 'Account Settled'}
+                </Text>
+                <Text style={[styles.balanceAmount, { color: balanceColor }]}>
+                  {isPending ? `${money(summary.balance)} Due` : isAdvance ? `${money(-summary.balance)} Advance` : 'Settled'}
                 </Text>
               </View>
-              <Text style={styles.rateText}>
-                {money(worker.daily_rate)}/day
-                {worker.overtime_rate ?  + OT /hr : ''}
-              </Text>
             </View>
-            {worker.phone ? (
-              <Pressable onPress={handleCall} style={styles.phoneRow}>
-                <AppIcon name="call" size={12} color="#16A34A" />
-                <Text style={styles.phoneText}>{worker.phone}</Text>
-                <View style={styles.callPill}>
-                  <Text style={styles.callPillText}>Tap to Call</Text>
-                </View>
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
-
-        <View
-          style={[
-            styles.balanceStrip,
-            isPending
-              ? styles.balanceStripPending
-              : isAdvance
-              ? styles.balanceStripAdvance
-              : styles.balanceStripSettled,
-          ]}
-        >
-          <View>
-            <Text style={styles.balanceStripLabel}>
-              {isPending
-                ? 'Unpaid Balance (bkaya)'
-                : isAdvance
-                ? 'Advance Given (peshgi)'
-                : 'Account Clear (chukta)'}
-            </Text>
-            <Text
-              style={[
-                styles.balanceStripValue,
-                {
-                  color: isPending ? '#B45309' : isAdvance ? '#1D4ED8' : '#15803D',
-                },
+            <Pressable
+              onPress={() => onOpenPaymentModal(worker.id)}
+              style={({ pressed }) => [
+                styles.payBtn,
+                isPending ? styles.payBtnPrimary : styles.payBtnSecondary,
+                pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
               ]}
             >
-              {isPending
-                ? ${money(summary.balance)} Due
-                : isAdvance
-                ? ${money(-summary.balance)} Advance
-                : 'Rs.0 Settled'}
-            </Text>
+              <AppIcon name="wallet" size={14} color={isPending ? '#FFF' : '#0F2851'} />
+              <Text style={[styles.payBtnText, { color: isPending ? '#FFF' : '#0F2851' }]}>
+                {isPending ? 'Pay Now' : 'Advance'}
+              </Text>
+            </Pressable>
           </View>
-          <Pressable
-            onPress={() => onOpenPaymentModal(worker.id)}
-            style={({ pressed }) => [
-              styles.payNowBtn,
-              isPending ? styles.payNowBtnPending : styles.payNowBtnDefault,
-              pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
-            ]}
-          >
-            <AppIcon
-              name="wallet-outline"
-              size={14}
-              color={isPending ? '#FFFFFF' : '#0F2851'}
-            />
-            <Text
-              style={[
-                styles.payNowBtnText,
-                isPending ? { color: '#FFFFFF' } : { color: '#0F2851' },
-              ]}
-            >
-              {isPending ? 'Pay Wages' : 'Give Advance'}
-            </Text>
-          </Pressable>
         </View>
       </View>
 
-      <View style={styles.tabBar}>
-        {(
-          [
-            { key: 'OVERVIEW' as PageTab, icon: 'bar-chart-outline', label: 'Performance' },
-            { key: 'ATTENDANCE' as PageTab, icon: 'calendar-outline', label: Haziri () },
-            { key: 'PAYMENTS' as PageTab, icon: 'wallet-outline', label: Payments () },
-          ]
-        ).map((t) => (
-          <Pressable
-            key={t.key}
-            onPress={() => setActiveTab(t.key)}
-            style={[styles.tabItem, activeTab === t.key && styles.tabItemActive]}
-          >
-            <AppIcon
-              name={t.icon as any}
-              size={14}
-              color={activeTab === t.key ? '#0F2851' : '#64748B'}
-            />
-            <Text style={[styles.tabItemText, activeTab === t.key && styles.tabItemTextActive]}>
-              {t.label}
-            </Text>
-          </Pressable>
-        ))}
+      <View style={styles.tabBarWrapper}>
+        <View style={styles.tabBar}>
+          {TABS.map((t) => {
+            const isActive = activeTab === t.key;
+            return (
+              <Pressable
+                key={t.key}
+                onPress={() => setActiveTab(t.key)}
+                style={[
+                  styles.tabItem,
+                  isActive && styles.tabItemActive,
+                ]}
+              >
+                <AppIcon name={t.icon as any} size={14} color={isActive ? '#0F2851' : '#94A3B8'} />
+                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{t.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       <ScrollView
@@ -325,68 +286,71 @@ export function WorkerDetailPage({
       >
         {activeTab === 'OVERVIEW' ? (
           <>
-            <View style={styles.perfGrid}>
+            <View style={styles.statsGrid}>
               {[
-                { bg: '#EFF6FF', icon: 'calendar', iconColor: '#2563EB', value: ${totalUnits}, unit: 'Days', label: 'Total Haziri', foot: ${fullDays} Full +  Half },
-                { bg: '#FFFBEB', icon: 'time', iconColor: '#D97706', value: ${totalOtHours}, unit: 'Hrs OT', label: 'Overtime', foot: ${money(otEarnings)} OT earned },
-                { bg: '#F0FDF4', icon: 'business', iconColor: '#059669', value: ${sitesBreakdown.length}, unit: 'Sites', label: 'Sites Worked', foot: 'Active contributor' },
-                { bg: '#F5F3FF', icon: 'trending-up', iconColor: '#7C3AED', value: money(avgDayEarning), unit: '', label: 'Avg Day Rate', foot: 'Incl. overtime' },
+                { bg: '#EFF6FF', iconBg: '#DBEAFE', icon: 'calendar', iconColor: '#2563EB', value: `${totalUnits}`, unit: 'Days', label: 'Total Haziri', sub: `${fullDays} Full + ${halfDays} Half` },
+                { bg: '#FFFBEB', iconBg: '#FDE68A', icon: 'time', iconColor: '#D97706', value: totalOtHours || '0', unit: 'Hrs OT', label: 'Overtime', sub: `${money(otEarnings)} earned` },
+                { bg: '#F0FDF4', iconBg: '#BBF7D0', icon: 'business', iconColor: '#16A34A', value: `${sitesBreakdown.length}`, unit: 'Sites', label: 'Sites Worked', sub: 'Contributed' },
+                { bg: '#F5F3FF', iconBg: '#DDD6FE', icon: 'trending-up', iconColor: '#7C3AED', value: money(avgDayEarning), unit: '', label: 'Avg Day Rate', sub: 'incl. OT' },
               ].map((card, i) => (
-                <View key={i} style={styles.perfCard}>
-                  <View style={[styles.perfIconBox, { backgroundColor: card.bg }]}>
-                    <AppIcon name={card.icon as any} size={18} color={card.iconColor} />
+                <View key={i} style={[styles.statCard, { backgroundColor: card.bg }]}>
+                  <View style={[styles.statIconBox, { backgroundColor: card.iconBg }]}>
+                    <AppIcon name={card.icon as any} size={16} color={card.iconColor} />
                   </View>
-                  <Text style={styles.perfCardValue}>
+                  <Text style={styles.statValue}>
                     {card.value}
-                    {card.unit ? <Text style={styles.perfCardUnit}> {card.unit}</Text> : null}
+                    {card.unit ? <Text style={styles.statUnit}> {card.unit}</Text> : null}
                   </Text>
-                  <Text style={styles.perfCardLabel}>{card.label}</Text>
-                  <Text style={styles.perfCardFoot}>{card.foot}</Text>
+                  <Text style={styles.statLabel}>{card.label}</Text>
+                  <Text style={styles.statSub}>{card.sub}</Text>
                 </View>
               ))}
             </View>
 
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Financial Summary</Text>
-              <View style={styles.finRow}>
-                <View style={styles.finCol}>
-                  <Text style={styles.finColLabel}>Total Earned</Text>
-                  <Text style={[styles.finColValue, { color: '#0F2851' }]}>{money(summary.earned)}</Text>
-                </View>
-                <View style={styles.finDivider} />
-                <View style={styles.finCol}>
-                  <Text style={styles.finColLabel}>Total Paid</Text>
-                  <Text style={[styles.finColValue, { color: '#15803D' }]}>{money(summary.paid)}</Text>
-                </View>
-                <View style={styles.finDivider} />
-                <View style={styles.finCol}>
-                  <Text style={styles.finColLabel}>{isPending ? 'Due' : isAdvance ? 'Advance' : 'Balance'}</Text>
-                  <Text style={[styles.finColValue, { color: isPending ? '#B45309' : isAdvance ? '#1D4ED8' : '#15803D' }]}>
-                    {isPending ? money(summary.balance) : isAdvance ? money(-summary.balance) : 'Rs.0'}
-                  </Text>
-                </View>
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderIcon}><AppIcon name="cash" size={14} color="#0F2851" /></View>
+                <Text style={styles.cardTitle}>Financial Summary</Text>
+              </View>
+              <View style={styles.finGrid}>
+                {[
+                  { label: 'Total Earned', value: money(summary.earned), color: '#0F2851' },
+                  { label: 'Total Paid', value: money(summary.paid), color: '#16A34A' },
+                  { label: isPending ? 'Balance Due' : isAdvance ? 'Advance' : 'Balance', value: isPending ? money(summary.balance) : isAdvance ? money(-summary.balance) : 'Rs.0', color: balanceColor },
+                ].map((item, i, arr) => (
+                  <React.Fragment key={item.label}>
+                    <View style={styles.finItem}>
+                      <Text style={styles.finLabel}>{item.label}</Text>
+                      <Text style={[styles.finValue, { color: item.color }]}>{item.value}</Text>
+                    </View>
+                    {i < arr.length - 1 && <View style={styles.finDivider} />}
+                  </React.Fragment>
+                ))}
               </View>
             </View>
 
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Site Contributions</Text>
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderIcon}><AppIcon name="business" size={14} color="#0F2851" /></View>
+                <Text style={styles.cardTitle}>Site Contributions</Text>
+                <View style={styles.countBadge}><Text style={styles.countBadgeText}>{sitesBreakdown.length}</Text></View>
+              </View>
               {sitesBreakdown.length > 0 ? (
                 sitesBreakdown.map((s, idx) => (
                   <View key={s.siteName + idx} style={[styles.siteRow, idx < sitesBreakdown.length - 1 && styles.siteRowBorder]}>
-                    <View style={styles.siteIconBox}>
-                      <AppIcon name="business" size={16} color="#0284C7" />
-                    </View>
+                    <View style={styles.siteIconWrap}><AppIcon name="location" size={15} color="#0284C7" /></View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.siteRowName} numberOfLines={1}>{s.siteName}</Text>
-                      <Text style={styles.siteRowDays}>{s.days} Days Worked</Text>
+                      <Text style={styles.siteName} numberOfLines={1}>{s.siteName}</Text>
+                      <Text style={styles.siteDays}>{s.days} days worked</Text>
                     </View>
-                    <Text style={styles.siteRowEarned}>{money(s.earned)}</Text>
+                    <View style={styles.siteEarnedBox}><Text style={styles.siteEarned}>{money(s.earned)}</Text></View>
                   </View>
                 ))
               ) : (
-                <View style={styles.emptyBox}>
-                  <AppIcon name="business-outline" size={24} color="#CBD5E1" />
-                  <Text style={styles.emptyText}>No site attendance recorded yet.</Text>
+                <View style={styles.emptyState}>
+                  <AppIcon name="business-outline" size={32} color="#CBD5E1" />
+                  <Text style={styles.emptyTitle}>No Sites Yet</Text>
+                  <Text style={styles.emptyDesc}>Attendance records will appear here.</Text>
                 </View>
               )}
             </View>
@@ -394,200 +358,210 @@ export function WorkerDetailPage({
         ) : null}
 
         {activeTab === 'ATTENDANCE' ? (
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitle}>Haziri Log</Text>
-              <View style={styles.countPill}>
-                <Text style={styles.countPillText}>{workerAttendance.length} Entries</Text>
-              </View>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.cardHeaderIcon}><AppIcon name="calendar" size={14} color="#0F2851" /></View>
+              <Text style={styles.cardTitle}>Haziri Log</Text>
+              <View style={styles.countBadge}><Text style={styles.countBadgeText}>{workerAttendance.length}</Text></View>
             </View>
             {workerAttendance.length > 0 ? (
-              workerAttendance.map((a) => {
+              workerAttendance.map((a, idx) => {
                 const site = data.sites.find((s) => s.id === a.site_id);
                 const isFull = Number(a.units) === 1;
                 const hasOt = Number(a.overtime_minutes || 0) > 0;
                 const otHoursStr = (Number(a.overtime_minutes || 0) / 60).toFixed(1).replace(/\.0$/, '');
                 const dateInfo = formatDateSafely(a.date);
                 return (
-                  <View key={a.id} style={styles.logCard}>
-                    <View style={styles.logDateBox}>
-                      <Text style={styles.logDateDay}>{dateInfo.day}</Text>
-                      <Text style={styles.logDateMonth}>{dateInfo.month}</Text>
+                  <View key={a.id} style={[styles.logRow, idx < workerAttendance.length - 1 && styles.logRowBorder]}>
+                    <View style={styles.dateBox}>
+                      <Text style={styles.dateDay}>{dateInfo.day}</Text>
+                      <Text style={styles.dateMonth}>{dateInfo.month}</Text>
                     </View>
-                    <View style={styles.logMetaCol}>
-                      <Text style={styles.logSiteTitle} numberOfLines={1}>{site?.name || 'Project Site'}</Text>
-                      <View style={styles.logBadgeRow}>
-                        <View style={[styles.shiftBadge, isFull ? styles.shiftBadgeFull : styles.shiftBadgeHalf]}>
-                          <Text style={[styles.shiftBadgeText, isFull ? styles.shiftBadgeTextFull : styles.shiftBadgeTextHalf]}>
-                            {isFull ? '1.0 Full Day' : '0.5 Half Day'}
+                    <View style={styles.logMeta}>
+                      <Text style={styles.logSite} numberOfLines={1}>{site?.name || 'Project Site'}</Text>
+                      <View style={styles.logBadges}>
+                        <View style={[styles.shiftBadge, isFull ? styles.shiftFull : styles.shiftHalf]}>
+                          <Text style={[styles.shiftText, isFull ? styles.shiftTextFull : styles.shiftTextHalf]}>
+                            {isFull ? 'Full Day' : 'Half Day'}
                           </Text>
                         </View>
                         {hasOt ? (
                           <View style={styles.otBadge}>
                             <AppIcon name="time" size={10} color="#D97706" />
-                            <Text style={styles.otBadgeText}>+{otHoursStr}h OT</Text>
+                            <Text style={styles.otText}>+{otHoursStr}h OT</Text>
                           </View>
                         ) : null}
                       </View>
-                      {a.notes ? <Text style={styles.logNotesText}>Note: {a.notes}</Text> : null}
+                      {a.notes ? <Text style={styles.noteText} numberOfLines={1}>{a.notes}</Text> : null}
                     </View>
-                    <View style={styles.logAmountCol}>
-                      <Text style={styles.logAmountText}>{money(a.amount)}</Text>
+                    <View style={styles.logAmount}>
+                      <Text style={styles.logAmountVal}>{money(a.amount)}</Text>
                       <Text style={styles.logAmountLabel}>Earned</Text>
                     </View>
                   </View>
                 );
               })
             ) : (
-              <View style={styles.emptyBox}>
-                <AppIcon name="calendar-outline" size={24} color="#CBD5E1" />
-                <Text style={styles.emptyText}>No attendance records found.</Text>
+              <View style={styles.emptyState}>
+                <AppIcon name="calendar-outline" size={32} color="#CBD5E1" />
+                <Text style={styles.emptyTitle}>No Attendance Yet</Text>
+                <Text style={styles.emptyDesc}>Mark daily attendance to see records here.</Text>
               </View>
             )}
           </View>
         ) : null}
 
         {activeTab === 'PAYMENTS' ? (
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitle}>Payment Ledger</Text>
-              <View style={styles.countPill}>
-                <Text style={styles.countPillText}>{workerPayments.length} Records</Text>
-              </View>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.cardHeaderIcon}><AppIcon name="wallet" size={14} color="#0F2851" /></View>
+              <Text style={styles.cardTitle}>Payment Ledger</Text>
+              <View style={styles.countBadge}><Text style={styles.countBadgeText}>{workerPayments.length}</Text></View>
             </View>
             {workerPayments.length > 0 ? (
-              workerPayments.map((p) => {
+              workerPayments.map((p, idx) => {
                 const dateInfo = formatDateSafely(p.date);
                 const modeIcon = p.mode === 'UPI' ? 'qr-code' : p.mode === 'BANK' ? 'business' : 'cash';
+                const modeBg = p.mode === 'UPI' ? '#F5F3FF' : p.mode === 'BANK' ? '#EFF6FF' : '#F0FDF4';
+                const modeColor = p.mode === 'UPI' ? '#7C3AED' : p.mode === 'BANK' ? '#1D4ED8' : '#16A34A';
                 return (
-                  <View key={p.id} style={styles.logCard}>
-                    <View style={styles.payModeBox}>
-                      <AppIcon name={modeIcon as any} size={18} color="#15803D" />
+                  <View key={p.id} style={[styles.logRow, idx < workerPayments.length - 1 && styles.logRowBorder]}>
+                    <View style={[styles.modeBox, { backgroundColor: modeBg }]}>
+                      <AppIcon name={modeIcon as any} size={17} color={modeColor} />
                     </View>
-                    <View style={styles.logMetaCol}>
-                      <Text style={styles.logSiteTitle} numberOfLines={1}>{p.description || 'Labour Wage Payment'}</Text>
-                      <Text style={styles.paymentMetaText}>
-                        {dateInfo.full}{p.mode ?  +  : ''}{p.reference ?  + Ref:  : ''}
+                    <View style={styles.logMeta}>
+                      <Text style={styles.logSite} numberOfLines={1}>{p.description || 'Wage Payment'}</Text>
+                      <Text style={styles.payMeta}>
+                        {dateInfo.full}{p.mode ? ` · ${p.mode}` : ''}{p.reference ? ` · Ref: ${p.reference}` : ''}
                       </Text>
                     </View>
-                    <View style={styles.logAmountCol}>
-                      <Text style={styles.payAmountText}>{money(p.amount)}</Text>
-                      <Text style={styles.logAmountLabel}>Paid Out</Text>
+                    <View style={styles.logAmount}>
+                      <Text style={styles.payAmountVal}>{money(p.amount)}</Text>
+                      <Text style={styles.logAmountLabel}>Paid</Text>
                     </View>
                   </View>
                 );
               })
             ) : (
-              <View style={styles.emptyBox}>
-                <AppIcon name="wallet-outline" size={24} color="#CBD5E1" />
-                <Text style={styles.emptyText}>No payments recorded yet.</Text>
+              <View style={styles.emptyState}>
+                <AppIcon name="wallet-outline" size={32} color="#CBD5E1" />
+                <Text style={styles.emptyTitle}>No Payments Yet</Text>
+                <Text style={styles.emptyDesc}>Record the first wage payment for this worker.</Text>
                 <Pressable
                   onPress={() => onOpenPaymentModal(worker.id)}
-                  style={({ pressed }) => [styles.emptyActionBtn, pressed && { opacity: 0.8 }]}
+                  style={({ pressed }) => [styles.emptyBtn, pressed && { opacity: 0.85 }]}
                 >
-                  <AppIcon name="add" size={14} color="#FFFFFF" />
-                  <Text style={styles.emptyActionBtnText}>Record First Payment</Text>
+                  <AppIcon name="add" size={14} color="#FFF" />
+                  <Text style={styles.emptyBtnText}>Record Payment</Text>
                 </Pressable>
               </View>
             )}
           </View>
         ) : null}
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  pageRoot: { flex: 1, backgroundColor: Colors.background },
-  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', backgroundColor: '#FFFFFF', gap: 12 },
-  backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
-  topBarTitle: { flex: 1, fontSize: 17, fontWeight: '800', color: '#0F172A', letterSpacing: -0.2 },
-  editTopBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#CBD5E1' },
-  editTopBtnText: { fontSize: 13, fontWeight: '700', color: '#0F2851' },
-  heroCard: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 14, gap: 14 },
-  heroCardDesktop: { maxWidth: 800, alignSelf: 'center', width: '100%' },
-  heroProfileRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  avatarLarge: { width: 60, height: 60, borderRadius: 18, alignItems: 'center', justifyContent: 'center', position: 'relative', borderWidth: 1.5, borderColor: '#E2E8F0' },
-  avatarLargeText: { fontSize: 22, fontWeight: '800' },
-  activeRing: { position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: '#FFFFFF' },
-  heroTextCol: { flex: 1, gap: 4 },
+  pageRoot: { flex: 1, backgroundColor: '#F8FAFC' },
+  topBarWrapper: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', width: '100%' },
+  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 10 },
+  topBarDesktop: { maxWidth: 860, alignSelf: 'center', width: '100%' },
+  backBtn: { width: 34, height: 34, borderRadius: 9, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+  topBarTitle: { flex: 1, fontSize: 16, fontWeight: '800', color: '#0F172A', letterSpacing: -0.2 },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#CBD5E1' },
+  editBtnText: { fontSize: 13, fontWeight: '700', color: '#0F2851' },
+  heroWrapper: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', width: '100%' },
+  heroCard: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14, gap: 12 },
+  heroCardDesktop: { maxWidth: 860, alignSelf: 'center', width: '100%' },
+  heroTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  avatar: { width: 58, height: 58, borderRadius: 18, alignItems: 'center', justifyContent: 'center', position: 'relative', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.18, shadowRadius: 8, elevation: 4 },
+  avatarText: { fontSize: 21, fontWeight: '900' },
+  statusDot: { position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: 7, borderWidth: 2.5, borderColor: '#FFFFFF' },
+  heroInfo: { flex: 1, gap: 5 },
   heroNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  heroWorkerName: { fontSize: 20, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
-  heroDesignationRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  skillBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: '#DBEAFE' },
-  skillBadgeText: { fontSize: 12, fontWeight: '700', color: '#1E40AF' },
-  rateText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
-  phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  heroName: { fontSize: 19, fontWeight: '900', color: '#0F172A', letterSpacing: -0.4 },
+  heroBadgeRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
+  skillChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: '#DBEAFE' },
+  skillChipText: { fontSize: 11, fontWeight: '700', color: '#1E40AF' },
+  rateChip: { fontSize: 12, fontWeight: '700', color: '#475569' },
+  otChip: { fontSize: 11, fontWeight: '600', color: '#D97706', backgroundColor: '#FFFBEB', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5, borderWidth: 1, borderColor: '#FDE68A' },
+  phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 1 },
   phoneText: { fontSize: 13, fontWeight: '600', color: '#16A34A' },
-  callPill: { backgroundColor: '#DCFCE7', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: '#BBF7D0' },
-  callPillText: { fontSize: 11, fontWeight: '800', color: '#15803D' },
-  balanceStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1 },
-  balanceStripPending: { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' },
-  balanceStripAdvance: { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' },
-  balanceStripSettled: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
-  balanceStripLabel: { fontSize: 11, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 },
-  balanceStripValue: { fontSize: 17, fontWeight: '800' },
-  payNowBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 9, borderWidth: 1 },
-  payNowBtnPending: { backgroundColor: '#D97706', borderColor: '#D97706' },
-  payNowBtnDefault: { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' },
-  payNowBtnText: { fontSize: 13, fontWeight: '800' },
-  tabBar: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', backgroundColor: '#FFFFFF', paddingHorizontal: 8 },
-  tabItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 12, borderBottomWidth: 2.5, borderBottomColor: 'transparent' },
+  callBadge: { backgroundColor: '#DCFCE7', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: '#BBF7D0' },
+  callBadgeText: { fontSize: 10, fontWeight: '800', color: '#15803D' },
+  balanceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1 },
+  balanceLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  balanceDot: { width: 8, height: 8, borderRadius: 4 },
+  balanceLabel: { fontSize: 10, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 },
+  balanceAmount: { fontSize: 16, fontWeight: '900', letterSpacing: -0.2 },
+  payBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 9, borderWidth: 1 },
+  payBtnPrimary: { backgroundColor: '#D97706', borderColor: '#D97706' },
+  payBtnSecondary: { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' },
+  payBtnText: { fontSize: 13, fontWeight: '700' },
+  tabBarWrapper: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', width: '100%', alignItems: 'center', justifyContent: 'center' },
+  tabBar: { flexDirection: 'row', maxWidth: 640, width: '100%', paddingHorizontal: 12 },
+  tabItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderBottomWidth: 2.5, borderBottomColor: 'transparent' },
   tabItemActive: { borderBottomColor: '#0F2851' },
-  tabItemText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
-  tabItemTextActive: { fontWeight: '800', color: '#0F2851' },
-  body: { flex: 1, backgroundColor: '#F8FAFC' },
-  bodyContent: { padding: 16, gap: 14 },
-  bodyContentDesktop: { maxWidth: 800, alignSelf: 'center', width: '100%' },
-  perfGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  perfCard: { flex: 1, minWidth: '46%', backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', gap: 4, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
-  perfIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  perfCardValue: { fontSize: 20, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
-  perfCardUnit: { fontSize: 13, fontWeight: '600', color: '#64748B' },
-  perfCardLabel: { fontSize: 12, fontWeight: '700', color: '#334155' },
-  perfCardFoot: { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
-  sectionCard: { backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#E2E8F0', padding: 14, gap: 12, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
-  sectionTitle: { fontSize: 14, fontWeight: '800', color: '#0F172A', letterSpacing: -0.1 },
-  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  countPill: { backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: '#DBEAFE' },
-  countPillText: { fontSize: 11, fontWeight: '700', color: '#1E40AF' },
-  finRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 8, borderWidth: 1, borderColor: '#E2E8F0' },
-  finCol: { flex: 1, alignItems: 'center' },
-  finColLabel: { fontSize: 10, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 3 },
-  finColValue: { fontSize: 15, fontWeight: '800' },
-  finDivider: { width: 1, height: 28, backgroundColor: '#E2E8F0' },
-  siteIconBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#E0F2FE', alignItems: 'center', justifyContent: 'center' },
-  siteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  tabLabel: { fontSize: 13, fontWeight: '600', color: '#94A3B8' },
+  tabLabelActive: { color: '#0F2851', fontWeight: '800' },
+  body: { flex: 1 },
+  bodyContent: { padding: 14, gap: 12 },
+  bodyContentDesktop: { maxWidth: 860, alignSelf: 'center', width: '100%' },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  statCard: { flex: 1, minWidth: '46%', borderRadius: 14, padding: 14, gap: 3 },
+  statIconBox: { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  statValue: { fontSize: 22, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
+  statUnit: { fontSize: 12, fontWeight: '600', color: '#64748B' },
+  statLabel: { fontSize: 12, fontWeight: '700', color: '#334155' },
+  statSub: { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden', shadowColor: '#0F172A', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  cardHeaderIcon: { width: 28, height: 28, borderRadius: 7, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  cardTitle: { flex: 1, fontSize: 14, fontWeight: '800', color: '#0F172A' },
+  countBadge: { backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, borderWidth: 1, borderColor: '#DBEAFE' },
+  countBadgeText: { fontSize: 11, fontWeight: '800', color: '#1E40AF' },
+  finGrid: { flexDirection: 'row', alignItems: 'center', margin: 12, borderRadius: 10, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', paddingVertical: 14 },
+  finItem: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
+  finLabel: { fontSize: 10, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 },
+  finValue: { fontSize: 15, fontWeight: '900' },
+  finDivider: { width: 1, height: 32, backgroundColor: '#E2E8F0' },
+  siteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
   siteRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  siteRowName: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
-  siteRowDays: { fontSize: 11, fontWeight: '500', color: '#64748B', marginTop: 1 },
-  siteRowEarned: { fontSize: 14, fontWeight: '800', color: '#0F2851' },
-  logCard: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  logDateBox: { width: 42, height: 48, borderRadius: 10, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center' },
-  logDateDay: { fontSize: 17, fontWeight: '800', color: '#1E40AF' },
-  logDateMonth: { fontSize: 10, fontWeight: '700', color: '#3B82F6', textTransform: 'uppercase' },
-  logMetaCol: { flex: 1, gap: 4 },
-  logSiteTitle: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
-  logBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  shiftBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5, borderWidth: 1 },
-  shiftBadgeFull: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
-  shiftBadgeHalf: { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' },
-  shiftBadgeText: { fontSize: 10, fontWeight: '700' },
-  shiftBadgeTextFull: { color: '#15803D' },
-  shiftBadgeTextHalf: { color: '#B45309' },
-  otBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#FFFBEB', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5, borderWidth: 1, borderColor: '#FDE68A' },
-  otBadgeText: { fontSize: 10, fontWeight: '700', color: '#D97706' },
-  logNotesText: { fontSize: 11, color: '#64748B', fontStyle: 'italic' },
-  logAmountCol: { alignItems: 'flex-end' },
-  logAmountText: { fontSize: 14, fontWeight: '800', color: '#0F2851' },
-  logAmountLabel: { fontSize: 10, fontWeight: '600', color: '#94A3B8', marginTop: 1 },
-  payModeBox: { width: 42, height: 48, borderRadius: 10, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0', alignItems: 'center', justifyContent: 'center' },
-  paymentMetaText: { fontSize: 11, color: '#64748B', fontWeight: '500' },
-  payAmountText: { fontSize: 14, fontWeight: '800', color: '#15803D' },
-  emptyBox: { alignItems: 'center', paddingVertical: 24, gap: 8 },
-  emptyText: { fontSize: 13, color: '#94A3B8', fontWeight: '500', textAlign: 'center' },
-  emptyActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, backgroundColor: '#15803D', paddingHorizontal: 16, paddingVertical: 9, borderRadius: 8 },
-  emptyActionBtnText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
+  siteIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#E0F2FE', alignItems: 'center', justifyContent: 'center' },
+  siteName: { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 2 },
+  siteDays: { fontSize: 11, color: '#64748B', fontWeight: '500' },
+  siteEarnedBox: { backgroundColor: '#F0FDF4', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4, borderWidth: 1, borderColor: '#BBF7D0' },
+  siteEarned: { fontSize: 13, fontWeight: '800', color: '#15803D' },
+  logRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  logRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+  dateBox: { width: 44, height: 50, borderRadius: 11, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center' },
+  dateDay: { fontSize: 18, fontWeight: '900', color: '#1E40AF', lineHeight: 20 },
+  dateMonth: { fontSize: 10, fontWeight: '700', color: '#3B82F6', textTransform: 'uppercase' },
+  modeBox: { width: 44, height: 50, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+  logMeta: { flex: 1, gap: 4 },
+  logSite: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
+  logBadges: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  shiftBadge: { paddingHorizontal: 7, paddingVertical: 2.5, borderRadius: 5, borderWidth: 1 },
+  shiftFull: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
+  shiftHalf: { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' },
+  shiftText: { fontSize: 10, fontWeight: '700' },
+  shiftTextFull: { color: '#15803D' },
+  shiftTextHalf: { color: '#B45309' },
+  otBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#FFFBEB', paddingHorizontal: 6, paddingVertical: 2.5, borderRadius: 5, borderWidth: 1, borderColor: '#FDE68A' },
+  otText: { fontSize: 10, fontWeight: '700', color: '#D97706' },
+  noteText: { fontSize: 11, color: '#94A3B8', fontStyle: 'italic' },
+  payMeta: { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
+  logAmount: { alignItems: 'flex-end', gap: 2 },
+  logAmountVal: { fontSize: 14, fontWeight: '900', color: '#0F2851' },
+  logAmountLabel: { fontSize: 10, fontWeight: '600', color: '#94A3B8' },
+  payAmountVal: { fontSize: 14, fontWeight: '900', color: '#16A34A' },
+  emptyState: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 20, gap: 8 },
+  emptyTitle: { fontSize: 15, fontWeight: '800', color: '#334155' },
+  emptyDesc: { fontSize: 13, color: '#94A3B8', textAlign: 'center', lineHeight: 18 },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, backgroundColor: '#0F2851', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 9 },
+  emptyBtnText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
 });

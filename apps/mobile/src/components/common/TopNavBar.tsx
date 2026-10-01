@@ -101,15 +101,15 @@ export function TopNavBar({
               </Text>
             ) : null}
           </Pressable>
-        ) : (
+        ) : icon ? (
           <View style={styles.iconBadge}>
             <AppIcon
-              name={icon || 'shield-checkmark'}
+              name={icon}
               size={18}
               color="#FFFFFF"
             />
           </View>
-        )}
+        ) : null}
 
         {/* Title & Subtitle */}
         <View style={styles.titleWrapper}>

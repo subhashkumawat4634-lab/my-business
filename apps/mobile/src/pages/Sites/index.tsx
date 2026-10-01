@@ -35,6 +35,40 @@ interface SitesPageProps {
   onRefresh: () => void;
 }
 
+function getSiteStatusTheme(status: string) {
+  switch (status) {
+    case 'ONGOING':
+      return {
+        color: '#16A34A',
+        accent: '#22C55E',
+        bg: '#F0FDF4',
+        badgeBg: '#DCFCE7',
+      };
+    case 'COMPLETED':
+      return {
+        color: '#2563EB',
+        accent: '#3B82F6',
+        bg: '#EFF6FF',
+        badgeBg: '#DBEAFE',
+      };
+    case 'PAUSED':
+      return {
+        color: '#D97706',
+        accent: '#F59E0B',
+        bg: '#FFFBEB',
+        badgeBg: '#FEF3C7',
+      };
+    case 'UPCOMING':
+    default:
+      return {
+        color: '#6366F1',
+        accent: '#818CF8',
+        bg: '#EEF2FF',
+        badgeBg: '#E0E7FF',
+      };
+  }
+}
+
 export function SitesPage({
   data,
   selectedSiteId,
@@ -628,6 +662,18 @@ export function SitesPage({
     (acc, s) => acc + (Number(s.contract_amount) || 0),
     0
   );
+  const totalPendingVal = data.sites.reduce((acc, s) => {
+    const f = siteSummary(s, data.attendance, data.entries);
+    return acc + (f.ownerBalance > 0 ? f.ownerBalance : 0);
+  }, 0);
+
+  const statusCounts: Record<string, number> = {
+    ALL: data.sites.length,
+    ONGOING: data.sites.filter((s) => s.status === 'ONGOING').length,
+    UPCOMING: data.sites.filter((s) => s.status === 'UPCOMING').length,
+    PAUSED: data.sites.filter((s) => s.status === 'PAUSED').length,
+    COMPLETED: data.sites.filter((s) => s.status === 'COMPLETED').length,
+  };
 
   return (
     <View style={styles.pageWrapper}>
@@ -673,7 +719,7 @@ export function SitesPage({
           <View style={styles.statBannerDivider} />
           <View style={styles.statBannerItem}>
             <Text style={styles.statBannerLabel}>Active Sites</Text>
-            <Text style={[styles.statBannerValue, { color: Colors.success }]}>
+            <Text style={[styles.statBannerValue, { color: '#16A34A' }]}>
               {ongoingSitesCount}
             </Text>
           </View>
@@ -682,6 +728,13 @@ export function SitesPage({
             <Text style={styles.statBannerLabel}>Total Value</Text>
             <Text style={styles.statBannerValue}>
               {money(totalContractVal)}
+            </Text>
+          </View>
+          <View style={styles.statBannerDivider} />
+          <View style={styles.statBannerItem}>
+            <Text style={styles.statBannerLabel}>Pending Due</Text>
+            <Text style={[styles.statBannerValue, { color: totalPendingVal > 0 ? '#D97706' : '#16A34A' }]}>
+              {money(totalPendingVal)}
             </Text>
           </View>
         </View>
@@ -694,104 +747,188 @@ export function SitesPage({
         />
 
         {/* Status Filter Chips */}
-        <View style={styles.chipsRow}>
-          {['ALL', 'ONGOING', 'UPCOMING', 'PAUSED', 'COMPLETED'].map((status) => (
-            <Pressable
-              key={status}
-              onPress={() => setStatusFilter(status)}
-              style={[
-                styles.chip,
-                statusFilter === status && styles.chipActive,
-              ]}
-            >
-              <Text
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsRow}
+        >
+          {['ALL', 'ONGOING', 'UPCOMING', 'PAUSED', 'COMPLETED'].map((status) => {
+            const isSelected = statusFilter === status;
+            return (
+              <Pressable
+                key={status}
+                onPress={() => setStatusFilter(status)}
                 style={[
-                  styles.chipText,
-                  statusFilter === status && styles.chipTextActive,
+                  styles.chip,
+                  isSelected && styles.chipActive,
                 ]}
               >
-                {status}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+                <Text
+                  style={[
+                    styles.chipText,
+                    isSelected && styles.chipTextActive,
+                  ]}
+                >
+                  {status} ({statusCounts[status] || 0})
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
 
-        {/* Sites List */}
+        {/* Sites List in Premium Single-Row Card UI */}
         {filteredSites.length ? (
-          <View style={[styles.sitesGrid, isDesktop && styles.desktopGrid]}>
+          <View style={styles.sitesGrid}>
             {filteredSites.map((siteItem) => {
               const f = siteSummary(siteItem, data.attendance, data.entries);
               const progress =
                 f.contract > 0 ? Math.min(1, f.received / f.contract) : 0;
+              const statusTheme = getSiteStatusTheme(siteItem.status);
+
               return (
                 <Pressable
                   key={siteItem.id}
                   onPress={() => onSelectSite(siteItem.id)}
-                  style={styles.siteCard}
+                  style={({ pressed }) => [
+                    styles.siteRowCard,
+                    pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
+                  ]}
                   accessibilityLabel={'Open site ' + siteItem.name}
                 >
-                  <View style={styles.siteCardTop}>
-                    <View style={styles.siteIconBadge}>
-                      <AppIcon
-                        name={
-                          siteItem.work_type === 'LABOUR'
-                            ? 'hammer-outline'
-                            : 'construct-outline'
-                        }
-                        size={20}
-                        color={Colors.primary}
-                      />
-                    </View>
-                    <Badge
-                      label={siteItem.status}
-                      tone={siteItem.status === 'PAUSED' ? 'orange' : 'green'}
-                    />
-                  </View>
+                  <View
+                    style={[
+                      styles.siteRowAccent,
+                      { backgroundColor: statusTheme.accent },
+                    ]}
+                  />
 
-                  <Text style={styles.siteName}>{siteItem.name}</Text>
-                  <Text style={styles.siteOwner}>
-                    {siteItem.owner_name} •{' '}
-                    {siteItem.work_type === 'LABOUR'
-                      ? 'Labour Only'
-                      : 'Labour + Material'}
-                  </Text>
-
-                  <View style={styles.siteProgressRow}>
-                    <View style={styles.progressBar}>
+                  <View style={styles.siteRowContent}>
+                    {/* Header Row: Icon + Title & Owner + Status Pill + Chevron */}
+                    <View style={styles.siteRowTop}>
                       <View
                         style={[
-                          styles.progressFill,
-                          { width: `${Math.round(progress * 100)}%` },
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.progressText}>
-                      {Math.round(progress * 100)}%
-                    </Text>
-                  </View>
-
-                  <View style={styles.siteCardFooter}>
-                    <View>
-                      <Text style={styles.metaLabel}>Contract</Text>
-                      <Text style={styles.metaValue}>{money(f.contract)}</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.metaLabel}>To Collect</Text>
-                      <Text
-                        style={[
-                          styles.metaValue,
-                          {
-                            color:
-                              f.ownerBalance < 0
-                                ? Colors.danger
-                                : Colors.warning,
-                          },
+                          styles.siteRowIconBadge,
+                          { backgroundColor: statusTheme.bg },
                         ]}
                       >
-                        {f.ownerBalance >= 0
-                          ? money(f.ownerBalance)
-                          : `${money(-f.ownerBalance)} Adv`}
+                        <AppIcon
+                          name={
+                            siteItem.work_type === 'LABOUR'
+                              ? 'hammer'
+                              : 'business'
+                          }
+                          size={18}
+                          color={statusTheme.color}
+                        />
+                      </View>
+
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <View style={styles.siteRowTitleWrap}>
+                          <Text style={styles.siteRowName} numberOfLines={1}>
+                            {siteItem.name}
+                          </Text>
+                          <View
+                            style={[
+                              styles.siteStatusPill,
+                              { backgroundColor: statusTheme.badgeBg },
+                            ]}
+                          >
+                            <View
+                              style={[
+                                styles.siteStatusDot,
+                                { backgroundColor: statusTheme.color },
+                              ]}
+                            />
+                            <Text
+                              style={[
+                                styles.siteStatusPillText,
+                                { color: statusTheme.color },
+                              ]}
+                            >
+                              {siteItem.status}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text style={styles.siteRowMeta} numberOfLines={1}>
+                          👤 {siteItem.owner_name || 'Direct Client'} •{' '}
+                          {siteItem.work_type === 'LABOUR'
+                            ? 'Labour Only'
+                            : 'Labour + Material'}
+                          {siteItem.phone ? ` • 📞 ${siteItem.phone}` : ''}
+                        </Text>
+                      </View>
+
+                      <View style={styles.siteRowChevron}>
+                        <AppIcon name="chevron-forward" size={16} color="#94A3B8" />
+                      </View>
+                    </View>
+
+                    {/* Progress Bar */}
+                    <View style={styles.siteRowProgressRow}>
+                      <View style={styles.siteRowProgressBar}>
+                        <View
+                          style={[
+                            styles.siteRowProgressFill,
+                            {
+                              width: `${Math.max(3, Math.round(progress * 100))}%`,
+                              backgroundColor: statusTheme.accent,
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.siteRowProgressText}>
+                        {Math.round(progress * 100)}% Recv
                       </Text>
+                    </View>
+
+                    {/* 3 Metric Pills Footer */}
+                    <View style={styles.siteRowMetricsFooter}>
+                      <View style={styles.siteRowMetricCol}>
+                        <Text style={styles.siteRowMetricLabel}>Contract</Text>
+                        <Text style={styles.siteRowMetricVal}>
+                          {money(f.contract)}
+                        </Text>
+                      </View>
+
+                      <View style={styles.siteRowMetricDiv} />
+
+                      <View style={styles.siteRowMetricCol}>
+                        <Text style={styles.siteRowMetricLabel}>Received</Text>
+                        <Text
+                          style={[
+                            styles.siteRowMetricVal,
+                            { color: '#16A34A' },
+                          ]}
+                        >
+                          {money(f.received)}
+                        </Text>
+                      </View>
+
+                      <View style={styles.siteRowMetricDiv} />
+
+                      <View style={styles.siteRowMetricCol}>
+                        <Text style={styles.siteRowMetricLabel}>Balance Due</Text>
+                        <Text
+                          style={[
+                            styles.siteRowMetricVal,
+                            {
+                              color:
+                                f.ownerBalance > 0
+                                  ? '#D97706'
+                                  : f.ownerBalance < 0
+                                  ? '#DC2626'
+                                  : '#16A34A',
+                            },
+                          ]}
+                        >
+                          {f.ownerBalance > 0
+                            ? money(f.ownerBalance)
+                            : f.ownerBalance < 0
+                            ? `${money(-f.ownerBalance)} Adv`
+                            : '₹0 Settled'}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </Pressable>
@@ -802,7 +939,7 @@ export function SitesPage({
           <EmptyState
             title="No Work Sites Found"
             description="No work sites found. Create a new site to start managing contract agreements, daily attendance and cash flows."
-            actionTitle="+ Create New Site"
+            actionTitle="Create New Site"
             onAction={onOpenNewSite}
           />
         )}
@@ -954,82 +1091,131 @@ const styles = StyleSheet.create({
   sitesGrid: {
     gap: 12,
   },
-  desktopGrid: {
+  siteRowCard: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  siteCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 16,
-    gap: 8,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
     elevation: 2,
   },
-  siteCardTop: {
+  siteRowAccent: {
+    width: 5,
+  },
+  siteRowContent: {
+    flex: 1,
+    padding: 12,
+    gap: 8,
+  },
+  siteRowTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
   },
-  siteIconBadge: {
+  siteRowIconBadge: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: Colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  siteName: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  siteOwner: {
-    fontSize: 12,
-    color: Colors.textMuted,
-  },
-  siteProgressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 4,
-  },
-  progressBar: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.surfaceSubtle,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.primary,
-  },
-  progressText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: Colors.primary,
-  },
-  siteCardFooter: {
+  siteRowTitleWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: Colors.surfaceSubtle,
+    gap: 6,
   },
-  metaLabel: {
+  siteRowName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+    flex: 1,
+  },
+  siteStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  siteStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  siteStatusPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'capitalize',
+  },
+  siteRowMeta: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  siteRowChevron: {
+    paddingLeft: 2,
+  },
+  siteRowProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  siteRowProgressBar: {
+    flex: 1,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#F1F5F9',
+    overflow: 'hidden',
+  },
+  siteRowProgressFill: {
+    height: 5,
+    borderRadius: 3,
+  },
+  siteRowProgressText: {
     fontSize: 10,
     fontWeight: '700',
-    color: Colors.textMuted,
-    textTransform: 'uppercase',
+    color: '#64748B',
   },
-  metaValue: {
-    fontSize: 14,
+  siteRowMetricsFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  siteRowMetricCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  siteRowMetricLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  siteRowMetricVal: {
+    fontSize: 12,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0F172A',
+    marginTop: 1,
+  },
+  siteRowMetricDiv: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#E2E8F0',
   },
   // Details view styles
   backRow: {

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../theme/colors';
@@ -52,6 +53,9 @@ export function ReceivePaymentModal({
   onClose,
   onSave,
 }: ReceivePaymentModalProps) {
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
+
   // Form State
   const [siteId, setSiteId] = useState<string>(
     spec.initial.site_id || data.sites[0]?.id || ''
@@ -178,20 +182,25 @@ export function ReceivePaymentModal({
       animationType="slide"
       onRequestClose={() => !busy && onClose()}
       presentationStyle="pageSheet"
+      transparent={isDesktop}
     >
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
+        <SafeAreaView
+          style={[styles.modalCard, isDesktop && styles.modalCardDesktop]}
+          edges={['top', 'bottom']}
         >
-          {/* Header */}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.headerIconBadge}>
                 <AppIcon name="arrow-down-circle" size={20} color="#15803D" />
               </View>
               <View>
-                <Text style={styles.headerTitle}>Paisa Aaya (Receive Payment)</Text>
+                <Text style={styles.headerTitle}>Receive Payment</Text>
                 <Text style={styles.headerSubtitle}>
                   Record client payment, milestone receipt & cash in
                 </Text>
@@ -626,29 +635,59 @@ export function ReceivePaymentModal({
               ) : (
                 <>
                   <AppIcon name="checkmark" size={18} color="#FFFFFF" />
-                  <Text style={styles.saveBtnText}>Save Payment (Paisa Aaya)</Text>
+                  <Text style={styles.saveBtnText}>Save Payment</Text>
                 </>
               )}
             </Pressable>
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
 
-      {/* Calendar Picker Modal */}
-      <CalendarPickerModal
-        visible={isCalendarOpen}
-        title="Select Payment Date"
-        selectedDate={date}
-        onSelect={(newDate) => {
-          if (newDate) setDate(newDate);
-        }}
-        onClose={() => setIsCalendarOpen(false)}
-      />
+        {/* Calendar Picker Modal */}
+        {isCalendarOpen && (
+          <CalendarPickerModal
+            visible={isCalendarOpen}
+            title="Select Payment Date"
+            selectedDate={date}
+            onSelect={(newDate) => {
+              if (newDate) setDate(newDate);
+            }}
+            onClose={() => setIsCalendarOpen(false)}
+          />
+        )}
+        </SafeAreaView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  modalOverlayDesktop: {
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    width: '100%',
+  },
+  modalCardDesktop: {
+    maxWidth: 680,
+    width: '100%',
+    maxHeight: '94%',
+    borderRadius: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+    overflow: 'hidden',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',

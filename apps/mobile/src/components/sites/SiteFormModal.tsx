@@ -1976,19 +1976,53 @@ export function SiteFormModal({
     return <View style={styles.pageRoot}>{content}</View>;
   }
 
+  const isDesktop = width > 768;
+
   return (
     <Modal
       visible
       animationType="slide"
       onRequestClose={() => !busy && onClose()}
       presentationStyle="pageSheet"
+      transparent={isDesktop}
     >
-      {content}
+      <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
+        <View style={[styles.modalCard, isDesktop && styles.modalCardDesktop]}>
+          {content}
+        </View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  modalOverlayDesktop: {
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    width: '100%',
+  },
+  modalCardDesktop: {
+    maxWidth: 780,
+    width: '100%',
+    maxHeight: '94%',
+    borderRadius: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+    overflow: 'hidden',
+  },
   pageRoot: {
     flex: 1,
     backgroundColor: '#F8FAFC',

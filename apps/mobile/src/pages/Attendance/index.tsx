@@ -186,26 +186,12 @@ export function AttendancePage({
       <TopNavBar
         title="Daily Haziri Register"
         subtitle="Present, half day, absent & overtime"
-        icon="calendar-outline"
         badge={{
           label: `${stats.present} Present today`,
           tone: stats.present > 0 ? 'green' : 'orange',
         }}
         onRefresh={onRefresh}
         refreshing={refreshing}
-        actions={
-          <Pressable
-            onPress={() => onOpenAttendanceModal()}
-            style={({ pressed }) => [
-              styles.navActionBtn,
-              pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-            ]}
-            accessibilityLabel="Mark attendance"
-          >
-            <AppIcon name="add" size={17} color="#FFFFFF" />
-            <Text style={styles.navActionBtnText}>Haziri Lagao</Text>
-          </Pressable>
-        }
       />
 
       <ScrollView
@@ -222,139 +208,37 @@ export function AttendancePage({
         <View style={styles.container}>
           {/* 1. DATE NAVIGATION & FILTER STRIP */}
           <View style={styles.dateNavigatorCard}>
-            <View style={styles.dateControlRow}>
-              {/* Prev Day Button */}
-              <Pressable
-                onPress={() => {
-                  setDateMode('selected');
-                  setSelectedDate(shiftDate(selectedDate, -1));
-                }}
-                style={({ pressed }) => [
-                  styles.dateNavArrow,
-                  pressed && { backgroundColor: '#E2E8F0' },
-                ]}
-                accessibilityLabel="Previous day"
-              >
-                <AppIcon name="chevron-back" size={18} color="#1E293B" />
-              </Pressable>
-
-              {/* Main Date Display & Modal Opener */}
-              <Pressable
-                onPress={() => setIsCalendarOpen(true)}
-                style={({ pressed }) => [
-                  styles.currentDatePill,
-                  pressed && { opacity: 0.8 },
-                ]}
-                accessibilityLabel="Choose date"
-              >
-                <View style={styles.calendarIconCircle}>
-                  <AppIcon name="calendar" size={16} color="#2563EB" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={styles.currentDateText}>
-                      {dateMode === 'all'
-                        ? 'All Dates'
-                        : formatDateDisplay(selectedDate)}
-                    </Text>
-                    {dateMode === 'selected' && isToday ? (
-                      <View style={styles.todayTag}>
-                        <Text style={styles.todayTagText}>Today</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text style={styles.currentDateSub}>
+            <Pressable
+              onPress={() => setIsCalendarOpen(true)}
+              style={({ pressed }) => [
+                styles.currentDatePill,
+                pressed && { opacity: 0.8 },
+              ]}
+              accessibilityLabel="Choose date"
+            >
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.currentDateText}>
                     {dateMode === 'all'
-                      ? 'Showing complete historical register'
-                      : 'Tap to pick any calendar date'}
+                      ? 'All Dates'
+                      : formatDateDisplay(selectedDate)}
                   </Text>
+                  {dateMode === 'selected' && isToday ? (
+                    <View style={styles.todayTag}>
+                      <Text style={styles.todayTagText}>Today</Text>
+                    </View>
+                  ) : null}
                 </View>
-                <AppIcon name="chevron-down" size={16} color="#64748B" />
-              </Pressable>
-
-              {/* Next Day Button */}
-              <Pressable
-                onPress={() => {
-                  setDateMode('selected');
-                  setSelectedDate(shiftDate(selectedDate, 1));
-                }}
-                style={({ pressed }) => [
-                  styles.dateNavArrow,
-                  pressed && { backgroundColor: '#E2E8F0' },
-                ]}
-                accessibilityLabel="Next day"
-              >
-                <AppIcon name="chevron-forward" size={18} color="#1E293B" />
-              </Pressable>
-            </View>
-
-            {/* Quick Date Chips */}
-            <View style={styles.quickDateChipsRow}>
-              <Pressable
-                onPress={() => {
-                  setDateMode('selected');
-                  setSelectedDate(currentDate);
-                }}
-                style={[
-                  styles.quickDateChip,
-                  dateMode === 'selected' && isToday && styles.quickDateChipActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.quickDateChipText,
-                    dateMode === 'selected' && isToday && styles.quickDateChipTextActive,
-                  ]}
-                >
-                  Today
+                <Text style={styles.currentDateSub}>
+                  {dateMode === 'all'
+                    ? 'Showing complete historical register'
+                    : 'Tap to pick any calendar date'}
                 </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => {
-                  setDateMode('selected');
-                  setSelectedDate(yesterdayDate);
-                }}
-                style={[
-                  styles.quickDateChip,
-                  dateMode === 'selected' && isYesterday && styles.quickDateChipActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.quickDateChipText,
-                    dateMode === 'selected' && isYesterday && styles.quickDateChipTextActive,
-                  ]}
-                >
-                  Yesterday
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => setDateMode('all')}
-                style={[
-                  styles.quickDateChip,
-                  dateMode === 'all' && styles.quickDateChipActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.quickDateChipText,
-                    dateMode === 'all' && styles.quickDateChipTextActive,
-                  ]}
-                >
-                  All Records
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => setIsCalendarOpen(true)}
-                style={styles.calendarPickChip}
-              >
-                <AppIcon name="calendar-outline" size={13} color="#2563EB" />
-                <Text style={styles.calendarPickChipText}>Calendar</Text>
-              </Pressable>
-            </View>
+              </View>
+              <View style={styles.calendarIconCircle}>
+                <AppIcon name="calendar" size={16} color="#2563EB" />
+              </View>
+            </Pressable>
           </View>
 
           {/* 2. STATS SUMMARY CARDS */}
@@ -534,59 +418,59 @@ export function AttendancePage({
 
           {/* 4. UNMARKED WORKERS SECTION (Fast 1-tap Haziri Marking) */}
           {dateMode === 'selected' &&
-            statusFilter !== '1' &&
-            statusFilter !== '0.5' &&
-            statusFilter !== '0' &&
-            unmarkedWorkers.length > 0 && (
-              <View style={styles.unmarkedSection}>
-                <View style={styles.unmarkedHeaderRow}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <View style={styles.unmarkedDot} />
-                    <Text style={styles.unmarkedSectionTitle}>
-                      Pending Haziri ({unmarkedWorkers.length})
-                    </Text>
-                  </View>
-                  <Text style={styles.unmarkedSectionSub}>
-                    Tap to mark attendance
+          statusFilter !== '1' &&
+          statusFilter !== '0.5' &&
+          statusFilter !== '0' &&
+          unmarkedWorkers.length > 0 ? (
+            <View style={styles.unmarkedSection}>
+              <View style={styles.unmarkedHeaderRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={styles.unmarkedDot} />
+                  <Text style={styles.unmarkedSectionTitle}>
+                    Pending Haziri ({unmarkedWorkers.length})
                   </Text>
                 </View>
-
-                <View style={styles.unmarkedGrid}>
-                  {unmarkedWorkers.map((w) => (
-                    <Pressable
-                      key={w.id}
-                      onPress={() => onOpenAttendanceModal(undefined, w.id)}
-                      style={({ pressed }) => [
-                        styles.unmarkedWorkerCard,
-                        pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] },
-                      ]}
-                      accessibilityLabel={'Mark haziri for ' + w.name}
-                    >
-                      <View style={styles.unmarkedWorkerLeft}>
-                        <View style={styles.unmarkedAvatar}>
-                          <Text style={styles.unmarkedAvatarText}>
-                            {(w.name || 'W').slice(0, 2).toUpperCase()}
-                          </Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.unmarkedWorkerName} numberOfLines={1}>
-                            {w.name}
-                          </Text>
-                          <Text style={styles.unmarkedWorkerSkill} numberOfLines={1}>
-                            {w.skill || 'Worker'} • {money(w.daily_rate)}/day
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.unmarkedActionBtn}>
-                        <AppIcon name="add" size={14} color="#2563EB" />
-                        <Text style={styles.unmarkedActionBtnText}>Mark</Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
+                <Text style={styles.unmarkedSectionSub}>
+                  Tap to mark attendance
+                </Text>
               </View>
-            )}
+
+              <View style={styles.unmarkedGrid}>
+                {unmarkedWorkers.map((w) => (
+                  <Pressable
+                    key={w.id}
+                    onPress={() => onOpenAttendanceModal(undefined, w.id)}
+                    style={({ pressed }) => [
+                      styles.unmarkedWorkerCard,
+                      pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] },
+                    ]}
+                    accessibilityLabel={'Mark haziri for ' + w.name}
+                  >
+                    <View style={styles.unmarkedWorkerLeft}>
+                      <View style={styles.unmarkedAvatar}>
+                        <Text style={styles.unmarkedAvatarText}>
+                          {(w.name || 'W').slice(0, 2).toUpperCase()}
+                        </Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.unmarkedWorkerName} numberOfLines={1}>
+                          {w.name}
+                        </Text>
+                        <Text style={styles.unmarkedWorkerSkill} numberOfLines={1}>
+                          {w.skill || 'Worker'} • {money(w.daily_rate)}/day
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.unmarkedActionBtn}>
+                      <AppIcon name="add" size={14} color="#2563EB" />
+                      <Text style={styles.unmarkedActionBtnText}>Mark</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
 
           {/* 5. RECORDED ATTENDANCE CARDS LIST */}
           <View style={styles.recordsListSection}>
@@ -596,11 +480,11 @@ export function AttendancePage({
                   ? `Recorded Attendance (${filteredAttendance.length})`
                   : `All Attendance Records (${filteredAttendance.length})`}
               </Text>
-              {filteredAttendance.length > 0 && (
+              {filteredAttendance.length > 0 ? (
                 <Text style={styles.recordsHeaderSub}>
                   Tap any card to correct or edit
                 </Text>
-              )}
+              ) : null}
             </View>
 
             {filteredAttendance.map((a) => {
@@ -716,7 +600,7 @@ export function AttendancePage({
                     </View>
 
                     {/* Middle Row: Overtime & Notes if applicable */}
-                    {(otMins > 0 || a.notes) && (
+                    {(otMins > 0 || Boolean(a.notes)) ? (
                       <View style={styles.cardDetailsRow}>
                         {otMins > 0 ? (
                           <View style={styles.overtimePill}>
@@ -736,7 +620,7 @@ export function AttendancePage({
                           </View>
                         ) : null}
                       </View>
-                    )}
+                    ) : null}
 
                     {/* Bottom Row: Wage Earned + Edit CTA */}
                     <View style={styles.cardFooterRow}>
@@ -756,7 +640,7 @@ export function AttendancePage({
             })}
 
             {/* Empty State */}
-            {!filteredAttendance.length && statusFilter !== 'UNMARKED' && (
+            {!filteredAttendance.length && statusFilter !== 'UNMARKED' ? (
               <EmptyState
                 title={
                   query
@@ -770,10 +654,8 @@ export function AttendancePage({
                     ? 'Try searching with a different worker or site name.'
                     : 'Mark attendance to track daily wages, half days, and overtime.'
                 }
-                actionTitle="+ Mark Attendance"
-                onAction={() => onOpenAttendanceModal()}
               />
-            )}
+            ) : null}
           </View>
         </View>
       </ScrollView>
@@ -865,16 +747,16 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
   },
   currentDatePill: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
+    gap: 12,
     backgroundColor: '#F8FAFC',
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#E2E8F0',
   },
   calendarIconCircle: {
     width: 32,

@@ -13,8 +13,10 @@ import { AttendanceModal } from './src/components/attendance/AttendanceModal';
 import { MaterialBillModal } from './src/components/bills/MaterialBillModal';
 import { ExtraWorkModal } from './src/components/bills/ExtraWorkModal';
 import { ReceivePaymentModal } from './src/components/bills/ReceivePaymentModal';
+import { ExpenseBillModal } from './src/components/bills/ExpenseBillModal';
 import { WorkerFormModal } from './src/components/workers/WorkerFormModal';
 import { LabourPaymentModal } from './src/components/workers/LabourPaymentModal';
+import { VoidEntryModal } from './src/components/common/VoidEntryModal';
 
 // Pages
 import { AuthPage } from './src/pages/Auth';
@@ -509,6 +511,19 @@ function MainApp() {
           }}
           onSave={handleSaveForm}
         />
+      ) : form && form.action === 'entry.create' && (form.title.toLowerCase().includes('expense') || form.title.toLowerCase().includes('kharcha')) && data ? (
+        <ExpenseBillModal
+          key={form.action + (form.entity_id || '')}
+          spec={form}
+          data={data}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setForm(null);
+            setError('');
+          }}
+          onSave={handleSaveForm}
+        />
       ) : form && form.action === 'entry.create' && form.title.toLowerCase().includes('extra') && data ? (
         <ExtraWorkModal
           key={form.action + (form.entity_id || '')}
@@ -569,6 +584,21 @@ function MainApp() {
             setForm(null);
             openAttendanceModal(undefined, wId);
           }}
+        />
+      ) : form && form.action === 'entry.void' && data ? (
+        <VoidEntryModal
+          key={form.action + (form.entity_id || '')}
+          spec={form}
+          entry={data.entries.find((e) => e.id === form.entity_id)}
+          site={data.sites.find((s) => s.id === data.entries.find((e) => e.id === form.entity_id)?.site_id)}
+          worker={data.workers.find((w) => w.id === data.entries.find((e) => e.id === form.entity_id)?.worker_id)}
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setForm(null);
+            setError('');
+          }}
+          onSave={handleSaveForm}
         />
       ) : form ? (
         <FormModal

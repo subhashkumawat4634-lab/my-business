@@ -1,5 +1,4 @@
-import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet, Platform } from 'react-native';
 import { Colors } from '../../theme/colors';
 import { AppIcon } from '../icons/AppIcon';
 
@@ -18,7 +17,12 @@ export function SearchBar({
     <View style={styles.container}>
       <AppIcon name="search-outline" size={18} color={Colors.textMuted} />
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          Platform.OS === 'web'
+            ? ({ outlineStyle: 'none', outlineWidth: 0 } as any)
+            : undefined,
+        ]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../theme/colors';
@@ -75,6 +76,9 @@ export function AttendanceModal({
   onClose,
   onSave,
 }: AttendanceModalProps) {
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
+
   const isCorrection = spec.title.toLowerCase().includes('correct');
 
   // Form State
@@ -241,13 +245,18 @@ export function AttendanceModal({
       animationType="slide"
       onRequestClose={() => !busy && onClose()}
       presentationStyle="pageSheet"
+      transparent={isDesktop}
     >
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
+        <SafeAreaView
+          style={[styles.modalCard, isDesktop && styles.modalCardDesktop]}
+          edges={['top', 'bottom']}
         >
-          {/* Header */}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.headerIconBadge}>
@@ -878,34 +887,66 @@ export function AttendanceModal({
             </Pressable>
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
 
-      {/* Calendar Picker Modal */}
-      <CalendarPickerModal
-        visible={isCalendarOpen}
-        title="Select Attendance Date"
-        selectedDate={date}
-        onSelect={(newDate) => {
-          if (newDate) setDate(newDate);
-        }}
-        onClose={() => setIsCalendarOpen(false)}
-      />
+        {/* Calendar Picker Modal */}
+        {isCalendarOpen && (
+          <CalendarPickerModal
+            visible={isCalendarOpen}
+            title="Select Attendance Date"
+            selectedDate={date}
+            onSelect={(newDate) => {
+              if (newDate) setDate(newDate);
+            }}
+            onClose={() => setIsCalendarOpen(false)}
+          />
+        )}
 
-      {/* Overtime Clock Picker Modal */}
-      <ClockPickerModal
-        visible={isClockPickerOpen}
-        initialMinutes={currentOtMins}
-        hourlyRate={Number(selectedWorker?.overtime_rate || 0)}
-        onClose={() => setIsClockPickerOpen(false)}
-        onConfirm={(newMins) => {
-          setOvertimeMinutes(String(newMins));
-        }}
-      />
+        {/* Overtime Clock Picker Modal */}
+        {isClockPickerOpen && (
+          <ClockPickerModal
+            visible={isClockPickerOpen}
+            initialMinutes={currentOtMins}
+            hourlyRate={Number(selectedWorker?.overtime_rate || 0)}
+            onClose={() => setIsClockPickerOpen(false)}
+            onConfirm={(newMins) => {
+              setOvertimeMinutes(String(newMins));
+            }}
+          />
+        )}
+        </SafeAreaView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  modalOverlayDesktop: {
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    width: '100%',
+  },
+  modalCardDesktop: {
+    maxWidth: 680,
+    width: '100%',
+    maxHeight: '94%',
+    borderRadius: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+    overflow: 'hidden',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',
