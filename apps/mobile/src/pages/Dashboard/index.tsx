@@ -24,6 +24,7 @@ interface DashboardPageProps {
   onOpenAttendance: () => void;
   onOpenEntry: (kind: string) => void;
   onNavigateTab: (tabKey: string) => void;
+  onUpdateProfile?: (values: { name?: string; organization_name?: string }) => Promise<void> | void;
   onLogout?: () => void;
 }
 
@@ -36,6 +37,7 @@ export function DashboardPage({
   onOpenAttendance,
   onOpenEntry,
   onNavigateTab,
+  onUpdateProfile,
   onLogout,
 }: DashboardPageProps) {
   const { width } = useWindowDimensions();
@@ -77,8 +79,10 @@ export function DashboardPage({
       <TopNavBar
         title="ThekaBook"
         subtitle={data.organization.name}
-        icon="shield-checkmark"
         userInitials={data.user.name}
+        organizationName={data.organization.name}
+        onOpenProfile={() => onNavigateTab('profile')}
+        onUpdateProfile={onUpdateProfile}
         onLogout={onLogout}
         onRefresh={onRefresh}
         refreshing={refreshing}
@@ -139,7 +143,6 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Add payment received"
               >
-                <AppIcon name="add" size={16} color="#FFFFFF" />
                 <Text style={styles.heroAddBtnText}>Payment In</Text>
               </Pressable>
             </View>

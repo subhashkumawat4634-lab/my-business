@@ -9,6 +9,7 @@ export interface AppIconProps {
   size?: number;
   color?: string;
   source?: IconSource;
+  style?: any;
 }
 
 export function AppIcon({
@@ -16,9 +17,10 @@ export function AppIcon({
   size = 22,
   color = Colors.textPrimary,
   source = 'ion',
+  style,
 }: AppIconProps) {
   if (source === 'material') {
-    return <MaterialCommunityIcons name={name as any} size={size} color={color} />;
+    return <MaterialCommunityIcons name={name as any} size={size} color={color} style={style} />;
   }
-  return <Ionicons name={name as any} size={size} color={color} />;
+  return <Ionicons name={name as any} size={size} color={color} style={style} />;
 }

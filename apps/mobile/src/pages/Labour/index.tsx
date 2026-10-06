@@ -192,7 +192,6 @@ export function LabourPage({
     <View style={styles.pageWrapper}>
       <TopNavBar
         title="Labour & Team"
-        icon="people-outline"
         onRefresh={onRefresh}
         refreshing={refreshing}
         actions={
@@ -204,7 +203,6 @@ export function LabourPage({
             ]}
             accessibilityLabel="Add new worker"
           >
-            <AppIcon name="add" size={17} color="#FFFFFF" />
             <Text style={styles.navActionBtnText}>Add Worker</Text>
           </Pressable>
         }

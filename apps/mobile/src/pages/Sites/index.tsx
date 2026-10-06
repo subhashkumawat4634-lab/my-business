@@ -679,7 +679,6 @@ export function SitesPage({
     <View style={styles.pageWrapper}>
       <TopNavBar
         title="Work Sites"
-        icon="business-outline"
         onRefresh={onRefresh}
         refreshing={refreshing}
         actions={
@@ -691,7 +690,6 @@ export function SitesPage({
             ]}
             accessibilityLabel="Create new work site"
           >
-            <AppIcon name="add" size={18} color="#FFFFFF" />
             <Text style={styles.navNewSiteBtnText}>New Site</Text>
           </Pressable>
         }

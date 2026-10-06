@@ -98,11 +98,10 @@ export function HisabPage({
 
   return (
     <View style={styles.pageWrapper}>
-      {/* Top Navigation Bar - No duplicate Paisa Aaya button in corner */}
+      {/* Top Navigation Bar */}
       <TopNavBar
         title="Hisab & Ledger"
         subtitle="Money in, costs incurred & cash paid out"
-        icon="wallet-outline"
         onRefresh={onRefresh}
         refreshing={refreshing}
       />
@@ -726,7 +725,7 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 40,
@@ -738,6 +737,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: '#0F172A',
+    backgroundColor: 'transparent',
     paddingVertical: 4,
   },
   filterChipsRow: {

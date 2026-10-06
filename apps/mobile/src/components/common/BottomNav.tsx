@@ -22,6 +22,11 @@ export function BottomNav({ tabs, activeTab, onTabPress }: BottomNavProps) {
       <View style={styles.inner}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
+          const activeIconName = tab.icon.endsWith('-outline')
+            ? tab.icon.replace('-outline', '')
+            : tab.icon;
+          const iconName = isActive ? activeIconName : tab.icon;
+
           return (
             <Pressable
               key={tab.key}
@@ -33,9 +38,9 @@ export function BottomNav({ tabs, activeTab, onTabPress }: BottomNavProps) {
             >
               <View style={[styles.iconWrapper, isActive && styles.activeIconWrapper]}>
                 <AppIcon
-                  name={tab.icon}
-                  size={isActive ? 22 : 20}
-                  color={isActive ? Colors.primary : Colors.textMuted}
+                  name={iconName}
+                  size={isActive ? 23 : 21}
+                  color={isActive ? '#1D4ED8' : '#475569'}
                 />
                 {tab.badge ? (
                   <View style={styles.badge}>
@@ -62,15 +67,15 @@ export function BottomNav({ tabs, activeTab, onTabPress }: BottomNavProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1.5,
+    borderTopColor: '#E2E8F0',
     paddingBottom: Platform.OS === 'ios' ? 24 : 8,
     paddingTop: 8,
-    shadowColor: '#000',
+    shadowColor: '#0F2851',
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 12,
   },
   inner: {
@@ -88,8 +93,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   iconWrapper: {
-    width: 42,
-    height: 30,
+    width: 46,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
@@ -97,25 +102,27 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   activeIconWrapper: {
-    backgroundColor: Colors.primarySurface,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
   },
   label: {
     fontSize: 11,
     letterSpacing: 0.1,
   },
   activeLabel: {
-    fontWeight: '800',
-    color: Colors.primary,
+    fontWeight: '900',
+    color: '#1D4ED8',
   },
   inactiveLabel: {
-    fontWeight: '500',
-    color: Colors.textMuted,
+    fontWeight: '700',
+    color: '#475569',
   },
   badge: {
     position: 'absolute',
     top: -2,
     right: 4,
-    backgroundColor: Colors.warning,
+    backgroundColor: '#E65100',
     borderRadius: 8,
     minWidth: 16,
     height: 16,

@@ -26,12 +26,14 @@ import { AttendancePage } from './src/pages/Attendance';
 import { LabourPage } from './src/pages/Labour';
 import { HisabPage } from './src/pages/Hisab';
 import { ReportsPage } from './src/pages/Reports';
+import { ProfilePage } from './src/pages/Profile';
 
 // API & Helpers
 import { getToken, saveToken, request, commandKey } from './src/api';
 import { attendanceForm, entryForm, siteForm, workerForm, voidForm } from './src/forms';
 import { pdfReport, shareReport } from './src/report';
 import { FormSpec, Row, Snapshot } from './src/types';
+import { LanguageProvider } from './src/i18n';
 
 const NAV_TABS: TabItem[] = [
   { key: 'home', label: 'Overview', icon: 'grid-outline' },
@@ -72,6 +74,9 @@ function MainApp() {
       if (path === '/reports') {
         return { tab: 'reports', selectedSiteId: null, isNewSite: false };
       }
+      if (path === '/profile') {
+        return { tab: 'profile', selectedSiteId: null, isNewSite: false };
+      }
     }
     return { tab: 'home', selectedSiteId: null, isNewSite: false };
   };
@@ -86,10 +91,39 @@ function MainApp() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
-
   const pendingRef = useRef<{ signature: string; key: string } | null>(null);
 
   useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.documentElement.style.colorScheme = 'light';
+      document.documentElement.style.backgroundColor = '#F4F6F9';
+      if (document.body) {
+        document.body.style.backgroundColor = '#F4F6F9';
+        document.body.style.color = '#0F172A';
+      }
+      let styleEl = document.getElementById('thekabook-web-light-styles');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'thekabook-web-light-styles';
+        document.head.appendChild(styleEl);
+      }
+      styleEl.innerHTML = `
+        html, body, #root {
+          background-color: #F4F6F9 !important;
+          color: #0F172A !important;
+          color-scheme: light !important;
+        }
+        input, textarea, select {
+          background-color: transparent !important;
+          color: #0F172A !important;
+          color-scheme: light !important;
+        }
+        input::placeholder, textarea::placeholder {
+          color: #94A3B8 !important;
+        }
+      `;
+    }
+
     getToken()
       .then((t) => {
         setToken(t);
@@ -185,6 +219,28 @@ function MainApp() {
     }
   }
 
+  async function handleUpdateProfile(values: { name?: string; organization_name?: string }) {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const body = {
+        action: 'profile.update',
+        data: values,
+      };
+      await request('/commands', token, {
+        ...body,
+        key: commandKey(),
+      });
+      setToast('Profile updated successfully');
+      await refresh();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function navigate(
     newTab: string,
     urlPath?: string,
@@ -242,6 +298,10 @@ function MainApp() {
           setSelectedSiteId(null);
         } else if (path === '/reports') {
           setTab('reports');
+          setIsNewSite(false);
+          setSelectedSiteId(null);
+        } else if (path === '/profile') {
+          setTab('profile');
           setIsNewSite(false);
           setSelectedSiteId(null);
         } else {
@@ -403,6 +463,7 @@ function MainApp() {
                 onOpenAttendance={() => openAttendanceModal()}
                 onOpenEntry={(kind) => openEntryModal(kind)}
                 onNavigateTab={handleNavigate}
+                onUpdateProfile={handleUpdateProfile}
                 onLogout={handleLogout}
               />
             )}
@@ -459,6 +520,17 @@ function MainApp() {
             onGenerateReport={handleShareReport}
             refreshing={refreshing}
             onRefresh={() => refresh()}
+          />
+        )}
+
+        {tab === 'profile' && (
+          <ProfilePage
+            data={data}
+            onBack={() => navigate('home', '/', null, false)}
+            onUpdateProfile={handleUpdateProfile}
+            onLogout={handleLogout}
+            onRefresh={() => refresh()}
+            refreshing={refreshing}
           />
         )}
           </>
@@ -620,7 +692,9 @@ function MainApp() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <MainApp />
+      <LanguageProvider>
+        <MainApp />
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }

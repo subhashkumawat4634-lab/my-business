@@ -1447,6 +1447,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     color: '#0F172A',
+    backgroundColor: 'transparent',
     paddingVertical: 4,
   },
   filterChipsScroll: {

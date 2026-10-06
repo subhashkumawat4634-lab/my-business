@@ -44,7 +44,6 @@ export function ReportsPage({
       <TopNavBar
         title="Reports & Statements"
         subtitle="Business performance, site margins & audit history"
-        icon="bar-chart-outline"
         onRefresh={onRefresh}
         refreshing={refreshing}
       />
