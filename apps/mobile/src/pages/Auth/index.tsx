@@ -28,6 +28,12 @@ export function AuthPage({ onLogin }: AuthPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const nameInputRef = React.useRef<TextInput>(null);
+  const orgInputRef = React.useRef<TextInput>(null);
+  const emailInputRef = React.useRef<TextInput>(null);
+  const passwordInputRef = React.useRef<TextInput>(null);
 
   async function submit() {
     if (busy) return;
@@ -70,6 +76,10 @@ export function AuthPage({ onLogin }: AuthPageProps) {
 
   return (
     <SafeAreaView style={styles.root}>
+      {/* Background Ambient Decorative Circles */}
+      <View style={styles.bgGlowTop} pointerEvents="none" />
+      <View style={styles.bgGlowBottom} pointerEvents="none" />
+
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -80,14 +90,24 @@ export function AuthPage({ onLogin }: AuthPageProps) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.cardContainer}>
-            {/* App Logo & Header */}
+            {/* Top Accent Gradient Line */}
+            <View style={styles.cardAccentBar} />
+
+            {/* Brand Emblem & Header */}
             <View style={styles.brandHeader}>
-              <View style={styles.logoBadge}>
-                <AppIcon name="shield-checkmark" size={28} color="#FFFFFF" />
+              <View style={styles.logoBadgeContainer}>
+                <View style={styles.logoGlow} />
+                <View style={styles.logoBadge}>
+                  <AppIcon name="shield-checkmark" size={30} color="#FFFFFF" />
+                </View>
               </View>
-              <Text style={styles.brandTitle}>ThekaBook</Text>
-              <View style={styles.brandTag}>
-                <Text style={styles.brandTagText}>CONTRACTOR WORKSPACE</Text>
+
+              <View style={styles.titleWrap}>
+                <Text style={styles.brandTitle}>Theka<Text style={styles.brandTitleAccent}>Book</Text></Text>
+                <View style={styles.proPill}>
+                  <AppIcon name="flash" size={10} color="#0284C7" />
+                  <Text style={styles.proPillText}>CONTRACTOR WORKSPACE</Text>
+                </View>
               </View>
             </View>
 
@@ -104,8 +124,8 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                 ]}
               >
                 <AppIcon
-                  name="log-in-outline"
-                  size={17}
+                  name={!isRegister ? "log-in" : "log-in-outline"}
+                  size={18}
                   color={!isRegister ? Colors.primary : Colors.textMuted}
                 />
                 <Text
@@ -129,8 +149,8 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                 ]}
               >
                 <AppIcon
-                  name="person-add-outline"
-                  size={17}
+                  name={isRegister ? "person-add" : "person-add-outline"}
+                  size={18}
                   color={isRegister ? Colors.primary : Colors.textMuted}
                 />
                 <Text
@@ -151,15 +171,17 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               </Text>
               <Text style={styles.formSubtitle}>
                 {isRegister
-                  ? 'Set up your contractor profile to start managing sites.'
-                  : 'Enter your credentials to access your contractor ledger.'}
+                  ? 'Enter your business details to get started.'
+                  : 'Enter your credentials to access your account.'}
               </Text>
             </View>
 
-            {/* Error Message Box */}
+            {/* Error Message Alert */}
             {error ? (
               <View style={styles.errorAlert}>
-                <AppIcon name="alert-circle" size={18} color="#DC2626" />
+                <View style={styles.errorIconWrap}>
+                  <AppIcon name="alert-circle" size={18} color="#DC2626" />
+                </View>
                 <Text style={styles.errorAlertText}>{error}</Text>
               </View>
             ) : null}
@@ -169,48 +191,89 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               {isRegister && (
                 <>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>YOUR FULL NAME</Text>
-                    <View style={styles.inputBox}>
-                      <View style={styles.inputIconWrap}>
-                        <AppIcon name="person-outline" size={18} color={Colors.textMuted} />
+                    <Text style={styles.inputLabel}>FULL NAME</Text>
+                    <Pressable
+                      onPress={() => nameInputRef.current?.focus()}
+                      style={[
+                        styles.inputBox,
+                        focusedField === 'name' && styles.inputBoxFocused,
+                      ]}
+                    >
+                      <View style={styles.inputIconWrap} pointerEvents="none">
+                        <AppIcon
+                          name="person-outline"
+                          size={19}
+                          color={focusedField === 'name' ? Colors.accent : Colors.textMuted}
+                        />
                       </View>
                       <TextInput
+                        ref={nameInputRef}
                         accessibilityLabel="Your full name"
                         style={styles.textInput}
                         placeholder="e.g. Rajesh Sharma"
                         placeholderTextColor={Colors.textSubtle}
                         value={name}
                         onChangeText={setName}
+                        onFocus={() => setFocusedField('name')}
+                        onBlur={() => setFocusedField(null)}
+                        returnKeyType="next"
+                        onSubmitEditing={() => orgInputRef.current?.focus()}
                       />
-                    </View>
+                    </Pressable>
                   </View>
 
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>BUSINESS / FIRM NAME</Text>
-                    <View style={styles.inputBox}>
-                      <View style={styles.inputIconWrap}>
-                        <AppIcon name="business-outline" size={18} color={Colors.textMuted} />
+                    <Pressable
+                      onPress={() => orgInputRef.current?.focus()}
+                      style={[
+                        styles.inputBox,
+                        focusedField === 'org' && styles.inputBoxFocused,
+                      ]}
+                    >
+                      <View style={styles.inputIconWrap} pointerEvents="none">
+                        <AppIcon
+                          name="business-outline"
+                          size={19}
+                          color={focusedField === 'org' ? Colors.accent : Colors.textMuted}
+                        />
                       </View>
                       <TextInput
+                        ref={orgInputRef}
                         accessibilityLabel="Business name"
                         style={styles.textInput}
-                        placeholder="e.g. Sharma Infrastructure"
+                        placeholder="e.g. Sharma Constructions & Infra"
                         placeholderTextColor={Colors.textSubtle}
                         value={org}
                         onChangeText={setOrg}
+                        onFocus={() => setFocusedField('org')}
+                        onBlur={() => setFocusedField(null)}
+                        returnKeyType="next"
+                        onSubmitEditing={() => emailInputRef.current?.focus()}
                       />
-                    </View>
+                    </Pressable>
                   </View>
                 </>
               )}
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
-                <View style={styles.inputBox}>
-                  <View style={styles.inputIconWrap}>
-                    <AppIcon name="mail-outline" size={18} color={Colors.textMuted} />
+                <Pressable
+                  onPress={() => emailInputRef.current?.focus()}
+                  style={[
+                    styles.inputBox,
+                    focusedField === 'email' && styles.inputBoxFocused,
+                  ]}
+                >
+                  <View style={styles.inputIconWrap} pointerEvents="none">
+                    <AppIcon
+                      name="mail-outline"
+                      size={19}
+                      color={focusedField === 'email' ? Colors.accent : Colors.textMuted}
+                    />
                   </View>
                   <TextInput
+                    ref={emailInputRef}
                     accessibilityLabel="Email address"
                     style={styles.textInput}
                     placeholder="contractor@business.com"
@@ -218,46 +281,69 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="email"
+                    autoCorrect={false}
                     value={email}
                     onChangeText={setEmail}
+                    onFocus={() => setFocusedField('email')}
+                    onBlur={() => setFocusedField(null)}
+                    returnKeyType="next"
+                    onSubmitEditing={() => passwordInputRef.current?.focus()}
                   />
-                </View>
+                </Pressable>
               </View>
 
               <View style={styles.inputGroup}>
                 <View style={styles.labelRow}>
                   <Text style={styles.inputLabel}>PASSWORD</Text>
                   {isRegister && (
-                    <Text style={styles.labelHint}>Min. 10 characters</Text>
+                    <View style={styles.charBadge}>
+                      <Text style={styles.charBadgeText}>Min. 10 chars</Text>
+                    </View>
                   )}
                 </View>
-                <View style={styles.inputBox}>
-                  <View style={styles.inputIconWrap}>
-                    <AppIcon name="lock-closed-outline" size={18} color={Colors.textMuted} />
+                <Pressable
+                  onPress={() => passwordInputRef.current?.focus()}
+                  style={[
+                    styles.inputBox,
+                    focusedField === 'password' && styles.inputBoxFocused,
+                  ]}
+                >
+                  <View style={styles.inputIconWrap} pointerEvents="none">
+                    <AppIcon
+                      name="lock-closed-outline"
+                      size={19}
+                      color={focusedField === 'password' ? Colors.accent : Colors.textMuted}
+                    />
                   </View>
                   <TextInput
+                    ref={passwordInputRef}
                     accessibilityLabel="Password"
                     style={styles.textInput}
-                    placeholder={isRegister ? 'Minimum 10 characters' : 'Enter your password'}
+                    placeholder={isRegister ? 'Create secure password (10+ chars)' : 'Enter your password'}
                     placeholderTextColor={Colors.textSubtle}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
+                    autoCorrect={false}
                     value={password}
                     onChangeText={setPassword}
+                    onFocus={() => setFocusedField('password')}
+                    onBlur={() => setFocusedField(null)}
                     onSubmitEditing={submit}
+                    returnKeyType="go"
                   />
                   <Pressable
                     onPress={() => setShowPassword(!showPassword)}
                     style={styles.passwordToggleBtn}
                     accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   >
                     <AppIcon
                       name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={18}
-                      color={Colors.textMuted}
+                      size={20}
+                      color={showPassword ? Colors.primary : Colors.textMuted}
                     />
                   </Pressable>
-                </View>
+                </Pressable>
               </View>
             </View>
 
@@ -272,18 +358,25 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               ]}
             >
               {busy ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.submitBtnText}>
+                    {isRegister ? 'Creating Account...' : 'Signing In...'}
+                  </Text>
+                </View>
               ) : (
                 <View style={styles.submitBtnContent}>
                   <Text style={styles.submitBtnText}>
                     {isRegister ? 'Create Account' : 'Sign In'}
                   </Text>
-                  <AppIcon name="arrow-forward" size={18} color="#FFFFFF" />
+                  <View style={styles.arrowCircle}>
+                    <AppIcon name="arrow-forward" size={16} color="#FFFFFF" />
+                  </View>
                 </View>
               )}
             </Pressable>
 
-            {/* Quick Toggle Link */}
+            {/* Quick Switch Link */}
             <Pressable
               onPress={() => {
                 setIsRegister(!isRegister);
@@ -292,18 +385,18 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               style={styles.toggleFooter}
             >
               <Text style={styles.toggleFooterText}>
-                {isRegister ? 'Already have an account? ' : 'New contractor? '}
+                {isRegister ? 'Already have an account? ' : "Don't have an account? "}
                 <Text style={styles.toggleFooterLink}>
-                  {isRegister ? 'Sign In' : 'Create an account'}
+                  {isRegister ? 'Sign In' : 'Create Account'}
                 </Text>
               </Text>
             </Pressable>
 
             {/* Security Trust Footnote */}
             <View style={styles.securityRow}>
-              <AppIcon name="shield-checkmark-outline" size={14} color={Colors.textMuted} />
+              <AppIcon name="shield-checkmark" size={14} color="#059669" />
               <Text style={styles.securityText}>
-                256-Bit SSL Encrypted • Private Workspace
+                256-Bit SSL Encrypted • Private Cloud Ledger
               </Text>
             </View>
           </View>
@@ -316,7 +409,28 @@ export function AuthPage({ onLogin }: AuthPageProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+    position: 'relative',
+  },
+  bgGlowTop: {
+    position: 'absolute',
+    top: -60,
+    right: -40,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: '#E0F2FE',
+    opacity: 0.7,
+  },
+  bgGlowBottom: {
+    position: 'absolute',
+    bottom: -80,
+    left: -40,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: '#EEF2FF',
+    opacity: 0.8,
   },
   keyboardView: {
     flex: 1,
@@ -325,62 +439,99 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 28,
     paddingHorizontal: 16,
   },
   cardContainer: {
     width: '100%',
     maxWidth: 440,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 24,
+    paddingHorizontal: 26,
+    paddingTop: 24,
+    paddingBottom: 22,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 8 },
+    shadowColor: '#0F2851',
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowRadius: 24,
+    elevation: 8,
     gap: 18,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  cardAccentBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: '#1E40AF',
   },
 
   /* Brand Header */
   brandHeader: {
     alignItems: 'center',
     gap: 8,
-    paddingBottom: 4,
+    paddingTop: 4,
   },
-  logoBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: Colors.primary,
+  logoBadgeContainer: {
+    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
+  },
+  logoGlow: {
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    backgroundColor: '#3B82F6',
+    opacity: 0.3,
+  },
+  logoBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#0F2851',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#1E40AF',
+    shadowColor: '#0F2851',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  titleWrap: {
+    alignItems: 'center',
+    gap: 6,
   },
   brandTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    letterSpacing: -0.4,
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.5,
   },
-  brandTag: {
-    backgroundColor: '#EEF2FF',
+  brandTitleAccent: {
+    color: '#2563EB',
+  },
+  proPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingVertical: 3.5,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#BAE6FD',
   },
-  brandTagText: {
+  proPillText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#3B82F6',
+    color: '#0284C7',
     letterSpacing: 0.8,
   },
 
@@ -388,7 +539,7 @@ const styles = StyleSheet.create({
   segmentWrapper: {
     flexDirection: 'row',
     backgroundColor: '#F1F5F9',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 4,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -398,26 +549,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 7,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   segmentTabActive: {
     backgroundColor: '#FFFFFF',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   segmentLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.textMuted,
+    color: '#64748B',
   },
   segmentLabelActive: {
-    color: Colors.primary,
-    fontWeight: '700',
+    color: '#0F2851',
+    fontWeight: '800',
   },
 
   /* Form Header */
@@ -427,12 +578,12 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0F172A',
     letterSpacing: -0.3,
   },
   formSubtitle: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: '#64748B',
     lineHeight: 18,
   },
 
@@ -444,21 +595,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 11,
+  },
+  errorIconWrap: {
+    paddingTop: 1,
   },
   errorAlertText: {
     flex: 1,
     color: '#B91C1C',
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '600',
     lineHeight: 17,
   },
 
-  /* Fields */
+  /* Input Fields */
   fieldsContainer: {
-    gap: 14,
+    gap: 15,
   },
   inputGroup: {
     gap: 6,
@@ -469,72 +623,106 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   inputLabel: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '800',
-    color: Colors.textSecondary,
+    color: '#475569',
     letterSpacing: 0.6,
   },
-  labelHint: {
+  charBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  charBadgeText: {
     fontSize: 10,
-    color: Colors.textMuted,
+    color: '#64748B',
     fontWeight: '600',
   },
   inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.2,
-    borderColor: '#CBD5E1',
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
     backgroundColor: '#F8FAFC',
-    paddingHorizontal: 12,
-    height: 48,
+    paddingHorizontal: 14,
+    minHeight: 52,
+  },
+  inputBoxFocused: {
+    borderColor: '#2563EB',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 2,
   },
   inputIconWrap: {
     marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textInput: {
     flex: 1,
-    fontSize: 14,
-    color: Colors.textPrimary,
-    height: '100%',
+    fontSize: 15,
+    color: '#0F172A',
+    fontWeight: '500',
+    minHeight: 46,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
   },
   passwordToggleBtn: {
     padding: 6,
     marginLeft: 4,
   },
 
-  /* Submit Button */
+  /* Submit Action Button */
   submitBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    height: 48,
+    backgroundColor: '#0F2851',
+    borderRadius: 14,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: 2,
+    shadowColor: '#0F2851',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#1E3A8A',
   },
   submitBtnDisabled: {
-    opacity: 0.6,
+    opacity: 0.65,
   },
   submitBtnPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
+    opacity: 0.9,
+    transform: [{ scale: 0.985 }],
   },
   submitBtnContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 10,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   submitBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: 0.2,
+  },
+  arrowCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   /* Footer */
@@ -544,25 +732,27 @@ const styles = StyleSheet.create({
   },
   toggleFooterText: {
     fontSize: 13,
-    color: Colors.textMuted,
+    color: '#64748B',
+    fontWeight: '500',
   },
   toggleFooterLink: {
-    color: Colors.accent,
-    fontWeight: '700',
+    color: '#2563EB',
+    fontWeight: '800',
   },
   securityRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingTop: 8,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
   },
   securityText: {
-    fontSize: 10,
-    color: Colors.textSubtle,
+    fontSize: 10.5,
+    color: '#64748B',
     fontWeight: '600',
     letterSpacing: 0.2,
   },
 });
+

@@ -463,16 +463,11 @@ export function LabourPaymentModal({
                   ) : null}
                 </View>
 
-                {/* Worker Selector Button */}
-                <Pressable
-                  onPress={() => {
-                    setIsWorkerDropdownOpen(!isWorkerDropdownOpen);
-                    setIsSiteDropdownOpen(false);
-                  }}
-                  style={({ pressed }) => [
+                {/* Worker Selector Button / Select Bar */}
+                <View
+                  style={[
                     styles.selectorTrigger,
-                    isWorkerDropdownOpen && styles.selectorTriggerActive,
-                    pressed && { opacity: 0.85 },
+                    { position: 'relative' },
                   ]}
                 >
                   <View style={[styles.avatarCircle, { backgroundColor: avatarTheme.bg }]}>
@@ -490,16 +485,41 @@ export function LabourPaymentModal({
                         ? `${money(selectedWorker.daily_rate)}/day${
                             selectedWorker.phone ? ` • ${selectedWorker.phone}` : ''
                           }`
-                        : 'Tap to pick worker'}
+                        : 'Select worker'}
                     </Text>
                   </View>
 
                   <AppIcon
-                    name={isWorkerDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                    name="chevron-down"
                     size={16}
                     color="#64748B"
                   />
-                </Pressable>
+
+                  {/* Native HTML Select Bar for direct Worker selection */}
+                  {Platform.OS === 'web' && (
+                    <select
+                      value={workerId}
+                      onChange={(e: any) => setWorkerId(e.target.value)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        zIndex: 10,
+                      }}
+                      title="Select Worker"
+                    >
+                      {data.workers.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          👷 {w.name} {w.skill ? `(${w.skill})` : ''} — ₹{w.daily_rate}/day
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </View>
 
                 {/* Inline Worker Dropdown */}
                 {isWorkerDropdownOpen && (
@@ -640,19 +660,14 @@ export function LabourPaymentModal({
                 ) : null}
               </View>
 
-              {/* 3. WORK SITE SELECTOR */}
+              {/* 3. WORK SITE SELECTOR / SELECT BAR */}
               <View style={styles.sectionCard}>
                 <Text style={styles.cardLabel}>WORK SITE / PROJECT</Text>
 
-                <Pressable
-                  onPress={() => {
-                    setIsSiteDropdownOpen(!isSiteDropdownOpen);
-                    setIsWorkerDropdownOpen(false);
-                  }}
-                  style={({ pressed }) => [
+                <View
+                  style={[
                     styles.selectorTrigger,
-                    isSiteDropdownOpen && styles.selectorTriggerActive,
-                    pressed && { opacity: 0.85 },
+                    { position: 'relative' },
                   ]}
                 >
                   <View style={styles.siteIconWrap}>
@@ -671,11 +686,36 @@ export function LabourPaymentModal({
                     )}
                   </View>
                   <AppIcon
-                    name={isSiteDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                    name="chevron-down"
                     size={16}
                     color="#64748B"
                   />
-                </Pressable>
+
+                  {/* Native HTML Select Bar for direct Site selection */}
+                  {Platform.OS === 'web' && (
+                    <select
+                      value={siteId}
+                      onChange={(e: any) => setSiteId(e.target.value)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        zIndex: 10,
+                      }}
+                      title="Select Work Site"
+                    >
+                      {data.sites.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          🏢 {s.name} {s.owner_name ? `(Client: ${s.owner_name})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </View>
 
                 {/* Inline Site Dropdown */}
                 {isSiteDropdownOpen && (

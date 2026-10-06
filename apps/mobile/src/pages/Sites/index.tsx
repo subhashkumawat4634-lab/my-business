@@ -679,7 +679,6 @@ export function SitesPage({
     <View style={styles.pageWrapper}>
       <TopNavBar
         title="Work Sites"
-        subtitle={`${totalSitesCount} Total • ${ongoingSitesCount} Active Sites`}
         icon="business-outline"
         onRefresh={onRefresh}
         refreshing={refreshing}

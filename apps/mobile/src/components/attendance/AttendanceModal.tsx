@@ -345,21 +345,14 @@ export function AttendanceModal({
               </View>
 
               <View style={styles.dualDropdownRow}>
-                {/* Left Column: Work Site Dropdown */}
+                {/* Left Column: Work Site Dropdown / Select Bar */}
                 <View style={styles.dropdownCol}>
                   <Text style={styles.dropdownFieldLabel}>Work Site *</Text>
-                  <Pressable
-                    onPress={() => {
-                      setIsSiteDropdownOpen((prev) => !prev);
-                      setIsWorkerDropdownOpen(false);
-                      setIsStatusDropdownOpen(false);
-                    }}
-                    style={({ pressed }) => [
+                  <View
+                    style={[
                       styles.dropdownSelectorBtn,
-                      isSiteDropdownOpen && { borderColor: '#2563EB', backgroundColor: '#EFF6FF' },
-                      pressed && { opacity: 0.85 },
+                      { position: 'relative' },
                     ]}
-                    accessibilityLabel="Select work site"
                   >
                     <View style={styles.dropdownIconBoxSite}>
                       <AppIcon name="business" size={16} color="#0284C7" />
@@ -371,15 +364,40 @@ export function AttendanceModal({
                       <Text style={styles.dropdownSubText} numberOfLines={1}>
                         {selectedSite?.owner_name
                           ? `Client: ${selectedSite.owner_name}`
-                          : 'Tap to change site'}
+                          : 'Select site'}
                       </Text>
                     </View>
                     <AppIcon
-                      name={isSiteDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                      name="chevron-down"
                       size={15}
                       color="#64748B"
                     />
-                  </Pressable>
+
+                    {/* Native HTML Select Bar */}
+                    {Platform.OS === 'web' && (
+                      <select
+                        value={siteId}
+                        onChange={(e: any) => setSiteId(e.target.value)}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer',
+                          zIndex: 10,
+                        }}
+                        title="Select Work Site"
+                      >
+                        {data.sites.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            🏢 {s.name} {s.owner_name ? `(Client: ${s.owner_name})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </View>
 
                   {/* Work Site Inline Dropdown Menu */}
                   {isSiteDropdownOpen && (
@@ -453,23 +471,16 @@ export function AttendanceModal({
                   )}
                 </View>
 
-                {/* Right Column: Select Worker Dropdown */}
+                {/* Right Column: Select Worker Dropdown / Select Bar */}
                 <View style={styles.dropdownCol}>
                   <Text style={styles.dropdownFieldLabel}>
                     Worker ({filteredWorkers.length}) *
                   </Text>
-                  <Pressable
-                    onPress={() => {
-                      setIsWorkerDropdownOpen((prev) => !prev);
-                      setIsSiteDropdownOpen(false);
-                      setIsStatusDropdownOpen(false);
-                    }}
-                    style={({ pressed }) => [
+                  <View
+                    style={[
                       styles.dropdownSelectorBtn,
-                      isWorkerDropdownOpen && { borderColor: '#7C3AED', backgroundColor: '#F5F3FF' },
-                      pressed && { opacity: 0.85 },
+                      { position: 'relative' },
                     ]}
-                    accessibilityLabel="Select worker"
                   >
                     <View style={styles.dropdownIconBoxWorker}>
                       <Text style={styles.dropdownAvatarInitials}>
@@ -483,15 +494,40 @@ export function AttendanceModal({
                       <Text style={styles.dropdownSubText} numberOfLines={1}>
                         {selectedWorker
                           ? `${selectedWorker.skill || 'Worker'} • ${money(selectedWorker.daily_rate)}/d`
-                          : 'Tap to choose worker'}
+                          : 'Select worker'}
                       </Text>
                     </View>
                     <AppIcon
-                      name={isWorkerDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                      name="chevron-down"
                       size={15}
                       color="#64748B"
                     />
-                  </Pressable>
+
+                    {/* Native HTML Select Bar */}
+                    {Platform.OS === 'web' && (
+                      <select
+                        value={workerId}
+                        onChange={(e: any) => setWorkerId(e.target.value)}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer',
+                          zIndex: 10,
+                        }}
+                        title="Select Worker"
+                      >
+                        {data.workers.filter((w) => w.active).map((w) => (
+                          <option key={w.id} value={w.id}>
+                            👷 {w.name} {w.skill ? `(${w.skill})` : ''} — ₹{w.daily_rate}/day
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </View>
 
                   {/* Worker Inline Dropdown Menu */}
                   {isWorkerDropdownOpen && (

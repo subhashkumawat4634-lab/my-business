@@ -262,17 +262,14 @@ export function MaterialBillModal({
                 <Text style={styles.sectionTitle}>Site & Bill Date</Text>
               </View>
 
-              {/* Work Site Selector Dropdown */}
+              {/* Work Site Selector Dropdown / Select Bar */}
               <View style={{ gap: 4 }}>
                 <Text style={styles.fieldLabel}>Work Site *</Text>
-                <Pressable
-                  onPress={() => setIsSiteDropdownOpen((prev) => !prev)}
-                  style={({ pressed }) => [
+                <View
+                  style={[
                     styles.siteDropdownBtn,
-                    isSiteDropdownOpen && { borderColor: '#0284C7', backgroundColor: '#EFF6FF' },
-                    pressed && { opacity: 0.85 },
+                    { position: 'relative' },
                   ]}
-                  accessibilityLabel="Select site"
                 >
                   <View style={styles.siteIconBox}>
                     <AppIcon name="business" size={16} color="#0284C7" />
@@ -286,15 +283,40 @@ export function MaterialBillModal({
                         Client: {selectedSite.owner_name}
                       </Text>
                     ) : (
-                      <Text style={styles.siteSubText}>Tap to change work site</Text>
+                      <Text style={styles.siteSubText}>Select work site</Text>
                     )}
                   </View>
                   <AppIcon
-                    name={isSiteDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                    name="chevron-down"
                     size={16}
                     color="#64748B"
                   />
-                </Pressable>
+
+                  {/* Native HTML Select Bar for direct dropdown selection */}
+                  {Platform.OS === 'web' && (
+                    <select
+                      value={siteId}
+                      onChange={(e: any) => setSiteId(e.target.value)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        zIndex: 10,
+                      }}
+                      title="Select Work Site"
+                    >
+                      {data.sites.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          🏢 {s.name} {s.owner_name ? `(Client: ${s.owner_name})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </View>
 
                 {/* Inline Work Site Dropdown Menu */}
                 {isSiteDropdownOpen && (

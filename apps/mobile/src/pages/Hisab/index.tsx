@@ -103,10 +103,6 @@ export function HisabPage({
         title="Hisab & Ledger"
         subtitle="Money in, costs incurred & cash paid out"
         icon="wallet-outline"
-        badge={{
-          label: `${activeEntries.length} Transactions`,
-          tone: 'blue',
-        }}
         onRefresh={onRefresh}
         refreshing={refreshing}
       />

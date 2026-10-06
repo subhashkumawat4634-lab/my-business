@@ -192,9 +192,7 @@ export function LabourPage({
     <View style={styles.pageWrapper}>
       <TopNavBar
         title="Labour & Team"
-        subtitle={`${activeCount} Active • ${money(totalPendingWages)} Pending Wages`}
         icon="people-outline"
-        badge={{ label: `${totalWorkers} Total`, tone: 'blue' }}
         onRefresh={onRefresh}
         refreshing={refreshing}
         actions={

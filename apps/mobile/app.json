@@ -11,7 +11,8 @@
       "bundleIdentifier": "com.thekabook.app"
     },
     "android": {
-      "package": "com.thekabook.app"
+      "package": "com.thekabook.app",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
@@ -20,9 +21,11 @@
     "plugins": [
       "expo-secure-store",
       "expo-sharing",
-      "expo-status-bar"
+      "expo-status-bar",
+      "./plugins/withCleartextTraffic"
     ],
     "extra": {
+      "apiUrl": "http://192.168.1.9:4000",
       "description": "Sites, people and every rupee. Contractor work ledger.",
       "eas": {
         "projectId": "e270cfc6-36fa-420c-9a3a-14788827d3bf"

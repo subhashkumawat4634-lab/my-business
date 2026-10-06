@@ -172,7 +172,7 @@ export function parseSiteNotesAndDocs(rawNotes: string = ''): SiteMetadata {
           businessName: '',
         };
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return {
@@ -294,7 +294,7 @@ export function SiteFormModal({
   );
   const [startDate, setStartDate] = useState(
     activeSpec.initial.start_date ||
-      new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+    new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
   );
   const [endDate, setEndDate] = useState(activeSpec.initial.end_date || '');
   const [status, setStatus] = useState(activeSpec.initial.status || 'ONGOING');
@@ -481,10 +481,10 @@ export function SiteFormModal({
             const cat = file.name.toLowerCase().includes('agreement')
               ? 'AGREEMENT'
               : file.name.toLowerCase().includes('drawing')
-              ? 'DRAWING'
-              : file.name.toLowerCase().includes('quote')
-              ? 'QUOTATION'
-              : 'OTHER';
+                ? 'DRAWING'
+                : file.name.toLowerCase().includes('quote')
+                  ? 'QUOTATION'
+                  : 'OTHER';
 
             const reader = new FileReader();
             reader.onload = async () => {
@@ -502,7 +502,7 @@ export function SiteFormModal({
 
               if (dataUrl) {
                 await saveDocToIndexedDB(docId, file.name, dataUrl, file.type);
-                uploadDocToServer(docId, file.name, dataUrl, file.type).catch(() => {});
+                uploadDocToServer(docId, file.name, dataUrl, file.type).catch(() => { });
               }
             };
             reader.readAsDataURL(file);
@@ -510,7 +510,7 @@ export function SiteFormModal({
         };
         input.click();
         return;
-      } catch (err) {}
+      } catch (err) { }
     }
     setIsDocModalOpen(true);
   };
@@ -619,52 +619,52 @@ export function SiteFormModal({
         style={[styles.safeArea, asPage && styles.pageSafeArea]}
         edges={['top', 'left', 'right', 'bottom']}
       >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        {/* Mobile / Page Header */}
-        {asPage ? (
-          <TopNavBar
-            title={isEdit ? 'Edit Work Site' : 'Create New Work Site'}
-            subtitle={
-              isEdit
-                ? `${pricing === 'FIXED' ? 'Lumpsum' : pricing === 'UNIT' ? 'Unit Rate' : 'Daily Rate'} • ${workType === 'LABOUR' ? 'Labour' : 'Material'}`
-                : 'Add a new project or construction contract'
-            }
-            icon="business-outline"
-            onBack={() => !busy && onClose()}
-            backText="Work Sites"
-          />
-        ) : (
-          <View style={styles.header}>
-            <Pressable
-              onPress={() => !busy && onClose()}
-              style={({ pressed }) => [
-                styles.closeButton,
-                pressed && { opacity: 0.7 },
-              ]}
-              accessibilityLabel="Close form"
-            >
-              <AppIcon
-                name="close"
-                size={18}
-                color={Colors.textPrimary}
-              />
-            </Pressable>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          {/* Mobile / Page Header */}
+          {asPage ? (
+            <TopNavBar
+              title={isEdit ? 'Edit Work Site' : 'Create New Work Site'}
+              subtitle={
+                isEdit
+                  ? `${pricing === 'FIXED' ? 'Lumpsum' : pricing === 'UNIT' ? 'Unit Rate' : 'Daily Rate'} • ${workType === 'LABOUR' ? 'Labour' : 'Material'}`
+                  : 'Add a new project or construction contract'
+              }
+              icon="business-outline"
+              onBack={() => !busy && onClose()}
+              backText="Work Sites"
+            />
+          ) : (
+            <View style={styles.header}>
+              <Pressable
+                onPress={() => !busy && onClose()}
+                style={({ pressed }) => [
+                  styles.closeButton,
+                  pressed && { opacity: 0.7 },
+                ]}
+                accessibilityLabel="Close form"
+              >
+                <AppIcon
+                  name="close"
+                  size={18}
+                  color={Colors.textPrimary}
+                />
+              </Pressable>
 
-            <View style={styles.headerCenter}>
-              <Text style={styles.headerTitle} numberOfLines={1}>
-                {isEdit ? 'Edit Work Site' : 'New Work Site'}
-              </Text>
-              <Text style={styles.headerSubtitle}>
-                {`${pricing === 'FIXED' ? 'Lumpsum' : pricing === 'UNIT' ? 'Unit Rate' : 'Daily Rate'} • ${workType === 'LABOUR' ? 'Labour' : 'Material'}`}
-              </Text>
+              <View style={styles.headerCenter}>
+                <Text style={styles.headerTitle} numberOfLines={1}>
+                  {isEdit ? 'Edit Work Site' : 'New Work Site'}
+                </Text>
+                <Text style={styles.headerSubtitle}>
+                  {`${pricing === 'FIXED' ? 'Lumpsum' : pricing === 'UNIT' ? 'Unit Rate' : 'Daily Rate'} • ${workType === 'LABOUR' ? 'Labour' : 'Material'}`}
+                </Text>
+              </View>
+
+              <View style={styles.headerRightPlaceholder} />
             </View>
-
-            <View style={styles.headerRightPlaceholder} />
-          </View>
-        )}
+          )}
 
           {/* Error Banner */}
           {displayError ? (
@@ -899,8 +899,8 @@ export function SiteFormModal({
                             gstValidation?.mismatchError
                               ? Colors.danger
                               : gstValidation?.isValid
-                              ? '#16A34A'
-                              : Colors.textMuted
+                                ? '#16A34A'
+                                : Colors.textMuted
                           }
                         />
                         <TextInput
@@ -945,9 +945,13 @@ export function SiteFormModal({
                         State / Union Territory
                       </Text>
                       <Pressable
-                        onPress={() => setIsStatePickerOpen(true)}
+                        onPress={() => {
+                          setIsStatePickerOpen(!isStatePickerOpen);
+                          setStateSearch('');
+                        }}
                         style={[
                           styles.stateSelectBtn,
+                          isStatePickerOpen && { borderColor: Colors.primary, backgroundColor: '#EFF6FF' },
                           Boolean(gstValidation?.mismatchError) && styles.stateSelectBtnWarn,
                         ]}
                       >
@@ -956,6 +960,7 @@ export function SiteFormModal({
                             flexDirection: 'row',
                             alignItems: 'center',
                             gap: 8,
+                            flex: 1,
                           }}
                         >
                           <AppIcon
@@ -973,6 +978,7 @@ export function SiteFormModal({
                               !selectedState && { color: Colors.textSubtle },
                               Boolean(gstValidation?.mismatchError) && { color: Colors.danger },
                             ]}
+                            numberOfLines={1}
                           >
                             {selectedState
                               ? `${selectedState} (${selectedStateCode})`
@@ -980,7 +986,7 @@ export function SiteFormModal({
                           </Text>
                         </View>
                         <AppIcon
-                          name="chevron-forward"
+                          name={isStatePickerOpen ? 'chevron-up' : 'chevron-down'}
                           size={16}
                           color={
                             Boolean(gstValidation?.mismatchError)
@@ -989,6 +995,66 @@ export function SiteFormModal({
                           }
                         />
                       </Pressable>
+
+                      {/* In-place Downward-Opening Dropdown Menu */}
+                      {isStatePickerOpen && (
+                        <View style={styles.stateDownwardDropdown}>
+                          <View style={styles.stateDropdownSearchBox}>
+                            <AppIcon name="search" size={14} color="#64748B" />
+                            <TextInput
+                              value={stateSearch}
+                              onChangeText={setStateSearch}
+                              placeholder="Search state or code..."
+                              placeholderTextColor="#94A3B8"
+                              style={styles.stateDropdownSearchInput}
+                              autoFocus
+                            />
+                            {stateSearch ? (
+                              <Pressable onPress={() => setStateSearch('')}>
+                                <AppIcon name="close-circle" size={14} color="#94A3B8" />
+                              </Pressable>
+                            ) : null}
+                          </View>
+
+                          <ScrollView
+                            style={{ maxHeight: 200 }}
+                            keyboardShouldPersistTaps="handled"
+                            nestedScrollEnabled
+                          >
+                            {filteredStates.map((s) => {
+                              const isSelected = selectedStateCode === s.code;
+                              return (
+                                <Pressable
+                                  key={s.code}
+                                  onPress={() => {
+                                    setSelectedState(s.name);
+                                    setSelectedStateCode(s.code);
+                                    setIsStatePickerOpen(false);
+                                    setStateSearch('');
+                                  }}
+                                  style={[
+                                    styles.stateDropdownItem,
+                                    isSelected && styles.stateDropdownItemActive,
+                                  ]}
+                                >
+                                  <View style={[styles.stateCodeBadge, isSelected && styles.stateCodeBadgeActive]}>
+                                    <Text style={[styles.stateCodeBadgeText, isSelected && styles.stateCodeBadgeTextActive]}>
+                                      {s.code}
+                                    </Text>
+                                  </View>
+                                  <Text style={[styles.stateDropdownItemText, isSelected && styles.stateDropdownItemTextActive]}>
+                                    {s.name}
+                                  </Text>
+                                  {isSelected && (
+                                    <AppIcon name="checkmark" size={15} color={Colors.primary} />
+                                  )}
+                                </Pressable>
+                              );
+                            })}
+                          </ScrollView>
+                        </View>
+                      )}
+
                       {Boolean(gstValidation?.mismatchError) && (
                         <Text style={styles.simpleRedNotice}>
                           {gstValidation!.mismatchError}
@@ -1046,59 +1112,53 @@ export function SiteFormModal({
                 </View>
               </View>
 
-              {/* Scope Radio Cards */}
+              {/* Scope Select Bar */}
               <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>Contract Inclusions</Text>
-                <View style={styles.mobileScopeGrid}>
-                  <Pressable
-                    onPress={() => setWorkType('LABOUR')}
-                    style={[
-                      styles.mobileScopeCard,
-                      workType === 'LABOUR' && styles.mobileScopeCardActive,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.radioDotCircle,
-                        workType === 'LABOUR' && styles.radioDotCircleActive,
-                      ]}
-                    >
-                      {workType === 'LABOUR' && <View style={styles.radioDot} />}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.mobileScopeTitle}>Labour Only</Text>
-                      <Text style={styles.mobileScopeDesc}>
-                        Worker & mistri wages only. Client buys all materials.
-                      </Text>
-                    </View>
-                  </Pressable>
+                <View
+                  style={[
+                    styles.scopeSelectBarBtn,
+                    { position: 'relative' },
+                  ]}
+                >
+                  <View style={styles.scopeIconWrap}>
+                    <AppIcon
+                      name={workType === 'LABOUR' ? 'hammer-outline' : 'construct-outline'}
+                      size={18}
+                      color="#2563EB"
+                    />
+                  </View>
 
-                  <Pressable
-                    onPress={() => setWorkType('MATERIAL')}
-                    style={[
-                      styles.mobileScopeCard,
-                      workType === 'MATERIAL' && styles.mobileScopeCardActive,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.radioDotCircle,
-                        workType === 'MATERIAL' && styles.radioDotCircleActive,
-                      ]}
+                  <Text style={styles.scopeSelectTitle} numberOfLines={1}>
+                    {workType === 'LABOUR' ? 'Labour Only' : 'Labour + Material'}
+                  </Text>
+
+                  <View style={{ marginLeft: 'auto' }}>
+                    <AppIcon name="chevron-down" size={16} color="#64748B" />
+                  </View>
+
+                  {/* Native HTML Select Bar for direct dropdown selection */}
+                  {Platform.OS === 'web' && (
+                    <select
+                      value={workType}
+                      onChange={(e: any) => setWorkType(e.target.value)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        zIndex: 10,
+                        fontSize: 16,
+                      }}
+                      title="Select Contract Inclusions"
                     >
-                      {workType === 'MATERIAL' && (
-                        <View style={styles.radioDot} />
-                      )}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.mobileScopeTitle}>
-                        Labour + Material
-                      </Text>
-                      <Text style={styles.mobileScopeDesc}>
-                        Contractor handles labour and material procurement.
-                      </Text>
-                    </View>
-                  </Pressable>
+                      <option value="LABOUR">🔨 Labour Only</option>
+                      <option value="MATERIAL">🏗️ Labour + Material</option>
+                    </select>
+                  )}
                 </View>
               </View>
 
@@ -1779,87 +1839,6 @@ export function SiteFormModal({
         onClose={() => setIsEndCalendarOpen(false)}
       />
 
-      {/* STATE PICKER MODAL */}
-      {isStatePickerOpen && (
-        <Modal
-          visible={isStatePickerOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setIsStatePickerOpen(false)}
-        >
-          <View style={styles.modalBackdrop}>
-            <Pressable
-              style={StyleSheet.absoluteFill}
-              onPress={() => setIsStatePickerOpen(false)}
-            />
-            <View style={styles.stateModalSheet}>
-              <View style={styles.modalSheetHeader}>
-                <Text style={styles.modalSheetTitle}>
-                  Select State / Union Territory
-                </Text>
-                <Pressable
-                  onPress={() => setIsStatePickerOpen(false)}
-                  style={styles.sheetCloseBtn}
-                >
-                  <AppIcon name="close" size={16} color={Colors.textPrimary} />
-                </Pressable>
-              </View>
-
-              <View style={styles.stateSearchBox}>
-                <AppIcon name="search" size={16} color={Colors.textMuted} />
-                <TextInput
-                  value={stateSearch}
-                  onChangeText={setStateSearch}
-                  placeholder="Search state or code..."
-                  placeholderTextColor={Colors.textSubtle}
-                  style={styles.stateSearchInput}
-                />
-              </View>
-
-              <ScrollView style={{ maxHeight: 320 }}>
-                {filteredStates.map((st) => {
-                  const isSelected = selectedStateCode === st.code;
-                  return (
-                    <Pressable
-                      key={st.code}
-                      onPress={() => {
-                        setSelectedState(st.name);
-                        setSelectedStateCode(st.code);
-                        setIsStatePickerOpen(false);
-                        setStateSearch('');
-                      }}
-                      style={[
-                        styles.stateRowItem,
-                        isSelected && styles.stateRowItemActive,
-                      ]}
-                    >
-                      <View style={styles.stateCodePill}>
-                        <Text style={styles.stateCodePillText}>{st.code}</Text>
-                      </View>
-                      <Text
-                        style={[
-                          styles.stateRowName,
-                          isSelected && styles.stateRowNameActive,
-                        ]}
-                      >
-                        {st.name}
-                      </Text>
-                      {isSelected && (
-                        <AppIcon
-                          name="checkmark"
-                          size={16}
-                          color={Colors.primary}
-                        />
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-      )}
-
       {/* MANUAL ATTACH DOCUMENT MODAL */}
       {isDocModalOpen && (
         <Modal
@@ -1903,7 +1882,7 @@ export function SiteFormModal({
                           style={[
                             styles.docCatChipText,
                             newDocCategory === cat &&
-                              styles.docCatChipTextActive,
+                            styles.docCatChipTextActive,
                           ]}
                         >
                           {cat}
@@ -2323,52 +2302,31 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
   },
-  // Scope Cards (Mobile optimized)
-  mobileScopeGrid: {
-    gap: 8,
-  },
-  mobileScopeCard: {
+  // Scope Select Bar Styles
+  scopeSelectBarBtn: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    padding: 10,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
     borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 12,
+    height: 48,
+    gap: 10,
   },
-  mobileScopeCardActive: {
-    borderColor: Colors.primary,
+  scopeIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     backgroundColor: '#EFF6FF',
-  },
-  radioDotCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1.5,
-    borderColor: '#94A3B8',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
   },
-  radioDotCircleActive: {
-    borderColor: Colors.primary,
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.primary,
-  },
-  mobileScopeTitle: {
-    fontSize: 13,
-    fontWeight: '800',
+  scopeSelectTitle: {
+    fontSize: 14,
+    fontWeight: '700',
     color: Colors.textPrimary,
-  },
-  mobileScopeDesc: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 1,
+    flex: 1,
   },
   // Pricing Pills
   pricingPillsRow: {
@@ -3025,5 +2983,75 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     color: '#FFFFFF',
+  },
+  stateDownwardDropdown: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    marginTop: 6,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 100,
+  },
+  stateDropdownSearchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 10,
+    height: 38,
+    marginBottom: 6,
+  },
+  stateDropdownSearchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textPrimary,
+    paddingVertical: 4,
+  },
+  stateDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  stateDropdownItemActive: {
+    backgroundColor: '#EFF6FF',
+  },
+  stateDropdownItemText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1E293B',
+    flex: 1,
+  },
+  stateDropdownItemTextActive: {
+    fontWeight: '800',
+    color: Colors.primary,
+  },
+  stateCodeBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: '#E2E8F0',
+  },
+  stateCodeBadgeActive: {
+    backgroundColor: '#DBEAFE',
+  },
+  stateCodeBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#475569',
+  },
+  stateCodeBadgeTextActive: {
+    color: '#1D4ED8',
   },
 });

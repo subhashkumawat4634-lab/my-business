@@ -239,39 +239,68 @@ export function ReceivePaymentModal({
                 <Text style={styles.sectionTitle}>Work Site & Client</Text>
               </View>
 
-              {/* Work Site Selector Dropdown */}
-              <View style={{ gap: 4 }}>
-                <Text style={styles.fieldLabel}>Receiving for Site *</Text>
-                <Pressable
-                  onPress={() => setIsSiteDropdownOpen((prev) => !prev)}
-                  style={({ pressed }) => [
-                    styles.siteDropdownBtn,
-                    isSiteDropdownOpen && { borderColor: '#0284C7', backgroundColor: '#EFF6FF' },
-                    pressed && { opacity: 0.85 },
-                  ]}
-                  accessibilityLabel="Select site"
-                >
-                  <View style={styles.siteIconBox}>
-                    <AppIcon name="business" size={16} color="#0284C7" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.siteMainText} numberOfLines={1}>
-                      {selectedSite?.name || 'Select Work Site'}
-                    </Text>
-                    {selectedSite?.owner_name ? (
-                      <Text style={styles.siteSubText} numberOfLines={1}>
-                        Client: {selectedSite.owner_name}
+                {/* Work Site Selector Dropdown / Select Bar */}
+                <View style={{ gap: 4 }}>
+                  <Text style={styles.fieldLabel}>Receiving for Site *</Text>
+                  <View
+                    style={[
+                      styles.siteDropdownBtn,
+                      { position: 'relative' },
+                    ]}
+                  >
+                    <View style={styles.siteIconBox}>
+                      <AppIcon name="business" size={16} color="#0284C7" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.siteMainText} numberOfLines={1}>
+                        {selectedSite?.name || 'Select Work Site'}
                       </Text>
-                    ) : (
-                      <Text style={styles.siteSubText}>Tap to change work site</Text>
+                      {selectedSite?.owner_name ? (
+                        <Text style={styles.siteSubText} numberOfLines={1}>
+                          Client: {selectedSite.owner_name}
+                        </Text>
+                      ) : (
+                        <Text style={styles.siteSubText}>Select work site</Text>
+                      )}
+                    </View>
+                    <AppIcon
+                      name="chevron-down"
+                      size={16}
+                      color="#64748B"
+                    />
+
+                    {/* Native HTML Select Bar for direct dropdown selection */}
+                    {Platform.OS === 'web' && (
+                      <select
+                        value={siteId}
+                        onChange={(e: any) => {
+                          const newSiteId = e.target.value;
+                          setSiteId(newSiteId);
+                          const s = data.sites.find((item) => item.id === newSiteId);
+                          if (s?.owner_name) {
+                            setParty(s.owner_name);
+                          }
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer',
+                          zIndex: 10,
+                        }}
+                        title="Select Work Site"
+                      >
+                        {data.sites.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            🏢 {s.name} {s.owner_name ? `(Client: ${s.owner_name})` : ''}
+                          </option>
+                        ))}
+                      </select>
                     )}
                   </View>
-                  <AppIcon
-                    name={isSiteDropdownOpen ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color="#64748B"
-                  />
-                </Pressable>
 
                 {/* Inline Work Site Dropdown Menu */}
                 {isSiteDropdownOpen && (

@@ -16,7 +16,18 @@ export function getApiBaseUrl(): string {
     return `http://${hostname}:4000`;
   }
 
-  // 2. Mobile (Expo Go & dev client): Auto-detect Metro bundler IP
+  // 2. Explicit env URL
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL.trim().replace(/\/$/, '');
+  }
+
+  // 3. Expo Constants extra.apiUrl (embedded into standalone APK binary)
+  const configApiUrl = (Constants.expoConfig?.extra as any)?.apiUrl;
+  if (configApiUrl) {
+    return configApiUrl.replace(/\/$/, '');
+  }
+
+  // 4. Mobile (Expo Go & dev client): Auto-detect Metro bundler IP
   const hostUri = Constants.expoConfig?.hostUri || (Constants as any)?.manifest2?.extra?.expoGo?.debuggerHost || (Constants as any)?.manifest?.debuggerHost;
   if (hostUri) {
     const ip = hostUri.split(':')[0];
@@ -25,7 +36,7 @@ export function getApiBaseUrl(): string {
     }
   }
 
-  // 3. React Native SourceCode scriptURL
+  // 5. React Native SourceCode scriptURL
   const scriptURL: string | undefined = (NativeModules as any)?.SourceCode?.scriptURL;
   if (scriptURL) {
     try {
@@ -36,13 +47,8 @@ export function getApiBaseUrl(): string {
     } catch {}
   }
 
-  // 4. Explicit env URL fallback
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL.trim().replace(/\/$/, '');
-  }
-
-  // 5. Default fallback
-  return 'http://localhost:4000';
+  // 6. Default LAN IP fallback
+  return 'http://192.168.1.9:4000';
 }
 
 export const getToken = async () => Platform.OS === 'web' ? sessionStorage.getItem(TOKEN_KEY) : SecureStore.getItemAsync(TOKEN_KEY);
@@ -68,6 +74,9 @@ export async function request(path:string, token:string|null, body?:unknown) {
     primaryError = err;
     // Build list of alternative URLs to try if network fetch fails
     const fallbacks: string[] = [];
+    if (!baseUrl.includes('192.168.1.9')) {
+      fallbacks.push(`http://192.168.1.9:4000${path}`);
+    }
     if (baseUrl.includes('localhost')) {
       fallbacks.push(`http://127.0.0.1:4000${path}`);
     } else if (baseUrl.includes('127.0.0.1')) {
@@ -75,6 +84,7 @@ export async function request(path:string, token:string|null, body?:unknown) {
     } else {
       fallbacks.push(`http://localhost:4000${path}`, `http://127.0.0.1:4000${path}`);
     }
+    fallbacks.push(`http://10.0.2.2:4000${path}`);
 
     for (const altUrl of fallbacks) {
       try {

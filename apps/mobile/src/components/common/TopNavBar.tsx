@@ -144,26 +144,9 @@ export function TopNavBar({
         </View>
       </View>
 
-      {/* Right Area: Page-Specific Actions + Refresh + User Avatar */}
+      {/* Right Area: Page-Specific Actions + User Avatar */}
       <View style={styles.right}>
         {actions ? <View style={styles.actionsBox}>{actions}</View> : null}
-
-        {onRefresh && (
-          <Pressable
-            onPress={onRefresh}
-            style={({ pressed }) => [
-              styles.iconBtn,
-              pressed && { opacity: 0.7 },
-            ]}
-            accessibilityLabel="Refresh page data"
-          >
-            {refreshing ? (
-              <ActivityIndicator size="small" color={Colors.primary} />
-            ) : (
-              <AppIcon name="sync-outline" size={18} color={Colors.textMuted} />
-            )}
-          </Pressable>
-        )}
 
         {userInitials && (
           <Pressable
