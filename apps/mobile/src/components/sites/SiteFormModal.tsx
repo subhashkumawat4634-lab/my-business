@@ -18,7 +18,7 @@ import { Colors } from '../../theme/colors';
 import { AppIcon } from '../icons/AppIcon';
 import { FormSpec } from '../../types';
 import { CalendarPickerModal } from '../common/CalendarPickerModal';
-import { downloadSiteDocument } from '../../report';
+import { downloadSiteDocument, viewSiteDocument } from '../../report';
 import { siteForm } from '../../forms';
 import { TopNavBar } from '../common/TopNavBar';
 import { saveDocToIndexedDB, uploadDocToServer } from '../../storage/docStorage';
@@ -103,14 +103,6 @@ const COMMON_UNITS = [
   { label: 'Brass', value: 'brass' },
   { label: 'Days', value: 'days' },
   { label: 'Job', value: 'job' },
-];
-
-const SITE_SUGGESTIONS = [
-  'Residence Renovation',
-  'Interior & Painting',
-  'Civil Construction',
-  'Tile & Flooring Work',
-  'Commercial Renovation',
 ];
 
 const AGREEMENT_TERMS_PRESETS = [
@@ -317,7 +309,6 @@ export function SiteFormModal({
   const [isEndCalendarOpen, setIsEndCalendarOpen] = useState(false);
 
   const [localError, setLocalError] = useState('');
-  const [activeSection, setActiveSection] = useState<number>(1);
 
   // Handle GSTIN change with auto state detection
   const handleGstinChange = (text: string) => {
@@ -444,10 +435,10 @@ export function SiteFormModal({
     setDocuments((prev) => prev.filter((d) => d.id !== id));
   };
 
-  // Download Document handler
-  const handleDownloadDoc = async (doc: SiteDocument) => {
+  // View Document handler
+  const handleViewDoc = async (doc: SiteDocument) => {
     try {
-      await downloadSiteDocument(doc, {
+      await viewSiteDocument(doc, {
         name: name || 'Site Project',
         owner_name: ownerName || 'Client',
         phone,
@@ -460,7 +451,7 @@ export function SiteFormModal({
         pricing,
       });
     } catch (err: any) {
-      alert(err?.message || 'Could not download document.');
+      alert(err?.message || 'Could not view document.');
     }
   };
 
@@ -633,8 +624,6 @@ export function SiteFormModal({
                   : 'Add a new project or construction contract'
               }
               icon="business-outline"
-              onBack={() => !busy && onClose()}
-              backText="Work Sites"
             />
           ) : (
             <View style={styles.header}>
@@ -673,53 +662,6 @@ export function SiteFormModal({
               <Text style={styles.errorBannerText}>{displayError}</Text>
             </View>
           ) : null}
-
-          {/* Horizontal Section Indicator Tabs */}
-          <View style={styles.tabBarContainer}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tabBarScroll}
-            >
-              {[
-                { id: 1, label: 'Client & Site', icon: 'business' },
-                { id: 2, label: 'Scope & Rate', icon: 'calculator' },
-                { id: 3, label: 'Profit Forecast', icon: 'trending-up' },
-                { id: 4, label: 'Schedule', icon: 'calendar' },
-                {
-                  id: 5,
-                  label: `Documents (${documents.length})`,
-                  icon: 'document-text',
-                },
-              ].map((s) => {
-                const isActive = activeSection === s.id;
-                return (
-                  <Pressable
-                    key={s.id}
-                    onPress={() => setActiveSection(s.id)}
-                    style={[
-                      styles.sectionTab,
-                      isActive && styles.sectionTabActive,
-                    ]}
-                  >
-                    <AppIcon
-                      name={s.icon as any}
-                      size={13}
-                      color={isActive ? '#FFFFFF' : Colors.textMuted}
-                    />
-                    <Text
-                      style={[
-                        styles.sectionTabText,
-                        isActive && styles.sectionTabTextActive,
-                      ]}
-                    >
-                      {s.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
 
           <ScrollView
             keyboardShouldPersistTaps="handled"
@@ -762,23 +704,6 @@ export function SiteFormModal({
                     autoCapitalize="words"
                   />
                 </View>
-                {!isEdit && !name && (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.suggestionsScroll}
-                  >
-                    {SITE_SUGGESTIONS.map((item) => (
-                      <Pressable
-                        key={item}
-                        onPress={() => setName(item)}
-                        style={styles.suggestionPill}
-                      >
-                        <Text style={styles.suggestionPillText}>+ {item}</Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                )}
               </View>
 
               {/* Client / Owner Name */}
@@ -1742,16 +1667,16 @@ export function SiteFormModal({
                         </View>
                         <View style={styles.mobileDocActions}>
                           <Pressable
-                            onPress={() => handleDownloadDoc(doc)}
+                            onPress={() => handleViewDoc(doc)}
                             style={styles.docDownloadBtn}
-                            accessibilityLabel={`Download ${doc.name}`}
+                            accessibilityLabel={`View ${doc.name}`}
                           >
                             <AppIcon
-                              name="download-outline"
+                              name="eye-outline"
                               size={14}
-                              color={Colors.primary}
+                              color="#7C3AED"
                             />
-                            <Text style={styles.docDownloadBtnText}>Download</Text>
+                            <Text style={styles.docDownloadBtnText}>View</Text>
                           </Pressable>
                           <Pressable
                             onPress={() => handleRemoveDocument(doc.id)}
@@ -1806,7 +1731,7 @@ export function SiteFormModal({
                 <>
                   <AppIcon name="checkmark" size={17} color="#FFFFFF" />
                   <Text style={styles.saveBtnText}>
-                    {isEdit ? 'Update Site' : asPage ? 'Create Site' : 'Save Site'}
+                    {isEdit ? 'Save Changes' : 'Save Site'}
                   </Text>
                 </>
               )}
@@ -2095,37 +2020,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
   },
-  tabBarContainer: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  tabBarScroll: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  sectionTab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
-  },
-  sectionTabActive: {
-    backgroundColor: Colors.primary,
-  },
-  sectionTabText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-  },
-  sectionTabTextActive: {
-    color: '#FFFFFF',
-  },
   scrollContent: {
     padding: 12,
     gap: 12,
@@ -2225,24 +2119,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     color: Colors.textPrimary,
-  },
-  suggestionsScroll: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingTop: 4,
-  },
-  suggestionPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
-  suggestionPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.primary,
   },
   // GST Section styles
   gstCard: {
@@ -2781,14 +2657,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 6,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#F5F3FF',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#DDD6FE',
   },
   docDownloadBtnText: {
     fontSize: 11,
     fontWeight: '800',
-    color: Colors.primary,
+    color: '#7C3AED',
   },
   mobileDocDeleteBtn: {
     padding: 6,
@@ -2809,29 +2685,29 @@ const styles = StyleSheet.create({
   // Sticky Bottom Bar
   bottomBar: {
     flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
   },
   cancelBtn: {
     flex: 1,
-    height: 46,
+    height: 48,
     borderRadius: 10,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: Colors.textSecondary,
   },
   saveBtn: {
     flex: 2,
-    height: 46,
+    height: 48,
     borderRadius: 10,
     backgroundColor: Colors.primary,
     flexDirection: 'row',
@@ -2840,7 +2716,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   saveBtnText: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '800',
     color: '#FFFFFF',
   },

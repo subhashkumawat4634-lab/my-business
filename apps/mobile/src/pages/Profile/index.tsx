@@ -228,18 +228,15 @@ export function ProfilePage({
 
   const contractorDisplayName =
     form.contractorName || data.user.name || data.organization.name || 'ThekaBook';
-  const avatarLetters = formatNameInitials(contractorDisplayName, 'TB');
+  const avatarLetters = formatNameInitials(contractorDisplayName, '');
 
   return (
     <View style={styles.pageWrapper}>
       {/* Top Navigation Bar */}
       <TopNavBar
         title={t('businessProfile', 'Business & Firm Profile')}
-        subtitle={form.firmName || data.organization.name}
         userInitials={contractorDisplayName}
         organizationName={form.firmName || data.organization.name}
-        onBack={onBack}
-        backText={t('back', 'Back')}
         onRefresh={onRefresh}
         refreshing={refreshing}
       />
@@ -267,7 +264,11 @@ export function ProfilePage({
             <View style={styles.heroTopRow}>
               <View style={styles.avatarWrapper}>
                 <View style={styles.avatarCircle}>
-                  <Text style={styles.avatarText}>{avatarLetters}</Text>
+                  {avatarLetters ? (
+                    <Text style={styles.avatarText}>{avatarLetters}</Text>
+                  ) : (
+                    <AppIcon name="person" size={26} color="#FFFFFF" />
+                  )}
                 </View>
                 <View style={styles.avatarActiveDot} />
               </View>

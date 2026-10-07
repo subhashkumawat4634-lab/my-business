@@ -849,60 +849,6 @@ export function AttendancePage({
                   ) : null}
                 </View>
 
-                {/* Site Chips Filter */}
-                {data.sites.length > 1 && (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.filterChipsScroll}
-                  >
-                    <Pressable
-                      onPress={() => setSelectedSiteId('ALL')}
-                      style={[
-                        styles.filterChip,
-                        selectedSiteId === 'ALL' && styles.filterChipActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.filterChipText,
-                          selectedSiteId === 'ALL' && styles.filterChipTextActive,
-                        ]}
-                      >
-                        All Sites ({data.sites.length})
-                      </Text>
-                    </Pressable>
-
-                    {data.sites.map((site) => {
-                      const isSelected = selectedSiteId === site.id;
-                      return (
-                        <Pressable
-                          key={site.id}
-                          onPress={() => setSelectedSiteId(site.id)}
-                          style={[
-                            styles.filterChip,
-                            isSelected && styles.filterChipActive,
-                          ]}
-                        >
-                          <AppIcon
-                            name="business"
-                            size={13}
-                            color={isSelected ? '#2563EB' : Colors.textMuted}
-                          />
-                          <Text
-                            style={[
-                              styles.filterChipText,
-                              isSelected && styles.filterChipTextActive,
-                            ]}
-                          >
-                            {site.name}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                )}
-
                 {/* Status Filter Chips */}
                 <ScrollView
                   horizontal
@@ -989,7 +935,6 @@ export function AttendancePage({
                         </View>
 
                         <View style={styles.unmarkedActionBtn}>
-                          <AppIcon name="add" size={14} color="#2563EB" />
                           <Text style={styles.unmarkedActionBtnText}>Mark</Text>
                         </View>
                       </Pressable>

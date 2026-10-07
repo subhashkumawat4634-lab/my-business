@@ -117,6 +117,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Dashboard Page
     overview: 'Overview',
+    overviewSubtitle: 'Business overview, cash flow & live site pulse',
     contractorOverview: 'Contractor Overview',
     activeLedger: 'Active Ledger',
     totalReceivables: 'TOTAL RECEIVABLES',
@@ -441,6 +442,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Dashboard Page
     overview: 'डैशबोर्ड',
+    overviewSubtitle: 'व्यापार का सारांश, नकद प्रवाह और साइट्स का हिसाब',
     contractorOverview: 'ठेकेदार डैशबोर्ड',
     activeLedger: 'सक्रिय खाताबही',
     totalReceivables: 'कुल बाकी रकम (लेना है)',

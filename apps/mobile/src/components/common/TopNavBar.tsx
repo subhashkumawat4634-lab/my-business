@@ -47,9 +47,18 @@ export interface TopNavBarProps {
   style?: any;
 }
 
-export function formatNameInitials(name?: string | null, fallback = 'TB'): string {
+export function formatNameInitials(name?: string | null, fallback = ''): string {
   if (!name || !name.trim()) return fallback;
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const clean = name.trim();
+  if (
+    clean.toLowerCase() === 'thekabook' ||
+    clean.toLowerCase() === 'theka book' ||
+    clean.toLowerCase() === 'tb' ||
+    clean.toLowerCase() === 'admin'
+  ) {
+    return '';
+  }
+  const parts = clean.split(/\s+/).filter(Boolean);
   if (parts.length === 0) return fallback;
   if (parts.length === 1) {
     // Single word name (e.g. "Subhash" -> 'S', "Vikesh" -> 'V')
@@ -98,7 +107,7 @@ export function TopNavBar({
   };
 
   const badgeTheme = badgeObj ? getBadgeStyle(badgeObj.tone) : null;
-  const avatarText = formatNameInitials(userInitials || organizationName, 'TB');
+  const avatarText = formatNameInitials(userInitials || organizationName, '');
 
   const handleAvatarPress = () => {
     if (onOpenProfile) {
@@ -174,18 +183,23 @@ export function TopNavBar({
         {actions ? <View style={styles.actionsBox}>{actions}</View> : null}
 
         {/* Professional Profile Trigger Avatar */}
-        <Pressable
-          onPress={handleAvatarPress}
-          disabled={!onOpenProfile}
-          style={({ pressed }) => [
-            styles.avatarBtn,
-            pressed && onOpenProfile && { opacity: 0.8, transform: [{ scale: 0.95 }] },
-          ]}
-          accessibilityLabel="Open contractor profile & business settings"
-        >
-          <Text style={styles.avatarText}>{avatarText}</Text>
-          <View style={styles.avatarStatusBadge} />
-        </Pressable>
+        {onOpenProfile ? (
+          <Pressable
+            onPress={handleAvatarPress}
+            style={({ pressed }) => [
+              styles.avatarBtn,
+              pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] },
+            ]}
+            accessibilityLabel="Open contractor profile & business settings"
+          >
+            {avatarText ? (
+              <Text style={styles.avatarText}>{avatarText}</Text>
+            ) : (
+              <AppIcon name="person" size={17} color="#FFFFFF" />
+            )}
+            <View style={styles.avatarStatusBadge} />
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

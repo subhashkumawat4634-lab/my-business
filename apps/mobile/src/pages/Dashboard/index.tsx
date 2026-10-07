@@ -80,7 +80,7 @@ export function DashboardPage({
     <View style={styles.pageWrapper}>
       <TopNavBar
         title={t('appName', 'ThekaBook')}
-        subtitle={data.organization.name}
+        subtitle={t('overviewSubtitle', 'Business overview, cash flow & live site pulse')}
         userInitials={data.user.name}
         organizationName={data.organization.name}
         onOpenProfile={() => onNavigateTab('profile')}

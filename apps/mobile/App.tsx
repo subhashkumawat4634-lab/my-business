@@ -42,7 +42,7 @@ import { attendanceForm, entryForm, siteForm, workerForm, voidForm } from './src
 import { pdfReport, shareReport } from './src/report';
 import { FormSpec, Row, Snapshot } from './src/types';
 import { LanguageProvider, useLanguage } from './src/i18n';
-import { RedirectingScreen } from './src/components/common/RedirectingScreen';
+import { AppLoader } from './src/components/common/AppLoader';
 
 function MainApp() {
   const { t, lang } = useLanguage();
@@ -483,11 +483,7 @@ function MainApp() {
   };
 
   if (!ready) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
+    return <AppLoader message="Starting ThekaBook..." />;
   }
 
   if (!token) {
@@ -516,12 +512,7 @@ function MainApp() {
         </SafeAreaView>
       );
     }
-    return (
-      <RedirectingScreen
-        title="Loading Workspace..."
-        subtitle="Synchronizing project ledger, sites & attendance records"
-      />
-    );
+    return <AppLoader message="Syncing records..." />;
   }
 
   return (

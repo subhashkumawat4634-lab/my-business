@@ -20,7 +20,7 @@ import { TopNavBar } from '../../components/common/TopNavBar';
 import { Snapshot, Row } from '../../types';
 import { money, siteSummary } from '../../finance';
 import { parseSiteNotesAndDocs } from '../../components/sites/SiteFormModal';
-import { downloadSiteDocument } from '../../report';
+import { downloadSiteDocument, viewSiteDocument } from '../../report';
 import { useLanguage } from '../../i18n';
 
 interface SitesPageProps {
@@ -112,30 +112,19 @@ export function SitesPage({
       site.status === 'ONGOING'
         ? t('active', 'Active')
         : site.status === 'COMPLETED'
-        ? t('completed', 'Completed')
-        : site.status === 'PAUSED'
-        ? t('paused', 'Paused')
-        : t('upcoming', 'Upcoming');
+          ? t('completed', 'Completed')
+          : site.status === 'PAUSED'
+            ? t('paused', 'Paused')
+            : t('upcoming', 'Upcoming');
 
     return (
       <View style={styles.pageWrapper}>
         <TopNavBar
-          title={site.name}
-          subtitle={`${site.owner_name} • ${site.phone || (lang === 'hi' ? 'फोन नंबर नहीं' : 'No phone')}`}
+          title={t('siteDetails', 'Site Details')}
+          icon="business"
           userInitials={data.user.name}
           organizationName={data.organization.name}
           onOpenProfile={onOpenProfile}
-          onBack={() => onSelectSite(null)}
-          backText={t('allSites', 'All Sites')}
-          badge={{
-            label: statusBadgeLabel,
-            tone:
-              site.status === 'PAUSED'
-                ? 'orange'
-                : site.status === 'COMPLETED'
-                ? 'blue'
-                : 'green',
-          }}
           onRefresh={onRefresh}
           refreshing={refreshing}
         />
@@ -153,86 +142,63 @@ export function SitesPage({
           <View style={styles.container}>
             {/* Executive Site Overview Card */}
             <View style={styles.siteHeaderCard}>
-              {/* Primary Header: Avatar + Title & Meta + Status & Edit Button */}
+              {/* Primary Header: Avatar + Title & Meta + Edit Button */}
               <View style={styles.headerPrimaryRow}>
                 <View style={styles.siteAvatar}>
-                  <AppIcon name="business" size={24} color={Colors.primary} />
+                  <AppIcon name="business" size={22} color={Colors.primary} />
                 </View>
 
                 <View style={styles.headerMainCol}>
-                  <View style={styles.titleActionRow}>
-                    <Text style={styles.siteTitle} numberOfLines={1}>
-                      {site.name}
-                    </Text>
+                  <Text style={styles.siteTitle}>
+                    {site.name}
+                  </Text>
 
-                    <View style={styles.statusAndEditGroup}>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          site.status === 'ONGOING'
-                            ? styles.statusBadgeOngoing
-                            : site.status === 'COMPLETED'
+                  {/* Clean Status & Client Subtitle */}
+                  <View style={styles.headerMetaRow}>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        site.status === 'ONGOING'
+                          ? styles.statusBadgeOngoing
+                          : site.status === 'COMPLETED'
                             ? styles.statusBadgeCompleted
                             : styles.statusBadgePaused,
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.statusDot,
-                            site.status === 'ONGOING'
-                              ? styles.statusDotOngoing
-                              : site.status === 'COMPLETED'
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.statusDot,
+                          site.status === 'ONGOING'
+                            ? styles.statusDotOngoing
+                            : site.status === 'COMPLETED'
                               ? styles.statusDotCompleted
                               : styles.statusDotPaused,
-                          ]}
-                        />
-                        <Text
-                          style={[
-                            styles.statusBadgeText,
-                            site.status === 'ONGOING'
-                              ? styles.statusTextOngoing
-                              : site.status === 'COMPLETED'
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.statusBadgeText,
+                          site.status === 'ONGOING'
+                            ? styles.statusTextOngoing
+                            : site.status === 'COMPLETED'
                               ? styles.statusTextCompleted
                               : styles.statusTextPaused,
-                          ]}
-                        >
-                          {site.status === 'ONGOING'
-                            ? 'Ongoing'
-                            : site.status === 'COMPLETED'
+                        ]}
+                      >
+                        {site.status === 'ONGOING'
+                          ? 'Ongoing'
+                          : site.status === 'COMPLETED'
                             ? 'Completed'
                             : 'Paused'}
-                        </Text>
-                      </View>
-
-                      <Pressable
-                        onPress={() => onEditSite(site)}
-                        style={({ pressed }) => [
-                          styles.editSiteBtn,
-                          pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] },
-                        ]}
-                        accessibilityLabel="Edit site details"
-                      >
-                        <AppIcon name="create-outline" size={13} color="#334155" />
-                        <Text style={styles.editSiteBtnText}>Edit</Text>
-                      </Pressable>
+                      </Text>
                     </View>
-                  </View>
 
-                  {/* Clean Client & Firm Subtitle */}
-                  <View style={styles.headerMetaRow}>
+                    <Text style={styles.metaDotDivider}>•</Text>
+
                     <View style={styles.clientInlineGroup}>
                       <AppIcon name="person" size={12} color="#64748B" />
                       <Text style={styles.clientInlineName}>{site.owner_name}</Text>
                     </View>
-
-                    {businessName ? (
-                      <>
-                        <Text style={styles.metaDotDivider}>•</Text>
-                        <Text style={styles.businessInlineText} numberOfLines={1}>
-                          {businessName}
-                        </Text>
-                      </>
-                    ) : null}
 
                     {site.phone ? (
                       <>
@@ -243,86 +209,92 @@ export function SitesPage({
                         </View>
                       </>
                     ) : null}
+
+                    {businessName ? (
+                      <>
+                        <Text style={styles.metaDotDivider}>•</Text>
+                        <Text style={styles.businessInlineText}>
+                          {businessName}
+                        </Text>
+                      </>
+                    ) : null}
                   </View>
                 </View>
+
+                <Pressable
+                  onPress={() => onEditSite(site)}
+                  style={({ pressed }) => [
+                    styles.editSiteBtn,
+                    pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] },
+                  ]}
+                  accessibilityLabel="Edit site details"
+                >
+                  <AppIcon name="create-outline" size={13} color="#334155" />
+                  <Text style={styles.editSiteBtnText}>Edit</Text>
+                </Pressable>
               </View>
 
               {/* Clean hairline separator */}
               <View style={styles.cardDivider} />
 
-              {/* Key Project Specs Row */}
-              <View style={[styles.specsRow, !isDesktop && styles.specsRowMobile]}>
-                {/* Scope & Contract */}
-                <View style={styles.specItem}>
-                  <View style={styles.specIconBox}>
-                    <AppIcon
-                      name={site.work_type === 'LABOUR' ? 'people' : 'construct'}
-                      size={15}
-                      color="#475569"
-                    />
-                  </View>
-                  <View style={styles.specContent}>
-                    <Text style={styles.specLabel}>{t('scopeRate', 'Scope & Rate')}</Text>
-                    <Text style={styles.specValue} numberOfLines={1}>
-                      {site.work_type === 'LABOUR' ? t('labourOnly', 'Labour Only') : t('labourMaterial', 'Labour + Material')}
-                      {' • '}
-                      {site.pricing === 'FIXED'
-                        ? t('fixedLumpsum', 'Fixed Lumpsum')
-                        : site.pricing === 'UNIT'
+              {/* Key Project Specs Chips - Wrapping naturally with no truncation */}
+              <View style={styles.specsChipsContainer}>
+                {/* Scope & Rate */}
+                <View style={styles.specChip}>
+                  <AppIcon
+                    name={site.work_type === 'LABOUR' ? 'people-outline' : 'construct-outline'}
+                    size={13}
+                    color="#2563EB"
+                  />
+                  <Text style={styles.specChipText}>
+                    {site.work_type === 'LABOUR' ? t('labourOnly', 'Labour Only') : t('labourMaterial', 'Labour + Material')}
+                    {' • '}
+                    {site.pricing === 'FIXED'
+                      ? t('fixedLumpsum', 'Fixed Lumpsum')
+                      : site.pricing === 'UNIT'
                         ? t('unitRate', 'Unit Rate')
                         : t('daily', 'Daily')}
-                    </Text>
-                  </View>
+                  </Text>
                 </View>
 
                 {/* Timeline */}
                 {(site.start_date || site.end_date) ? (
-                  <View style={styles.specItem}>
-                    <View style={styles.specIconBox}>
-                      <AppIcon name="calendar-outline" size={15} color="#475569" />
-                    </View>
-                    <View style={styles.specContent}>
-                      <Text style={styles.specLabel}>{t('timeline', 'Timeline')}</Text>
-                      <Text style={styles.specValue} numberOfLines={1}>
-                        {site.start_date}{site.end_date ? ` → ${site.end_date}` : ` (${t('active', 'Active')})`}
-                      </Text>
-                    </View>
+                  <View style={styles.specChip}>
+                    <AppIcon name="calendar-outline" size={13} color="#059669" />
+                    <Text style={styles.specChipText}>
+                      {site.start_date}{site.end_date ? ` → ${site.end_date}` : ` (${t('active', 'Active')})`}
+                    </Text>
                   </View>
                 ) : null}
 
                 {/* Location */}
                 {site.address ? (
-                  <View style={styles.specItem}>
-                    <View style={styles.specIconBox}>
-                      <AppIcon name="location-outline" size={15} color="#475569" />
-                    </View>
-                    <View style={styles.specContent}>
-                      <Text style={styles.specLabel}>{t('location', 'Location')}</Text>
-                      <Text style={styles.specValue} numberOfLines={1}>
-                        {site.address}{state ? `, ${state}` : ''}
-                      </Text>
-                    </View>
+                  <View style={styles.specChip}>
+                    <AppIcon name="location-outline" size={13} color="#D97706" />
+                    <Text style={styles.specChipText}>
+                      {site.address}{state ? `, ${state}` : ''}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* GST Verification Banner */}
+                {gstin ? (
+                  <View style={[styles.specChip, styles.specChipGst]}>
+                    <AppIcon name="shield-checkmark-outline" size={13} color="#16A34A" />
+                    <Text style={styles.specChipGstText}>
+                      GSTIN: <Text style={styles.gstCodeText}>{gstin}</Text>
+                      {state ? ` • ${state}${stateCode ? ` (${stateCode})` : ''}` : ''}
+                    </Text>
                   </View>
                 ) : null}
               </View>
-
-              {/* GST Verification Banner (if registered) */}
-              {gstin ? (
-                <View style={styles.gstStrip}>
-                  <AppIcon name="shield-checkmark" size={13} color="#16A34A" />
-                  <Text style={styles.gstStripText}>
-                    GSTIN: <Text style={styles.gstCodeText}>{gstin}</Text>
-                    {state ? ` • ${state}${stateCode ? ` (${stateCode})` : ''}` : ''}
-                  </Text>
-                </View>
-              ) : null}
 
               {/* Contract Terms & Notes Section */}
               {userNotes ? (
                 <View style={styles.termsBox}>
                   <View style={styles.termsHeaderRow}>
                     <View style={styles.termsTitleGroup}>
-                      <AppIcon name="document-text-outline" size={15} color="#0F2851" />
+                      <AppIcon name="document-text-outline" size={14} color="#0F2851" />
                       <Text style={styles.termsTitleText}>{t('contractTermsNotes', 'Contract Terms & Notes')}</Text>
                     </View>
                     {isLongNotes && (
@@ -342,7 +314,7 @@ export function SitesPage({
                         </Text>
                         <AppIcon
                           name={termsExpanded ? 'chevron-up' : 'chevron-down'}
-                          size={13}
+                          size={12}
                           color="#1D4ED8"
                         />
                       </Pressable>
@@ -351,7 +323,7 @@ export function SitesPage({
 
                   <Text
                     style={styles.termsBodyText}
-                    numberOfLines={isLongNotes && !termsExpanded ? 4 : undefined}
+                    numberOfLines={isLongNotes && !termsExpanded ? 3 : undefined}
                   >
                     {userNotes}
                   </Text>
@@ -359,310 +331,300 @@ export function SitesPage({
               ) : null}
             </View>
 
-          {/* Financial Stat Cards */}
-          <View style={styles.metricsGrid}>
-            <MetricCard
-              label={t('agreedContract', 'Agreed Contract')}
-              value={money(f.contract)}
-              foot={t('totalProjectValue', 'Total project value')}
-              icon="business-outline"
-            />
-            <MetricCard
-              label={t('totalReceived', 'Received')}
-              value={money(f.received)}
-              foot={t('collectedSoFar', 'Collected so far')}
-              tone="success"
-              icon="cash-outline"
-            />
-            <MetricCard
-              label={t('clientBalance', 'Client Balance')}
-              value={money(f.ownerBalance)}
-              foot={f.ownerBalance < 0 ? t('overpaid', 'Overpaid') : t('pendingToCollect', 'Pending to collect')}
-              tone={f.ownerBalance < 0 ? 'danger' : 'warning'}
-              icon="wallet-outline"
-            />
-            <MetricCard
-              label={f.final ? t('finalMargin', 'Final Margin') : t('estMargin', 'Est. Margin')}
-              value={money(f.profit)}
-              foot={t('projectedMargin', 'Projected contractor margin')}
-              accent
-              tone={f.profit >= 0 ? 'success' : 'danger'}
-              icon="trending-up"
-            />
-          </View>
-
-          {/* Agreements & Documents Section */}
-          <Card style={styles.documentsCard}>
-            <View style={styles.docHeaderRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <AppIcon name="document-text" size={18} color="#7C3AED" />
-                <Text style={styles.cardHeaderTitle}>
-                  Agreements & Documents ({documents.length})
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => onEditSite(site)}
-                style={({ pressed }) => [
-                  styles.uploadDocBtn,
-                  pressed && { opacity: 0.8 },
-                ]}
-              >
-                <AppIcon name="cloud-upload" size={14} color="#7C3AED" />
-                <Text style={styles.uploadDocBtnText}>+ Manage</Text>
-              </Pressable>
+            {/* Financial Stat Cards */}
+            <View style={styles.metricsGrid}>
+              <MetricCard
+                label={t('agreedContract', 'Agreed Contract')}
+                value={money(f.contract)}
+                foot={t('totalProjectValue', 'Total project value')}
+                icon="business-outline"
+              />
+              <MetricCard
+                label={t('totalReceived', 'Received')}
+                value={money(f.received)}
+                foot={t('collectedSoFar', 'Collected so far')}
+                tone="success"
+                icon="cash-outline"
+              />
+              <MetricCard
+                label={t('clientBalance', 'Client Balance')}
+                value={money(f.ownerBalance)}
+                foot={f.ownerBalance < 0 ? t('overpaid', 'Overpaid') : t('pendingToCollect', 'Pending to collect')}
+                tone={f.ownerBalance < 0 ? 'danger' : 'warning'}
+                icon="wallet-outline"
+              />
+              <MetricCard
+                label={f.final ? t('finalMargin', 'Final Margin') : t('estMargin', 'Est. Margin')}
+                value={money(f.profit)}
+                foot={t('projectedMargin', 'Projected contractor margin')}
+                accent
+                tone={f.profit >= 0 ? 'success' : 'danger'}
+                icon="trending-up"
+              />
             </View>
 
-            {documents.length > 0 ? (
-              <View style={styles.docItemsGrid}>
-                {documents.map((d) => (
-                  <View key={d.id} style={styles.docItemCard}>
-                    <View style={styles.docItemIconBox}>
-                      <AppIcon
-                        name={
-                          d.category === 'AGREEMENT'
-                            ? 'document-text'
-                            : d.category === 'DRAWING'
-                            ? 'map'
-                            : d.category === 'QUOTATION'
-                            ? 'receipt'
-                            : 'image'
-                        }
-                        size={18}
-                        color={
-                          d.category === 'AGREEMENT'
-                            ? '#16A34A'
-                            : d.category === 'DRAWING'
-                            ? '#2563EB'
-                            : d.category === 'QUOTATION'
-                            ? '#D97706'
-                            : '#9333EA'
-                        }
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Text style={styles.docItemName} numberOfLines={1}>
-                          {d.name}
-                        </Text>
-                        <Badge label={d.category} tone="gray" />
+            {/* Agreements & Documents Section */}
+            <Card style={styles.documentsCard}>
+              <View style={styles.docHeaderRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <AppIcon name="document-text" size={17} color="#7C3AED" />
+                  <Text style={styles.cardHeaderTitle}>
+                    Agreements & Documents ({documents.length})
+                  </Text>
+                </View>
+              </View>
+
+              {documents.length > 0 ? (
+                <View style={styles.docItemsGrid}>
+                  {documents.map((d) => (
+                    <View key={d.id} style={styles.docItemCard}>
+                      <View style={styles.docItemIconBox}>
+                        <AppIcon
+                          name={
+                            d.category === 'AGREEMENT'
+                              ? 'document-text'
+                              : d.category === 'DRAWING'
+                                ? 'map'
+                                : d.category === 'QUOTATION'
+                                  ? 'receipt'
+                                  : 'image'
+                          }
+                          size={18}
+                          color={
+                            d.category === 'AGREEMENT'
+                              ? '#16A34A'
+                              : d.category === 'DRAWING'
+                                ? '#2563EB'
+                                : d.category === 'QUOTATION'
+                                  ? '#D97706'
+                                  : '#9333EA'
+                          }
+                        />
                       </View>
-                      <Text style={styles.docItemMeta}>
-                        {d.size ? `${d.size} • ` : ''}Date: {d.date}
-                        {d.refNo ? ` • Ref: ${d.refNo}` : ''}
-                      </Text>
-                      {d.terms ? (
-                        <Text style={styles.docItemTerms} numberOfLines={2}>
-                          Terms: {d.terms}
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.docItemName} numberOfLines={1}>
+                            {d.name}
+                          </Text>
+                          <Badge label={d.category} tone="gray" />
+                        </View>
+                        <Text style={styles.docItemMeta}>
+                          {d.size ? `${d.size} • ` : ''}Date: {d.date}
+                          {d.refNo ? ` • Ref: ${d.refNo}` : ''}
                         </Text>
-                      ) : null}
+                        {d.terms ? (
+                          <Text style={styles.docItemTerms} numberOfLines={2}>
+                            Terms: {d.terms}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Pressable
+                        onPress={() => viewSiteDocument(d, {
+                          name: site.name,
+                          owner_name: site.owner_name,
+                          phone: site.phone,
+                          address: site.address,
+                          gstin,
+                          state,
+                          stateCode,
+                          businessName,
+                          work_type: site.work_type,
+                          pricing: site.pricing,
+                        })}
+                        style={({ pressed }) => [
+                          styles.docItemActionViewBtn,
+                          pressed && { opacity: 0.75, transform: [{ scale: 0.96 }] },
+                        ]}
+                        accessibilityLabel={`View ${d.name}`}
+                      >
+                        <AppIcon name="eye-outline" size={14} color="#7C3AED" />
+                        <Text style={styles.docItemActionViewBtnText}>View</Text>
+                      </Pressable>
                     </View>
-                    <Pressable
-                      onPress={() => downloadSiteDocument(d, {
-                        name: site.name,
-                        owner_name: site.owner_name,
-                        phone: site.phone,
-                        address: site.address,
-                        gstin,
-                        state,
-                        stateCode,
-                        businessName,
-                        work_type: site.work_type,
-                        pricing: site.pricing,
-                      })}
-                      style={({ pressed }) => [
-                        styles.docItemDownloadBtn,
-                        pressed && { opacity: 0.8 },
-                      ]}
-                      accessibilityLabel={`Download ${d.name}`}
-                    >
-                      <AppIcon name="download-outline" size={14} color="#1E40AF" />
-                      <Text style={styles.docItemDownloadBtnText}>Download</Text>
-                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.noDocText}>
+                  No contracts or agreements attached yet. Tap "View" to see or upload documents.
+                </Text>
+              )}
+            </Card>
+
+            {/* Cost & Cash Breakdown */}
+            <Card style={styles.breakdownCard}>
+              <Text style={styles.cardHeaderTitle}>Cost & Cash Breakdown</Text>
+              <View style={styles.breakdownGrid}>
+                {[
+                  ['Labour Earned (Wages)', f.labour],
+                  ['Labour Paid (Cash)', f.wagesPaid],
+                  ['Material Cost', f.material],
+                  ['Other Site Expense', f.expenses],
+                  ['Supplier Bills Paid', f.suppliersPaid],
+                  ['Supplier Dues Pending', f.supplierBalance],
+                  ['Estimated Remaining Cost', f.remaining],
+                  ['Net Cash In Hand (This Site)', f.cash],
+                ].map(([label, v]) => (
+                  <View key={label as string} style={styles.breakdownItem}>
+                    <Text style={styles.breakdownLabel}>{label as string}</Text>
+                    <Text style={styles.breakdownValue}>{money(v as number)}</Text>
                   </View>
                 ))}
               </View>
+            </Card>
+
+            {/* Site Action Buttons */}
+            {isDesktop ? (
+              <View style={styles.actionsWrapDesktop}>
+                <Button
+                  title={t('receivePayment', 'Receive Payment')}
+                  onPress={() => onOpenEntry('RECEIPT', site.id)}
+                  icon="arrow-down"
+                />
+                <Button
+                  title={t('navAttendance', 'Attendance')}
+                  variant="secondary"
+                  onPress={() => onOpenAttendance(site.id)}
+                  icon="calendar"
+                />
+                <Button
+                  title={t('materialBill', 'Material Bill')}
+                  variant="secondary"
+                  onPress={() => onOpenEntry('MATERIAL', site.id)}
+                  icon="cube"
+                />
+                <Button
+                  title={t('extraWork', 'Extra Work')}
+                  variant="secondary"
+                  onPress={() => onOpenEntry('EXTRA', site.id)}
+                  icon="add-circle"
+                />
+                <Button
+                  title={t('shareStatement', 'Share Statement')}
+                  variant="secondary"
+                  onPress={() => onShareReport(site.id)}
+                  icon="share-social"
+                />
+              </View>
             ) : (
-              <Text style={styles.noDocText}>
-                No contracts or agreements attached yet. Tap "+ Manage" to attach files.
-              </Text>
+              <View style={styles.actionsWrapMobile}>
+                {/* Row 1: Primary Receive Payment (Full Width) */}
+                <Button
+                  title={t('receivePayment', 'Receive Payment')}
+                  onPress={() => onOpenEntry('RECEIPT', site.id)}
+                  icon="arrow-down"
+                  style={styles.fullWidthActionBtn}
+                />
+
+                {/* Row 2: Attendance & Material Bill (50% each) */}
+                <View style={styles.actionGridRow}>
+                  <View style={styles.actionGridCol}>
+                    <Button
+                      title={t('navAttendance', 'Attendance')}
+                      variant="secondary"
+                      onPress={() => onOpenAttendance(site.id)}
+                      icon="calendar"
+                      style={styles.gridActionBtn}
+                    />
+                  </View>
+                  <View style={styles.actionGridCol}>
+                    <Button
+                      title={t('materialBill', 'Material Bill')}
+                      variant="secondary"
+                      onPress={() => onOpenEntry('MATERIAL', site.id)}
+                      icon="cube"
+                      style={styles.gridActionBtn}
+                    />
+                  </View>
+                </View>
+
+                {/* Row 3: Extra Work & Share Statement (50% each) */}
+                <View style={styles.actionGridRow}>
+                  <View style={styles.actionGridCol}>
+                    <Button
+                      title={t('extraWork', 'Extra Work')}
+                      variant="secondary"
+                      onPress={() => onOpenEntry('EXTRA', site.id)}
+                      icon="add-circle"
+                      style={styles.gridActionBtn}
+                    />
+                  </View>
+                  <View style={styles.actionGridCol}>
+                    <Button
+                      title={t('shareStatement', 'Share Statement')}
+                      variant="secondary"
+                      onPress={() => onShareReport(site.id)}
+                      icon="share-social"
+                      style={styles.gridActionBtn}
+                    />
+                  </View>
+                </View>
+              </View>
             )}
-          </Card>
 
-          {/* Cost & Cash Breakdown */}
-          <Card style={styles.breakdownCard}>
-            <Text style={styles.cardHeaderTitle}>Cost & Cash Breakdown</Text>
-            <View style={styles.breakdownGrid}>
-              {[
-                ['Labour Earned (Wages)', f.labour],
-                ['Labour Paid (Cash)', f.wagesPaid],
-                ['Material Cost', f.material],
-                ['Other Site Expense', f.expenses],
-                ['Supplier Bills Paid', f.suppliersPaid],
-                ['Supplier Dues Pending', f.supplierBalance],
-                ['Estimated Remaining Cost', f.remaining],
-                ['Net Cash In Hand (This Site)', f.cash],
-              ].map(([label, v]) => (
-                <View key={label as string} style={styles.breakdownItem}>
-                  <Text style={styles.breakdownLabel}>{label as string}</Text>
-                  <Text style={styles.breakdownValue}>{money(v as number)}</Text>
-                </View>
-              ))}
+            {/* Site Ledger Entries */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('siteLedger', 'Site Ledger')}</Text>
+              <Text style={styles.sectionSubtitle}>{t('allTransactionsForSite', 'All transactions for this site')}</Text>
             </View>
-          </Card>
 
-          {/* Site Action Buttons */}
-          {isDesktop ? (
-            <View style={styles.actionsWrapDesktop}>
-              <Button
-                title={t('receivePayment', 'Receive Payment')}
-                onPress={() => onOpenEntry('RECEIPT', site.id)}
-                icon="arrow-down"
-              />
-              <Button
-                title={t('navAttendance', 'Attendance')}
-                variant="secondary"
-                onPress={() => onOpenAttendance(site.id)}
-                icon="calendar"
-              />
-              <Button
-                title={t('materialBill', 'Material Bill')}
-                variant="secondary"
-                onPress={() => onOpenEntry('MATERIAL', site.id)}
-                icon="cube"
-              />
-              <Button
-                title={t('extraWork', 'Extra Work')}
-                variant="secondary"
-                onPress={() => onOpenEntry('EXTRA', site.id)}
-                icon="add-circle"
-              />
-              <Button
-                title={t('shareStatement', 'Share Statement')}
-                variant="secondary"
-                onPress={() => onShareReport(site.id)}
-                icon="share-social"
-              />
-            </View>
-          ) : (
-            <View style={styles.actionsWrapMobile}>
-              {/* Row 1: Primary Receive Payment (Full Width) */}
-              <Button
-                title={t('receivePayment', 'Receive Payment')}
-                onPress={() => onOpenEntry('RECEIPT', site.id)}
-                icon="arrow-down"
-                style={styles.fullWidthActionBtn}
-              />
-
-              {/* Row 2: Attendance & Material Bill (50% each) */}
-              <View style={styles.actionGridRow}>
-                <View style={styles.actionGridCol}>
-                  <Button
-                    title={t('navAttendance', 'Attendance')}
-                    variant="secondary"
-                    onPress={() => onOpenAttendance(site.id)}
-                    icon="calendar"
-                    style={styles.gridActionBtn}
-                  />
-                </View>
-                <View style={styles.actionGridCol}>
-                  <Button
-                    title={t('materialBill', 'Material Bill')}
-                    variant="secondary"
-                    onPress={() => onOpenEntry('MATERIAL', site.id)}
-                    icon="cube"
-                    style={styles.gridActionBtn}
-                  />
-                </View>
-              </View>
-
-              {/* Row 3: Extra Work & Share Statement (50% each) */}
-              <View style={styles.actionGridRow}>
-                <View style={styles.actionGridCol}>
-                  <Button
-                    title={t('extraWork', 'Extra Work')}
-                    variant="secondary"
-                    onPress={() => onOpenEntry('EXTRA', site.id)}
-                    icon="add-circle"
-                    style={styles.gridActionBtn}
-                  />
-                </View>
-                <View style={styles.actionGridCol}>
-                  <Button
-                    title={t('shareStatement', 'Share Statement')}
-                    variant="secondary"
-                    onPress={() => onShareReport(site.id)}
-                    icon="share-social"
-                    style={styles.gridActionBtn}
-                  />
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* Site Ledger Entries */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('siteLedger', 'Site Ledger')}</Text>
-            <Text style={styles.sectionSubtitle}>{t('allTransactionsForSite', 'All transactions for this site')}</Text>
-          </View>
-
-          <View style={styles.ledgerList}>
-            {siteEntries.map((e) => {
-              const isReceipt = e.kind === 'RECEIPT';
-              return (
-                <Card key={e.id} style={styles.entryRow}>
-                  <View style={styles.entryLeft}>
-                    <View
+            <View style={styles.ledgerList}>
+              {siteEntries.map((e) => {
+                const isReceipt = e.kind === 'RECEIPT';
+                return (
+                  <Card key={e.id} style={styles.entryRow}>
+                    <View style={styles.entryLeft}>
+                      <View
+                        style={[
+                          styles.entryIcon,
+                          {
+                            backgroundColor: isReceipt
+                              ? Colors.successLight
+                              : Colors.surfaceSubtle,
+                          },
+                        ]}
+                      >
+                        <AppIcon
+                          name={
+                            isReceipt
+                              ? 'arrow-down'
+                              : e.kind === 'MATERIAL'
+                                ? 'cube'
+                                : 'arrow-up'
+                          }
+                          size={18}
+                          color={isReceipt ? Colors.success : Colors.textPrimary}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.entryDesc}>{e.description}</Text>
+                        <Text style={styles.entryMeta}>
+                          {String(e.date).slice(0, 10)} • {e.kind}
+                          {e.party ? ` • ${e.party}` : ''}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text
                       style={[
-                        styles.entryIcon,
-                        {
-                          backgroundColor: isReceipt
-                            ? Colors.successLight
-                            : Colors.surfaceSubtle,
-                        },
+                        styles.entryAmount,
+                        { color: isReceipt ? Colors.success : Colors.textPrimary },
                       ]}
                     >
-                      <AppIcon
-                        name={
-                          isReceipt
-                            ? 'arrow-down'
-                            : e.kind === 'MATERIAL'
-                            ? 'cube'
-                            : 'arrow-up'
-                        }
-                        size={18}
-                        color={isReceipt ? Colors.success : Colors.textPrimary}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.entryDesc}>{e.description}</Text>
-                      <Text style={styles.entryMeta}>
-                        {String(e.date).slice(0, 10)} • {e.kind}
-                        {e.party ? ` • ${e.party}` : ''}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text
-                    style={[
-                      styles.entryAmount,
-                      { color: isReceipt ? Colors.success : Colors.textPrimary },
-                    ]}
-                  >
-                    {isReceipt ? '+' : '-'} {money(e.amount)}
-                  </Text>
-                </Card>
-              );
-            })}
-            {!siteEntries.length && (
-              <Text style={styles.emptyNotice}>
-                {lang === 'hi' ? 'इस साइट के लिए अभी कोई लेन-देन दर्ज नहीं है।' : 'No expenses or receipts recorded for this site yet.'}
-              </Text>
-            )}
+                      {isReceipt ? '+' : '-'} {money(e.amount)}
+                    </Text>
+                  </Card>
+                );
+              })}
+              {!siteEntries.length && (
+                <Text style={styles.emptyNotice}>
+                  {lang === 'hi' ? 'इस साइट के लिए अभी कोई लेन-देन दर्ज नहीं है।' : 'No expenses or receipts recorded for this site yet.'}
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
+        </ScrollView>
+      </View>
+    );
+  }
 
   // Render All Sites List View
   const query = search.trim().toLowerCase();
@@ -737,234 +699,232 @@ export function SitesPage({
       >
         <View style={styles.container}>
 
-        {/* Quick Stats Overview Banner */}
-        <View style={styles.statsBanner}>
-          <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>{t('totalSites', 'Total Sites')}</Text>
-            <Text style={styles.statBannerValue}>{totalSitesCount}</Text>
+          {/* Quick Stats Overview Banner */}
+          <View style={styles.statsBanner}>
+            <View style={styles.statBannerItem}>
+              <Text style={styles.statBannerLabel}>{t('totalSites', 'Total Sites')}</Text>
+              <Text style={styles.statBannerValue}>{totalSitesCount}</Text>
+            </View>
+            <View style={styles.statBannerDivider} />
+            <View style={styles.statBannerItem}>
+              <Text style={styles.statBannerLabel}>{t('activeSitesCount', 'Active Sites')}</Text>
+              <Text style={[styles.statBannerValue, { color: '#16A34A' }]}>
+                {ongoingSitesCount}
+              </Text>
+            </View>
+            <View style={styles.statBannerDivider} />
+            <View style={styles.statBannerItem}>
+              <Text style={styles.statBannerLabel}>{t('totalValue', 'Total Value')}</Text>
+              <Text style={styles.statBannerValue}>
+                {money(totalContractVal)}
+              </Text>
+            </View>
+            <View style={styles.statBannerDivider} />
+            <View style={styles.statBannerItem}>
+              <Text style={styles.statBannerLabel}>{t('pendingDue', 'Pending Due')}</Text>
+              <Text style={[styles.statBannerValue, { color: totalPendingVal > 0 ? '#D97706' : '#16A34A' }]}>
+                {money(totalPendingVal)}
+              </Text>
+            </View>
           </View>
-          <View style={styles.statBannerDivider} />
-          <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>{t('activeSitesCount', 'Active Sites')}</Text>
-            <Text style={[styles.statBannerValue, { color: '#16A34A' }]}>
-              {ongoingSitesCount}
-            </Text>
-          </View>
-          <View style={styles.statBannerDivider} />
-          <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>{t('totalValue', 'Total Value')}</Text>
-            <Text style={styles.statBannerValue}>
-              {money(totalContractVal)}
-            </Text>
-          </View>
-          <View style={styles.statBannerDivider} />
-          <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>{t('pendingDue', 'Pending Due')}</Text>
-            <Text style={[styles.statBannerValue, { color: totalPendingVal > 0 ? '#D97706' : '#16A34A' }]}>
-              {money(totalPendingVal)}
-            </Text>
-          </View>
-        </View>
 
-        {/* Search */}
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder={t('searchSitePlaceholder', 'Search site or client name…')}
-        />
+          {/* Search */}
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t('searchSitePlaceholder', 'Search site or client name…')}
+          />
 
-        {/* Status Filter Chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipsRow}
-        >
-          {['ALL', 'ONGOING', 'UPCOMING', 'PAUSED', 'COMPLETED'].map((status) => {
-            const isSelected = statusFilter === status;
-            return (
-              <Pressable
-                key={status}
-                onPress={() => setStatusFilter(status)}
-                style={[
-                  styles.chip,
-                  isSelected && styles.chipActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    isSelected && styles.chipTextActive,
-                  ]}
-                >
-                  {getStatusChipLabel(status)} ({statusCounts[status] || 0})
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {/* Sites List in Premium Single-Row Card UI */}
-        {filteredSites.length ? (
-          <View style={styles.sitesGrid}>
-            {filteredSites.map((siteItem) => {
-              const f = siteSummary(siteItem, data.attendance, data.entries);
-              const progress =
-                f.contract > 0 ? Math.min(1, f.received / f.contract) : 0;
-              const statusTheme = getSiteStatusTheme(siteItem.status);
-
+          {/* Status Filter Chips */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsRow}
+          >
+            {['ALL', 'ONGOING', 'UPCOMING', 'PAUSED', 'COMPLETED'].map((status) => {
+              const isSelected = statusFilter === status;
               return (
                 <Pressable
-                  key={siteItem.id}
-                  onPress={() => onSelectSite(siteItem.id)}
-                  style={({ pressed }) => [
-                    styles.siteRowCard,
-                    pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
+                  key={status}
+                  onPress={() => setStatusFilter(status)}
+                  style={[
+                    styles.chip,
+                    isSelected && styles.chipActive,
                   ]}
-                  accessibilityLabel={'Open site ' + siteItem.name}
                 >
-                  <View
+                  <Text
                     style={[
-                      styles.siteRowAccent,
-                      { backgroundColor: statusTheme.accent },
+                      styles.chipText,
+                      isSelected && styles.chipTextActive,
                     ]}
-                  />
-
-                  <View style={styles.siteRowContent}>
-                    {/* Header Row: Icon + Title & Owner + Status Pill + Chevron */}
-                    <View style={styles.siteRowTop}>
-                      <View
-                        style={[
-                          styles.siteRowIconBadge,
-                          { backgroundColor: statusTheme.bg },
-                        ]}
-                      >
-                        <AppIcon
-                          name={
-                            siteItem.work_type === 'LABOUR'
-                              ? 'hammer'
-                              : 'business'
-                          }
-                          size={18}
-                          color={statusTheme.color}
-                        />
-                      </View>
-
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <View style={styles.siteRowTitleWrap}>
-                          <Text style={styles.siteRowName} numberOfLines={1}>
-                            {siteItem.name}
-                          </Text>
-                          <View
-                            style={[
-                              styles.siteStatusPill,
-                              { backgroundColor: statusTheme.badgeBg },
-                            ]}
-                          >
-                            <View
-                              style={[
-                                styles.siteStatusDot,
-                                { backgroundColor: statusTheme.color },
-                              ]}
-                            />
-                            <Text
-                              style={[
-                                styles.siteStatusPillText,
-                                { color: statusTheme.color },
-                              ]}
-                            >
-                              {getStatusChipLabel(siteItem.status)}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-
-                      <View style={styles.siteRowChevron}>
-                        <AppIcon name="chevron-forward" size={16} color="#94A3B8" />
-                      </View>
-                    </View>
-
-                    {/* Progress Bar */}
-                    <View style={styles.siteRowProgressRow}>
-                      <View style={styles.siteRowProgressBar}>
-                        <View
-                          style={[
-                            styles.siteRowProgressFill,
-                            {
-                              width: `${Math.max(3, Math.round(progress * 100))}%`,
-                              backgroundColor: statusTheme.accent,
-                            },
-                          ]}
-                        />
-                      </View>
-                      <Text style={styles.siteRowProgressText}>
-                        {Math.round(progress * 100)}% {lang === 'hi' ? 'प्राप्त' : 'Recv'}
-                      </Text>
-                    </View>
-
-                    {/* 3 Metric Pills Footer */}
-                    <View style={styles.siteRowMetricsFooter}>
-                      <View style={styles.siteRowMetricCol}>
-                        <Text style={styles.siteRowMetricLabel}>{t('contract', 'Contract')}</Text>
-                        <Text style={styles.siteRowMetricVal}>
-                          {money(f.contract)}
-                        </Text>
-                      </View>
-
-                      <View style={styles.siteRowMetricDiv} />
-
-                      <View style={styles.siteRowMetricCol}>
-                        <Text style={styles.siteRowMetricLabel}>{t('totalReceived', 'Received')}</Text>
-                        <Text
-                          style={[
-                            styles.siteRowMetricVal,
-                            { color: '#16A34A' },
-                          ]}
-                        >
-                          {money(f.received)}
-                        </Text>
-                      </View>
-
-                      <View style={styles.siteRowMetricDiv} />
-
-                      <View style={styles.siteRowMetricCol}>
-                        <Text style={styles.siteRowMetricLabel}>{t('balanceDues', 'Balance Due')}</Text>
-                        <Text
-                          style={[
-                            styles.siteRowMetricVal,
-                            {
-                              color:
-                                f.ownerBalance > 0
-                                  ? '#D97706'
-                                  : f.ownerBalance < 0
-                                  ? '#DC2626'
-                                  : '#16A34A',
-                            },
-                          ]}
-                        >
-                          {f.ownerBalance > 0
-                            ? money(f.ownerBalance)
-                            : f.ownerBalance < 0
-                            ? `${money(-f.ownerBalance)} Adv`
-                            : (lang === 'hi' ? '₹0 हिसाब चुकता' : '₹0 Settled')}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
+                  >
+                    {getStatusChipLabel(status)} ({statusCounts[status] || 0})
+                  </Text>
                 </Pressable>
               );
             })}
-          </View>
-        ) : (
-          <EmptyState
-            title={t('noSitesFound', 'No sites found matching your filter.')}
-            description={t('addFirstSiteDesc', 'Create a work site, add workers, and begin tracking daily attendance and project ledger.')}
-            actionTitle={t('createSiteBtn', 'Create New Site')}
-            onAction={onOpenNewSite}
-          />
-        )}
-      </View>
-    </ScrollView>
-  </View>
+          </ScrollView>
+
+          {/* Sites List in Premium Single-Row Card UI */}
+          {filteredSites.length ? (
+            <View style={styles.sitesGrid}>
+              {filteredSites.map((siteItem) => {
+                const f = siteSummary(siteItem, data.attendance, data.entries);
+                const progress =
+                  f.contract > 0 ? Math.min(1, f.received / f.contract) : 0;
+                const statusTheme = getSiteStatusTheme(siteItem.status);
+
+                return (
+                  <Pressable
+                    key={siteItem.id}
+                    onPress={() => onSelectSite(siteItem.id)}
+                    style={({ pressed }) => [
+                      styles.siteRowCard,
+                      pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
+                    ]}
+                    accessibilityLabel={'Open site ' + siteItem.name}
+                  >
+                    <View
+                      style={[
+                        styles.siteRowAccent,
+                        { backgroundColor: statusTheme.accent },
+                      ]}
+                    />
+
+                    <View style={styles.siteRowContent}>
+                      {/* Header Row: Icon + Title & Owner + Status Pill + Chevron */}
+                      <View style={styles.siteRowTop}>
+                        <View
+                          style={[
+                            styles.siteRowIconBadge,
+                            { backgroundColor: statusTheme.bg },
+                          ]}
+                        >
+                          <AppIcon
+                            name={
+                              siteItem.work_type === 'LABOUR'
+                                ? 'hammer'
+                                : 'business'
+                            }
+                            size={18}
+                            color={statusTheme.color}
+                          />
+                        </View>
+
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <View style={styles.siteRowTitleWrap}>
+                            <Text style={styles.siteRowName} numberOfLines={1}>
+                              {siteItem.name}
+                            </Text>
+                            <View
+                              style={[
+                                styles.siteStatusPill,
+                                { backgroundColor: statusTheme.badgeBg },
+                              ]}
+                            >
+                              <View
+                                style={[
+                                  styles.siteStatusDot,
+                                  { backgroundColor: statusTheme.color },
+                                ]}
+                              />
+                              <Text
+                                style={[
+                                  styles.siteStatusPillText,
+                                  { color: statusTheme.color },
+                                ]}
+                              >
+                                {getStatusChipLabel(siteItem.status)}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+
+                        <View style={styles.siteRowChevron}>
+                          <AppIcon name="chevron-forward" size={16} color="#94A3B8" />
+                        </View>
+                      </View>
+
+                      {/* Progress Bar */}
+                      <View style={styles.siteRowProgressRow}>
+                        <View style={styles.siteRowProgressBar}>
+                          <View
+                            style={[
+                              styles.siteRowProgressFill,
+                              {
+                                width: `${Math.max(3, Math.round(progress * 100))}%`,
+                                backgroundColor: statusTheme.accent,
+                              },
+                            ]}
+                          />
+                        </View>
+                        <Text style={styles.siteRowProgressText}>
+                          {Math.round(progress * 100)}% {lang === 'hi' ? 'प्राप्त' : 'Recv'}
+                        </Text>
+                      </View>
+
+                      {/* 3 Metric Pills Footer */}
+                      <View style={styles.siteRowMetricsFooter}>
+                        <View style={styles.siteRowMetricCol}>
+                          <Text style={styles.siteRowMetricLabel}>{t('contract', 'Contract')}</Text>
+                          <Text style={styles.siteRowMetricVal}>
+                            {money(f.contract)}
+                          </Text>
+                        </View>
+
+                        <View style={styles.siteRowMetricDiv} />
+
+                        <View style={styles.siteRowMetricCol}>
+                          <Text style={styles.siteRowMetricLabel}>{t('totalReceived', 'Received')}</Text>
+                          <Text
+                            style={[
+                              styles.siteRowMetricVal,
+                              { color: '#16A34A' },
+                            ]}
+                          >
+                            {money(f.received)}
+                          </Text>
+                        </View>
+
+                        <View style={styles.siteRowMetricDiv} />
+
+                        <View style={styles.siteRowMetricCol}>
+                          <Text style={styles.siteRowMetricLabel}>{t('balanceDues', 'Balance Due')}</Text>
+                          <Text
+                            style={[
+                              styles.siteRowMetricVal,
+                              {
+                                color:
+                                  f.ownerBalance > 0
+                                    ? '#D97706'
+                                    : f.ownerBalance < 0
+                                      ? '#DC2626'
+                                      : '#16A34A',
+                              },
+                            ]}
+                          >
+                            {f.ownerBalance > 0
+                              ? money(f.ownerBalance)
+                              : f.ownerBalance < 0
+                                ? `${money(-f.ownerBalance)} Adv`
+                                : (lang === 'hi' ? '₹0 हिसाब चुकता' : '₹0 Settled')}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : (
+            <EmptyState
+              title={t('noSitesFound', 'No sites found matching your filter.')}
+              description={t('noFilterMatchDesc', 'No records match your search. Try a different query or clear filters.')}
+            />
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -976,19 +936,20 @@ const styles = StyleSheet.create({
   navNewSiteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
+    justifyContent: 'center',
+    gap: 4,
+    height: 36,
+    paddingHorizontal: 13,
     borderRadius: 8,
     backgroundColor: Colors.primary,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.18,
     shadowRadius: 3,
     elevation: 2,
   },
   navNewSiteBtnText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '800',
     color: '#FFFFFF',
   },
@@ -1250,27 +1211,27 @@ const styles = StyleSheet.create({
   },
   siteHeaderCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    gap: 14,
-    marginBottom: 16,
+    borderRadius: 14,
+    padding: 14,
+    gap: 12,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 2,
   },
   headerPrimaryRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: 10,
   },
   siteAvatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 10,
     backgroundColor: '#F1F5F9',
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -1280,33 +1241,20 @@ const styles = StyleSheet.create({
   },
   headerMainCol: {
     flex: 1,
-    gap: 5,
-  },
-  titleActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 4,
   },
   siteTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0F172A',
     letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  statusAndEditGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
   },
@@ -1327,9 +1275,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   statusDotOngoing: {
     backgroundColor: '#16A34A',
@@ -1352,16 +1300,17 @@ const styles = StyleSheet.create({
   editSiteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
     borderRadius: 6,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    marginTop: 2,
   },
   editSiteBtnText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#334155',
   },
@@ -1377,12 +1326,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   clientInlineName: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '600',
     color: '#334155',
   },
   businessInlineText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     color: '#475569',
   },
@@ -1397,76 +1346,42 @@ const styles = StyleSheet.create({
     color: '#16A34A',
   },
   metaDotDivider: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#94A3B8',
   },
   cardDivider: {
     height: 1,
     backgroundColor: '#F1F5F9',
   },
-  specsRow: {
+  specsChipsContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  specsRowMobile: {
-    flexDirection: 'column',
-    gap: 10,
-  },
-  specItem: {
-    flex: 1,
+  specChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 5,
     backgroundColor: '#F8FAFC',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  specIconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 7,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  specContent: {
-    flex: 1,
-    gap: 1,
+  specChipText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#334155',
   },
-  specLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#64748B',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  specValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  gstStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  specChipGst: {
     backgroundColor: '#F0FDF4',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
     borderColor: '#DCFCE7',
-    alignSelf: 'flex-start',
   },
-  gstStripText: {
-    fontSize: 12,
+  specChipGstText: {
+    fontSize: 11.5,
     color: '#166534',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   gstCodeText: {
     fontFamily: 'monospace',
@@ -1475,52 +1390,53 @@ const styles = StyleSheet.create({
   },
   termsBox: {
     backgroundColor: '#F8FAFC',
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderLeftWidth: 3.5,
     borderLeftColor: '#0F2851',
-    padding: 12,
-    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 5,
   },
   termsHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 6,
   },
   termsTitleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
   termsTitleText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#0F2851',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
   termsToggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
     backgroundColor: '#EFF6FF',
     borderWidth: 1,
     borderColor: '#DBEAFE',
   },
   termsToggleBtnText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700',
     color: '#1D4ED8',
   },
   termsBodyText: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: '#1E293B',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   navEditIconBtn: {
     width: 36,
@@ -1657,20 +1573,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  uploadDocBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: '#F3E8FF',
-  },
-  uploadDocBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#7C3AED',
-  },
   docItemsGrid: {
     gap: 8,
   },
@@ -1714,22 +1616,22 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontStyle: 'italic',
   },
-  docItemDownloadBtn: {
+  docItemActionViewBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
+    gap: 5,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#F5F3FF',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
-    marginLeft: 4,
+    borderColor: '#DDD6FE',
+    marginLeft: 6,
   },
-  docItemDownloadBtnText: {
-    fontSize: 11,
+  docItemActionViewBtnText: {
+    fontSize: 11.5,
     fontWeight: '800',
-    color: '#1E40AF',
+    color: '#7C3AED',
   },
 });
 

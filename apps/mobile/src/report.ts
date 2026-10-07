@@ -46,6 +46,138 @@ export interface SiteInfoForDoc {
   pricing?: string;
 }
 
+export async function viewSiteDocument(
+  doc: SiteDocInfo,
+  site?: SiteInfoForDoc,
+  token?: string
+) {
+  if (Platform.OS === 'web') {
+    // 1. In-memory dataUrl (uploaded directly in session)
+    if (doc.dataUrl) {
+      openDataUrlInViewer(doc.dataUrl, doc.name);
+      return;
+    }
+
+    // 2. Local IndexedDB cache by doc.id or name
+    try {
+      const local =
+        (doc.id ? await getDocFromIndexedDB(doc.id) : null) ||
+        (await getDocFromIndexedDB(doc.name));
+      if (local && local.dataUrl) {
+        openDataUrlInViewer(local.dataUrl, doc.name);
+        return;
+      }
+    } catch {}
+
+    // 3. Fetch from API server
+    try {
+      const serverDoc =
+        (doc.id ? await fetchDocFromServer(doc.id, token) : null) ||
+        (await fetchDocFromServer(doc.name, token));
+      if (serverDoc && serverDoc.blobUrl) {
+        window.open(serverDoc.blobUrl, '_blank');
+        return;
+      }
+    } catch {}
+  }
+
+  // Fallback: If only terms/notes exist, render a clean standalone document view (NOT full site details)
+  const categoryColor =
+    doc.category === 'AGREEMENT'
+      ? '#16A34A'
+      : doc.category === 'DRAWING'
+        ? '#2563EB'
+        : doc.category === 'QUOTATION'
+          ? '#D97706'
+          : '#7C3AED';
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${escape(doc.name)}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 28px; color: #0F172A; background: #FFFFFF; }
+    .header-bar { border-bottom: 2px solid #0F2851; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .brand-title { font-size: 20px; font-weight: 800; color: #0F2851; margin: 0; }
+    .cat-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: 11px; text-transform: uppercase; background: #EFF6FF; color: ${categoryColor}; border: 1.5px solid ${categoryColor}; }
+    .doc-headline { margin-top: 10px; margin-bottom: 16px; }
+    .doc-name { font-size: 18px; font-weight: 800; color: #0F172A; }
+    .doc-meta { font-size: 12px; color: #64748B; margin-top: 4px; }
+    .card { border: 1px solid #E2E8F0; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+    .card-header { background: #F8FAFC; padding: 8px 14px; font-size: 11px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #E2E8F0; }
+    .card-body { padding: 14px; font-size: 13px; line-height: 1.6; color: #1E293B; white-space: pre-wrap; }
+    .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #F1F5F9; font-size: 11px; color: #94A3B8; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header-bar">
+    <div class="brand-title">THEKABOOK • DOCUMENT RECORD</div>
+    <div class="cat-badge">${escape(doc.category)}</div>
+  </div>
+
+  <div class="doc-headline">
+    <div class="doc-name">${escape(doc.name)}</div>
+    <div class="doc-meta">Date: ${escape(doc.date)} ${doc.refNo ? '• Reference No: ' + escape(doc.refNo) : ''}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Document Terms & Specifications</div>
+    <div class="card-body">${doc.terms ? escape(doc.terms) : 'Document file attached: ' + escape(doc.name)}</div>
+  </div>
+
+  <div class="footer">
+    ThekaBook Verified Document Viewer
+  </div>
+</body>
+</html>`;
+
+  if (Platform.OS === 'web') {
+    const w = window.open('', '_blank');
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+    } else {
+      await Print.printAsync({ html });
+    }
+    return;
+  }
+
+  const file = await Print.printToFileAsync({ html });
+  if (await Sharing.isAvailableAsync()) {
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'application/pdf',
+      dialogTitle: `View ${doc.name}`,
+      UTI: 'com.adobe.pdf',
+    });
+  }
+}
+
+function openDataUrlInViewer(dataUrl: string, filename?: string) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+
+  try {
+    if (dataUrl.startsWith('data:')) {
+      const parts = dataUrl.split(',');
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : 'application/pdf';
+      const bstr = atob(parts[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      return;
+    }
+    window.open(dataUrl, '_blank');
+  } catch {
+    window.open(dataUrl, '_blank');
+  }
+}
+
 export async function downloadSiteDocument(
   doc: SiteDocInfo,
   site: SiteInfoForDoc,
