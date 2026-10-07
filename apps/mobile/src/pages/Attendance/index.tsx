@@ -20,10 +20,12 @@ import { CalendarPickerModal } from '../../components/common/CalendarPickerModal
 import { Snapshot, Row } from '../../types';
 import { money } from '../../finance';
 import { today } from '../../forms';
+import { useLanguage } from '../../i18n';
 
 interface AttendancePageProps {
   data: Snapshot;
   onOpenAttendanceModal: (siteId?: string, workerId?: string, existing?: Row) => void;
+  onOpenProfile?: () => void;
   refreshing: boolean;
   onRefresh: () => void;
 }
@@ -61,9 +63,11 @@ const formatDateDisplay = (dateStr: string): string => {
 export function AttendancePage({
   data,
   onOpenAttendanceModal,
+  onOpenProfile,
   refreshing,
   onRefresh,
 }: AttendancePageProps) {
+  const { t, lang } = useLanguage();
   // Top View Switcher (Daily Marking vs Monthly Register)
   const [viewTab, setViewTab] = useState<'DAILY' | 'MONTHLY'>('DAILY');
 
@@ -321,8 +325,11 @@ export function AttendancePage({
     <View style={styles.pageWrapper}>
       {/* Top Navigation Bar */}
       <TopNavBar
-        title="Haziri Register"
-        subtitle={viewTab === 'DAILY' ? 'Daily Attendance Marking' : `${monthName} Monthly Register`}
+        title={t('attendanceTitle', 'Haziri Register')}
+        subtitle={viewTab === 'DAILY' ? t('dailyMarkingSub', 'Daily Attendance Marking') : `${monthName} ${t('monthlyRegisterSub', 'Monthly Attendance Register')}`}
+        userInitials={data.user.name}
+        organizationName={data.organization.name}
+        onOpenProfile={onOpenProfile}
         onRefresh={onRefresh}
         refreshing={refreshing}
       />
@@ -359,7 +366,7 @@ export function AttendancePage({
                   viewTab === 'DAILY' && styles.viewModeLabelActive,
                 ]}
               >
-                Daily Haziri
+                {t('dailyHaziri', 'Daily Haziri')}
               </Text>
             </Pressable>
 
@@ -381,7 +388,7 @@ export function AttendancePage({
                   viewTab === 'MONTHLY' && styles.viewModeLabelActive,
                 ]}
               >
-                Monthly Register
+                {t('monthlyRegister', 'Monthly Register')}
               </Text>
             </Pressable>
           </View>

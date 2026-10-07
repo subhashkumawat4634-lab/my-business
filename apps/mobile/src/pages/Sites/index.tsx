@@ -21,6 +21,7 @@ import { Snapshot, Row } from '../../types';
 import { money, siteSummary } from '../../finance';
 import { parseSiteNotesAndDocs } from '../../components/sites/SiteFormModal';
 import { downloadSiteDocument } from '../../report';
+import { useLanguage } from '../../i18n';
 
 interface SitesPageProps {
   data: Snapshot;
@@ -31,6 +32,7 @@ interface SitesPageProps {
   onOpenEntry: (kind: string, siteId?: string) => void;
   onOpenAttendance: (siteId?: string) => void;
   onShareReport: (siteId: string) => void;
+  onOpenProfile?: () => void;
   refreshing: boolean;
   onRefresh: () => void;
 }
@@ -78,9 +80,11 @@ export function SitesPage({
   onOpenEntry,
   onOpenAttendance,
   onShareReport,
+  onOpenProfile,
   refreshing,
   onRefresh,
 }: SitesPageProps) {
+  const { t, lang } = useLanguage();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [termsExpanded, setTermsExpanded] = useState(false);
@@ -104,15 +108,27 @@ export function SitesPage({
       .filter((e) => e.site_id === site.id)
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
+    const statusBadgeLabel =
+      site.status === 'ONGOING'
+        ? t('active', 'Active')
+        : site.status === 'COMPLETED'
+        ? t('completed', 'Completed')
+        : site.status === 'PAUSED'
+        ? t('paused', 'Paused')
+        : t('upcoming', 'Upcoming');
+
     return (
       <View style={styles.pageWrapper}>
         <TopNavBar
           title={site.name}
-          subtitle={`${site.owner_name} • ${site.phone || 'No phone'}`}
+          subtitle={`${site.owner_name} • ${site.phone || (lang === 'hi' ? 'फोन नंबर नहीं' : 'No phone')}`}
+          userInitials={data.user.name}
+          organizationName={data.organization.name}
+          onOpenProfile={onOpenProfile}
           onBack={() => onSelectSite(null)}
-          backText="All Sites"
+          backText={t('allSites', 'All Sites')}
           badge={{
-            label: site.status,
+            label: statusBadgeLabel,
             tone:
               site.status === 'PAUSED'
                 ? 'orange'
@@ -246,15 +262,15 @@ export function SitesPage({
                     />
                   </View>
                   <View style={styles.specContent}>
-                    <Text style={styles.specLabel}>Scope & Rate</Text>
+                    <Text style={styles.specLabel}>{t('scopeRate', 'Scope & Rate')}</Text>
                     <Text style={styles.specValue} numberOfLines={1}>
-                      {site.work_type === 'LABOUR' ? 'Labour Only' : 'Labour + Material'}
+                      {site.work_type === 'LABOUR' ? t('labourOnly', 'Labour Only') : t('labourMaterial', 'Labour + Material')}
                       {' • '}
                       {site.pricing === 'FIXED'
-                        ? 'Fixed Lumpsum'
+                        ? t('fixedLumpsum', 'Fixed Lumpsum')
                         : site.pricing === 'UNIT'
-                        ? 'Unit Rate'
-                        : 'Daily'}
+                        ? t('unitRate', 'Unit Rate')
+                        : t('daily', 'Daily')}
                     </Text>
                   </View>
                 </View>
@@ -266,9 +282,9 @@ export function SitesPage({
                       <AppIcon name="calendar-outline" size={15} color="#475569" />
                     </View>
                     <View style={styles.specContent}>
-                      <Text style={styles.specLabel}>Timeline</Text>
+                      <Text style={styles.specLabel}>{t('timeline', 'Timeline')}</Text>
                       <Text style={styles.specValue} numberOfLines={1}>
-                        {site.start_date}{site.end_date ? ` → ${site.end_date}` : ' (Active)'}
+                        {site.start_date}{site.end_date ? ` → ${site.end_date}` : ` (${t('active', 'Active')})`}
                       </Text>
                     </View>
                   </View>
@@ -281,7 +297,7 @@ export function SitesPage({
                       <AppIcon name="location-outline" size={15} color="#475569" />
                     </View>
                     <View style={styles.specContent}>
-                      <Text style={styles.specLabel}>Location</Text>
+                      <Text style={styles.specLabel}>{t('location', 'Location')}</Text>
                       <Text style={styles.specValue} numberOfLines={1}>
                         {site.address}{state ? `, ${state}` : ''}
                       </Text>
@@ -307,7 +323,7 @@ export function SitesPage({
                   <View style={styles.termsHeaderRow}>
                     <View style={styles.termsTitleGroup}>
                       <AppIcon name="document-text-outline" size={15} color="#0F2851" />
-                      <Text style={styles.termsTitleText}>Contract Terms & Notes</Text>
+                      <Text style={styles.termsTitleText}>{t('contractTermsNotes', 'Contract Terms & Notes')}</Text>
                     </View>
                     {isLongNotes && (
                       <Pressable
@@ -321,8 +337,8 @@ export function SitesPage({
                       >
                         <Text style={styles.termsToggleBtnText}>
                           {termsExpanded
-                            ? 'Show Less'
-                            : `Show All (${noteLines.length} lines)`}
+                            ? t('showLess', 'Show Less')
+                            : `${t('showAll', 'Show All')} (${noteLines.length})`}
                         </Text>
                         <AppIcon
                           name={termsExpanded ? 'chevron-up' : 'chevron-down'}
@@ -346,29 +362,29 @@ export function SitesPage({
           {/* Financial Stat Cards */}
           <View style={styles.metricsGrid}>
             <MetricCard
-              label="Agreed Contract"
+              label={t('agreedContract', 'Agreed Contract')}
               value={money(f.contract)}
-              foot="Total project value"
+              foot={t('totalProjectValue', 'Total project value')}
               icon="business-outline"
             />
             <MetricCard
-              label="Received"
+              label={t('totalReceived', 'Received')}
               value={money(f.received)}
-              foot="Collected so far"
+              foot={t('collectedSoFar', 'Collected so far')}
               tone="success"
               icon="cash-outline"
             />
             <MetricCard
-              label="Client Balance"
+              label={t('clientBalance', 'Client Balance')}
               value={money(f.ownerBalance)}
-              foot={f.ownerBalance < 0 ? 'Overpaid' : 'Pending to collect'}
+              foot={f.ownerBalance < 0 ? t('overpaid', 'Overpaid') : t('pendingToCollect', 'Pending to collect')}
               tone={f.ownerBalance < 0 ? 'danger' : 'warning'}
               icon="wallet-outline"
             />
             <MetricCard
-              label={f.final ? 'Final Margin' : 'Est. Margin'}
+              label={f.final ? t('finalMargin', 'Final Margin') : t('estMargin', 'Est. Margin')}
               value={money(f.profit)}
-              foot="Projected contractor margin"
+              foot={t('projectedMargin', 'Projected contractor margin')}
               accent
               tone={f.profit >= 0 ? 'success' : 'danger'}
               icon="trending-up"
@@ -498,30 +514,30 @@ export function SitesPage({
           {isDesktop ? (
             <View style={styles.actionsWrapDesktop}>
               <Button
-                title="Receive Payment"
+                title={t('receivePayment', 'Receive Payment')}
                 onPress={() => onOpenEntry('RECEIPT', site.id)}
                 icon="arrow-down"
               />
               <Button
-                title="Attendance"
+                title={t('navAttendance', 'Attendance')}
                 variant="secondary"
                 onPress={() => onOpenAttendance(site.id)}
                 icon="calendar"
               />
               <Button
-                title="Material Bill"
+                title={t('materialBill', 'Material Bill')}
                 variant="secondary"
                 onPress={() => onOpenEntry('MATERIAL', site.id)}
                 icon="cube"
               />
               <Button
-                title="Extra Work"
+                title={t('extraWork', 'Extra Work')}
                 variant="secondary"
                 onPress={() => onOpenEntry('EXTRA', site.id)}
                 icon="add-circle"
               />
               <Button
-                title="Share Statement"
+                title={t('shareStatement', 'Share Statement')}
                 variant="secondary"
                 onPress={() => onShareReport(site.id)}
                 icon="share-social"
@@ -531,7 +547,7 @@ export function SitesPage({
             <View style={styles.actionsWrapMobile}>
               {/* Row 1: Primary Receive Payment (Full Width) */}
               <Button
-                title="Receive Payment"
+                title={t('receivePayment', 'Receive Payment')}
                 onPress={() => onOpenEntry('RECEIPT', site.id)}
                 icon="arrow-down"
                 style={styles.fullWidthActionBtn}
@@ -541,7 +557,7 @@ export function SitesPage({
               <View style={styles.actionGridRow}>
                 <View style={styles.actionGridCol}>
                   <Button
-                    title="Attendance"
+                    title={t('navAttendance', 'Attendance')}
                     variant="secondary"
                     onPress={() => onOpenAttendance(site.id)}
                     icon="calendar"
@@ -550,7 +566,7 @@ export function SitesPage({
                 </View>
                 <View style={styles.actionGridCol}>
                   <Button
-                    title="Material Bill"
+                    title={t('materialBill', 'Material Bill')}
                     variant="secondary"
                     onPress={() => onOpenEntry('MATERIAL', site.id)}
                     icon="cube"
@@ -563,7 +579,7 @@ export function SitesPage({
               <View style={styles.actionGridRow}>
                 <View style={styles.actionGridCol}>
                   <Button
-                    title="Extra Work"
+                    title={t('extraWork', 'Extra Work')}
                     variant="secondary"
                     onPress={() => onOpenEntry('EXTRA', site.id)}
                     icon="add-circle"
@@ -572,7 +588,7 @@ export function SitesPage({
                 </View>
                 <View style={styles.actionGridCol}>
                   <Button
-                    title="Share Statement"
+                    title={t('shareStatement', 'Share Statement')}
                     variant="secondary"
                     onPress={() => onShareReport(site.id)}
                     icon="share-social"
@@ -585,8 +601,8 @@ export function SitesPage({
 
           {/* Site Ledger Entries */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Site Ledger</Text>
-            <Text style={styles.sectionSubtitle}>All transactions for this site</Text>
+            <Text style={styles.sectionTitle}>{t('siteLedger', 'Site Ledger')}</Text>
+            <Text style={styles.sectionSubtitle}>{t('allTransactionsForSite', 'All transactions for this site')}</Text>
           </View>
 
           <View style={styles.ledgerList}>
@@ -638,7 +654,7 @@ export function SitesPage({
             })}
             {!siteEntries.length && (
               <Text style={styles.emptyNotice}>
-                No expenses or receipts recorded for this site yet.
+                {lang === 'hi' ? 'इस साइट के लिए अभी कोई लेन-देन दर्ज नहीं है।' : 'No expenses or receipts recorded for this site yet.'}
               </Text>
             )}
           </View>
@@ -675,10 +691,24 @@ export function SitesPage({
     COMPLETED: data.sites.filter((s) => s.status === 'COMPLETED').length,
   };
 
+  const getStatusChipLabel = (status: string) => {
+    switch (status) {
+      case 'ONGOING': return t('active', 'Active');
+      case 'UPCOMING': return t('upcoming', 'Upcoming');
+      case 'PAUSED': return t('paused', 'Paused');
+      case 'COMPLETED': return t('completed', 'Completed');
+      default: return t('all', 'All');
+    }
+  };
+
   return (
     <View style={styles.pageWrapper}>
       <TopNavBar
-        title="Work Sites"
+        title={t('sitesTitle', 'Work Sites')}
+        subtitle={t('sitesSubtitle', 'Manage construction sites, theke & contract ledger')}
+        userInitials={data.user.name}
+        organizationName={data.organization.name}
+        onOpenProfile={onOpenProfile}
         onRefresh={onRefresh}
         refreshing={refreshing}
         actions={
@@ -690,7 +720,7 @@ export function SitesPage({
             ]}
             accessibilityLabel="Create new work site"
           >
-            <Text style={styles.navNewSiteBtnText}>New Site</Text>
+            <Text style={styles.navNewSiteBtnText}>{t('newSite', 'New Site')}</Text>
           </Pressable>
         }
       />
@@ -710,26 +740,26 @@ export function SitesPage({
         {/* Quick Stats Overview Banner */}
         <View style={styles.statsBanner}>
           <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>Total Sites</Text>
+            <Text style={styles.statBannerLabel}>{t('totalSites', 'Total Sites')}</Text>
             <Text style={styles.statBannerValue}>{totalSitesCount}</Text>
           </View>
           <View style={styles.statBannerDivider} />
           <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>Active Sites</Text>
+            <Text style={styles.statBannerLabel}>{t('activeSitesCount', 'Active Sites')}</Text>
             <Text style={[styles.statBannerValue, { color: '#16A34A' }]}>
               {ongoingSitesCount}
             </Text>
           </View>
           <View style={styles.statBannerDivider} />
           <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>Total Value</Text>
+            <Text style={styles.statBannerLabel}>{t('totalValue', 'Total Value')}</Text>
             <Text style={styles.statBannerValue}>
               {money(totalContractVal)}
             </Text>
           </View>
           <View style={styles.statBannerDivider} />
           <View style={styles.statBannerItem}>
-            <Text style={styles.statBannerLabel}>Pending Due</Text>
+            <Text style={styles.statBannerLabel}>{t('pendingDue', 'Pending Due')}</Text>
             <Text style={[styles.statBannerValue, { color: totalPendingVal > 0 ? '#D97706' : '#16A34A' }]}>
               {money(totalPendingVal)}
             </Text>
@@ -740,7 +770,7 @@ export function SitesPage({
         <SearchBar
           value={search}
           onChangeText={setSearch}
-          placeholder="Search site or client name…"
+          placeholder={t('searchSitePlaceholder', 'Search site or client name…')}
         />
 
         {/* Status Filter Chips */}
@@ -766,7 +796,7 @@ export function SitesPage({
                     isSelected && styles.chipTextActive,
                   ]}
                 >
-                  {status} ({statusCounts[status] || 0})
+                  {getStatusChipLabel(status)} ({statusCounts[status] || 0})
                 </Text>
               </Pressable>
             );
@@ -842,18 +872,10 @@ export function SitesPage({
                                 { color: statusTheme.color },
                               ]}
                             >
-                              {siteItem.status}
+                              {getStatusChipLabel(siteItem.status)}
                             </Text>
                           </View>
                         </View>
-
-                        <Text style={styles.siteRowMeta} numberOfLines={1}>
-                          👤 {siteItem.owner_name || 'Direct Client'} •{' '}
-                          {siteItem.work_type === 'LABOUR'
-                            ? 'Labour Only'
-                            : 'Labour + Material'}
-                          {siteItem.phone ? ` • 📞 ${siteItem.phone}` : ''}
-                        </Text>
                       </View>
 
                       <View style={styles.siteRowChevron}>
@@ -875,14 +897,14 @@ export function SitesPage({
                         />
                       </View>
                       <Text style={styles.siteRowProgressText}>
-                        {Math.round(progress * 100)}% Recv
+                        {Math.round(progress * 100)}% {lang === 'hi' ? 'प्राप्त' : 'Recv'}
                       </Text>
                     </View>
 
                     {/* 3 Metric Pills Footer */}
                     <View style={styles.siteRowMetricsFooter}>
                       <View style={styles.siteRowMetricCol}>
-                        <Text style={styles.siteRowMetricLabel}>Contract</Text>
+                        <Text style={styles.siteRowMetricLabel}>{t('contract', 'Contract')}</Text>
                         <Text style={styles.siteRowMetricVal}>
                           {money(f.contract)}
                         </Text>
@@ -891,7 +913,7 @@ export function SitesPage({
                       <View style={styles.siteRowMetricDiv} />
 
                       <View style={styles.siteRowMetricCol}>
-                        <Text style={styles.siteRowMetricLabel}>Received</Text>
+                        <Text style={styles.siteRowMetricLabel}>{t('totalReceived', 'Received')}</Text>
                         <Text
                           style={[
                             styles.siteRowMetricVal,
@@ -905,7 +927,7 @@ export function SitesPage({
                       <View style={styles.siteRowMetricDiv} />
 
                       <View style={styles.siteRowMetricCol}>
-                        <Text style={styles.siteRowMetricLabel}>Balance Due</Text>
+                        <Text style={styles.siteRowMetricLabel}>{t('balanceDues', 'Balance Due')}</Text>
                         <Text
                           style={[
                             styles.siteRowMetricVal,
@@ -923,7 +945,7 @@ export function SitesPage({
                             ? money(f.ownerBalance)
                             : f.ownerBalance < 0
                             ? `${money(-f.ownerBalance)} Adv`
-                            : '₹0 Settled'}
+                            : (lang === 'hi' ? '₹0 हिसाब चुकता' : '₹0 Settled')}
                         </Text>
                       </View>
                     </View>
@@ -934,9 +956,9 @@ export function SitesPage({
           </View>
         ) : (
           <EmptyState
-            title="No Work Sites Found"
-            description="No work sites found. Create a new site to start managing contract agreements, daily attendance and cash flows."
-            actionTitle="Create New Site"
+            title={t('noSitesFound', 'No sites found matching your filter.')}
+            description={t('addFirstSiteDesc', 'Create a work site, add workers, and begin tracking daily attendance and project ledger.')}
+            actionTitle={t('createSiteBtn', 'Create New Site')}
             onAction={onOpenNewSite}
           />
         )}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Linking,
   useWindowDimensions,
+  BackHandler,
 } from 'react-native';
 import { Colors } from '../../theme/colors';
 import { AppIcon } from '../../components/icons/AppIcon';
@@ -20,11 +21,13 @@ import { TopNavBar } from '../../components/common/TopNavBar';
 import { Snapshot, Row } from '../../types';
 import { money, workerSummary } from '../../finance';
 import { WorkerDetailPage } from './WorkerDetailPage';
+import { useLanguage } from '../../i18n';
 
 export interface LabourPageProps {
   data: Snapshot;
   onOpenWorkerModal: (worker?: Row) => void;
   onOpenPaymentModal: (workerId: string) => void;
+  onOpenProfile?: () => void;
   refreshing: boolean;
   onRefresh: () => void;
 }
@@ -74,13 +77,25 @@ export function LabourPage({
   data,
   onOpenWorkerModal,
   onOpenPaymentModal,
+  onOpenProfile,
   refreshing,
   onRefresh,
 }: LabourPageProps) {
+  const { t, lang } = useLanguage();
   const [search, setSearch] = useState('');
   const [selectedWorker, setSelectedWorker] = useState<Row | null>(null);
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
+
+  // Handle Android back button when viewing worker detail
+  useEffect(() => {
+    if (!selectedWorker) return;
+    const backSub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setSelectedWorker(null);
+      return true;
+    });
+    return () => backSub.remove();
+  }, [selectedWorker]);
 
   // Financial aggregates & worker summaries
   const {
@@ -191,7 +206,11 @@ export function LabourPage({
   return (
     <View style={styles.pageWrapper}>
       <TopNavBar
-        title="Labour & Team"
+        title={t('labourTitle', 'Labour & Team')}
+        subtitle={t('labourSubtitle', 'Manage workers, wages & daily attendance')}
+        userInitials={data.user.name}
+        organizationName={data.organization.name}
+        onOpenProfile={onOpenProfile}
         onRefresh={onRefresh}
         refreshing={refreshing}
         actions={
@@ -203,7 +222,7 @@ export function LabourPage({
             ]}
             accessibilityLabel="Add new worker"
           >
-            <Text style={styles.navActionBtnText}>Add Worker</Text>
+            <Text style={styles.navActionBtnText}>{t('addWorker', 'Add Worker')}</Text>
           </Pressable>
         }
       />
@@ -224,35 +243,35 @@ export function LabourPage({
           <View style={[styles.statsGrid, isDesktop && styles.statsGridDesktop]}>
             <View style={styles.statCol}>
               <MetricCard
-                label="Total Wages Earned"
+                label={t('totalWagesEarned', 'Total Wages Earned')}
                 value={money(totalEarned)}
-                foot="Across all time"
+                foot={t('acrossAllTime', 'Across all time')}
                 icon="cash-outline"
               />
             </View>
             <View style={styles.statCol}>
               <MetricCard
-                label="Pending Wages"
+                label={t('pendingWages', 'Pending Wages')}
                 value={money(totalPendingWages)}
-                foot={`${pendingCount} worker${pendingCount === 1 ? '' : 's'} to pay`}
+                foot={`${pendingCount} ${lang === 'hi' ? 'मजदूरों को देना बाकी' : 'workers to pay'}`}
                 icon="time-outline"
                 tone="warning"
               />
             </View>
             <View style={styles.statCol}>
               <MetricCard
-                label="Worker Advances"
+                label={t('workerAdvances', 'Worker Advances')}
                 value={money(totalAdvances)}
-                foot={`${advanceCount} worker${advanceCount === 1 ? '' : 's'} in advance`}
+                foot={`${advanceCount} ${lang === 'hi' ? 'मजदूर एडवांस में' : 'workers in advance'}`}
                 icon="arrow-forward-outline"
                 accent
               />
             </View>
             <View style={styles.statCol}>
               <MetricCard
-                label="Active Workforce"
+                label={t('activeWorkforce', 'Active Workforce')}
                 value={`${activeCount} / ${totalWorkers}`}
-                foot={`${Math.round((activeCount / (totalWorkers || 1)) * 100)}% available team`}
+                foot={`${Math.round((activeCount / (totalWorkers || 1)) * 100)}% ${lang === 'hi' ? 'सक्रिय मजदूर' : 'available team'}`}
                 icon="people-outline"
                 tone="success"
               />
@@ -264,7 +283,7 @@ export function LabourPage({
             <SearchBar
               value={search}
               onChangeText={setSearch}
-              placeholder="Search worker by name, skill (mason, helper) or phone…"
+              placeholder={t('searchWorkerPlaceholder', 'Search worker by name, skill (mason, helper) or phone…')}
             />
           </View>
 
@@ -312,22 +331,22 @@ export function LabourPage({
                         <View style={styles.skillBadge}>
                           <AppIcon name={getSkillIcon(w.skill)} size={11} color="#1E40AF" />
                           <Text style={styles.skillBadgeText} numberOfLines={1}>
-                            {w.skill || 'General Labour'}
+                            {w.skill || (lang === 'hi' ? 'मजदूर / कारीगर' : 'General Labour')}
                           </Text>
                         </View>
                         <Text style={styles.rateText} numberOfLines={1}>
-                          • {money(w.daily_rate)}/day
+                          • {money(w.daily_rate)}/{lang === 'hi' ? 'दिन' : 'day'}
                         </Text>
                         {isPending ? (
                           <View style={styles.dueBadge}>
                             <Text style={styles.dueBadgeText}>
-                              Due: {money(f.balance)}
+                              {lang === 'hi' ? 'बाकी' : 'Due'}: {money(f.balance)}
                             </Text>
                           </View>
                         ) : isAdvance ? (
                           <View style={styles.advBadge}>
                             <Text style={styles.advBadgeText}>
-                              Adv: {money(-f.balance)}
+                              {lang === 'hi' ? 'एडवांस' : 'Adv'}: {money(-f.balance)}
                             </Text>
                           </View>
                         ) : null}
@@ -365,7 +384,7 @@ export function LabourPage({
                       accessibilityLabel={`View details for ${w.name}`}
                     >
                       <AppIcon name="eye-outline" size={16} color="#0F2851" />
-                      <Text style={styles.viewActionBtnText}>View</Text>
+                      <Text style={styles.viewActionBtnText}>{t('view', 'View')}</Text>
                     </Pressable>
                   </View>
                 </Pressable>
@@ -374,13 +393,13 @@ export function LabourPage({
 
             {filteredWorkers.length === 0 ? (
               <EmptyState
-                title={search ? 'No Matching Workers' : 'No Workers Added Yet'}
+                title={search ? t('noMatchingWorkers', 'No Matching Workers') : t('noWorkersAddedYet', 'No Workers Added Yet')}
                 description={
                   search
-                    ? 'No workers found matching your search term.'
-                    : 'Add masons, helpers, and carpenters to track daily attendance and wages.'
+                    ? (lang === 'hi' ? 'आपकी खोज के अनुसार कोई मजदूर नहीं मिला।' : 'No workers found matching your search term.')
+                    : (lang === 'hi' ? 'दैनिक हाजिरी और मजदूरी का हिसाब रखने के लिए मिस्त्री, हेल्पर और कारीगर जोड़ें।' : 'Add masons, helpers, and carpenters to track daily attendance and wages.')
                 }
-                actionTitle={search ? 'Clear Search' : '+ Add First Worker'}
+                actionTitle={search ? t('clearSearch', 'Clear Search') : t('addFirstWorker', '+ Add First Worker')}
                 onAction={search ? () => setSearch('') : () => onOpenWorkerModal()}
               />
             ) : null}

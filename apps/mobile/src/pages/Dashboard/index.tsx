@@ -14,6 +14,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { TopNavBar } from '../../components/common/TopNavBar';
 import { Snapshot } from '../../types';
 import { money, siteSummary, workerSummary } from '../../finance';
+import { useLanguage } from '../../i18n';
 
 interface DashboardPageProps {
   data: Snapshot;
@@ -40,6 +41,7 @@ export function DashboardPage({
   onUpdateProfile,
   onLogout,
 }: DashboardPageProps) {
+  const { t, lang } = useLanguage();
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
 
@@ -77,7 +79,7 @@ export function DashboardPage({
   return (
     <View style={styles.pageWrapper}>
       <TopNavBar
-        title="ThekaBook"
+        title={t('appName', 'ThekaBook')}
         subtitle={data.organization.name}
         userInitials={data.user.name}
         organizationName={data.organization.name}
@@ -104,9 +106,9 @@ export function DashboardPage({
           {/* Greeting & Date Header */}
           <View style={styles.headerRow}>
             <View>
-              <Text style={styles.greetingTitle}>Contractor Overview</Text>
+              <Text style={styles.greetingTitle}>{t('contractorOverview', 'Contractor Overview')}</Text>
               <Text style={styles.greetingSub}>
-                {new Date().toLocaleDateString('en-IN', {
+                {new Date().toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', {
                   weekday: 'short',
                   day: 'numeric',
                   month: 'short',
@@ -116,7 +118,7 @@ export function DashboardPage({
             </View>
             <View style={styles.liveTag}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveTagText}>Active Ledger</Text>
+              <Text style={styles.liveTagText}>{t('activeLedger', 'Active Ledger')}</Text>
             </View>
           </View>
 
@@ -130,8 +132,8 @@ export function DashboardPage({
                   <AppIcon name="wallet" size={18} color="#2563EB" />
                 </View>
                 <View style={styles.heroTitleCol}>
-                  <Text style={styles.heroLabel}>TOTAL RECEIVABLES</Text>
-                  <Text style={styles.heroSubLabel}>Pending Client Dues</Text>
+                  <Text style={styles.heroLabel}>{t('totalReceivables', 'TOTAL RECEIVABLES')}</Text>
+                  <Text style={styles.heroSubLabel}>{t('pendingClientDues', 'Pending Client Dues')}</Text>
                 </View>
               </View>
 
@@ -143,7 +145,7 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Add payment received"
               >
-                <Text style={styles.heroAddBtnText}>Payment In</Text>
+                <Text style={styles.heroAddBtnText}>{t('paymentIn', 'Payment In')}</Text>
               </Pressable>
             </View>
 
@@ -152,17 +154,17 @@ export function DashboardPage({
             {/* Quick Metrics Bar Inside Hero */}
             <View style={styles.heroStatsBar}>
               <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatLabel}>Active Sites</Text>
+                <Text style={styles.heroStatLabel}>{t('activeSitesCount', 'Active Sites')}</Text>
                 <Text style={styles.heroStatValue}>{activeSites.length}</Text>
               </View>
               <View style={styles.heroStatDivider} />
               <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatLabel}>Active Labour</Text>
+                <Text style={styles.heroStatLabel}>{t('activeLabourCount', 'Active Labour')}</Text>
                 <Text style={styles.heroStatValue}>{activeWorkerCount}</Text>
               </View>
               <View style={styles.heroStatDivider} />
               <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatLabel}>Received</Text>
+                <Text style={styles.heroStatLabel}>{t('totalReceived', 'Received')}</Text>
                 <Text style={styles.heroStatValue}>{money(totalReceived)}</Text>
               </View>
             </View>
@@ -170,7 +172,7 @@ export function DashboardPage({
 
           {/* Primary Quick Actions Grid */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={styles.sectionTitle}>{t('quickActions', 'Quick Actions')}</Text>
           </View>
 
           {/* Unified Quick Actions & Financial Hub Card (All in 1 Card) */}
@@ -192,7 +194,7 @@ export function DashboardPage({
                   </View>
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  Daily Attendance
+                  {t('dailyAttendance', 'Daily Attendance')}
                 </Text>
               </Pressable>
 
@@ -211,7 +213,7 @@ export function DashboardPage({
                   </View>
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  Material Bill
+                  {t('materialBill', 'Material Bill')}
                 </Text>
               </Pressable>
 
@@ -230,7 +232,7 @@ export function DashboardPage({
                   </View>
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  Labour Wage
+                  {t('labourWage', 'Labour Wage')}
                 </Text>
               </Pressable>
             </View>
@@ -252,7 +254,7 @@ export function DashboardPage({
                   </View>
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  Receive Payment
+                  {t('receivePayment', 'Receive Payment')}
                 </Text>
               </Pressable>
 
@@ -271,7 +273,7 @@ export function DashboardPage({
                   </View>
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  Work Sites
+                  {t('workSites', 'Work Sites')}
                 </Text>
               </Pressable>
 
@@ -290,7 +292,7 @@ export function DashboardPage({
                   </View>
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  P&L Reports
+                  {t('plReports', 'P&L Reports')}
                 </Text>
               </Pressable>
             </View>
@@ -312,7 +314,7 @@ export function DashboardPage({
                   </View>
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  Pending Wages
+                  {t('pendingWages', 'Pending Wages')}
                 </Text>
               </Pressable>
 
@@ -331,7 +333,7 @@ export function DashboardPage({
                   </View>
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  Cash Flow
+                  {t('cashFlow', 'Cash Flow')}
                 </Text>
               </Pressable>
 
@@ -350,7 +352,7 @@ export function DashboardPage({
                   </View>
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  Est. Margin
+                  {t('estMargin', 'Est. Margin')}
                 </Text>
               </Pressable>
             </View>
@@ -359,14 +361,14 @@ export function DashboardPage({
           {/* Active Work Sites Section */}
           <View style={styles.sectionHeaderRow}>
             <View>
-              <Text style={styles.sectionTitle}>Active Sites & Theke</Text>
-              <Text style={styles.sectionSubtitle}>Live site status and collection dues</Text>
+              <Text style={styles.sectionTitle}>{t('activeSitesTheke', 'Active Sites & Theke')}</Text>
+              <Text style={styles.sectionSubtitle}>{t('liveSitesSubtitle', 'Live site status and collection dues')}</Text>
             </View>
             <Pressable
               onPress={() => onNavigateTab('sites')}
               style={styles.sectionActionBtn}
             >
-              <Text style={styles.viewAllText}>All Sites</Text>
+              <Text style={styles.viewAllText}>{t('allSites', 'All Sites')}</Text>
               <AppIcon name="chevron-forward" size={15} color="#2563EB" />
             </Pressable>
           </View>
@@ -402,7 +404,7 @@ export function DashboardPage({
                             {site.name}
                           </Text>
                           <Text style={styles.siteOwner} numberOfLines={1}>
-                            {site.owner_name || 'Client'} • {site.work_type === 'LABOUR' ? 'Labour Only' : 'Labour + Material'}
+                            {site.owner_name || (lang === 'hi' ? 'पार्टी' : 'Client')} • {site.work_type === 'LABOUR' ? t('labourOnly', 'Labour Only') : t('labourMaterial', 'Labour + Material')}
                           </Text>
                         </View>
                       </View>
@@ -419,7 +421,7 @@ export function DashboardPage({
                             site.status === 'PAUSED' ? styles.statusPausedText : styles.statusActiveText,
                           ]}
                         >
-                          {site.status}
+                          {site.status === 'PAUSED' ? t('paused', 'Paused') : t('active', 'Active')}
                         </Text>
                       </View>
                     </View>
@@ -427,7 +429,7 @@ export function DashboardPage({
                     {/* Progress Track */}
                     <View style={styles.siteProgressSection}>
                       <View style={styles.progressHeaderRow}>
-                        <Text style={styles.progressLabel}>Collection Progress</Text>
+                        <Text style={styles.progressLabel}>{t('collectionProgress', 'Collection Progress')}</Text>
                         <Text style={styles.progressPctText}>{progressPct}%</Text>
                       </View>
                       <View style={styles.progressBarTrack}>
@@ -443,11 +445,11 @@ export function DashboardPage({
                     {/* Site Financial Summary */}
                     <View style={styles.siteCardFooter}>
                       <View>
-                        <Text style={styles.cardMetaLabel}>CONTRACT</Text>
+                        <Text style={styles.cardMetaLabel}>{t('contract', 'CONTRACT')}</Text>
                         <Text style={styles.cardMetaValue}>{money(f.contract)}</Text>
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={styles.cardMetaLabel}>BALANCE DUES</Text>
+                        <Text style={styles.cardMetaLabel}>{t('balanceDues', 'BALANCE DUES')}</Text>
                         <Text
                           style={[
                             styles.cardMetaValue,
@@ -464,9 +466,9 @@ export function DashboardPage({
             </View>
           ) : (
             <EmptyState
-              title="Add Your First Work Site"
-              description="Create a work site, add workers, and begin tracking daily attendance and project ledger."
-              actionTitle="Create New Site"
+              title={t('addFirstSite', 'Add Your First Work Site')}
+              description={t('addFirstSiteDesc', 'Create a work site, add workers, and begin tracking daily attendance and project ledger.')}
+              actionTitle={t('createSiteBtn', 'Create New Site')}
               onAction={onOpenNewSite}
             />
           )}
@@ -474,14 +476,14 @@ export function DashboardPage({
           {/* Recent Activity Section */}
           <View style={[styles.sectionHeaderRow, { marginTop: 24 }]}>
             <View>
-              <Text style={styles.sectionTitle}>Recent Entries</Text>
-              <Text style={styles.sectionSubtitle}>Last transactions & wage payments</Text>
+              <Text style={styles.sectionTitle}>{t('recentEntries', 'Recent Entries')}</Text>
+              <Text style={styles.sectionSubtitle}>{t('lastTransactions', 'Last transactions & wage payments')}</Text>
             </View>
             <Pressable
               onPress={() => onNavigateTab('ledger')}
               style={styles.sectionActionBtn}
             >
-              <Text style={styles.viewAllText}>Full Hisab</Text>
+              <Text style={styles.viewAllText}>{t('fullHisab', 'Full Hisab')}</Text>
               <AppIcon name="chevron-forward" size={15} color="#2563EB" />
             </Pressable>
           </View>

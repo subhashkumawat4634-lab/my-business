@@ -16,11 +16,13 @@ import { TopNavBar } from '../../components/common/TopNavBar';
 import { Snapshot, Row } from '../../types';
 import { money } from '../../finance';
 import { entryLabels } from '../../forms';
+import { useLanguage } from '../../i18n';
 
 interface HisabPageProps {
   data: Snapshot;
   onOpenEntry: (kind: string, siteId?: string, workerId?: string, bill?: Row) => void;
   onOpenVoidModal: (entry: Row) => void;
+  onOpenProfile?: () => void;
   refreshing: boolean;
   onRefresh: () => void;
 }
@@ -29,9 +31,11 @@ export function HisabPage({
   data,
   onOpenEntry,
   onOpenVoidModal,
+  onOpenProfile,
   refreshing,
   onRefresh,
 }: HisabPageProps) {
+  const { t, lang } = useLanguage();
   const [search, setSearch] = useState('');
   const [kindFilter, setKindFilter] = useState('ALL');
   const [siteFilter, setSiteFilter] = useState('ALL');
@@ -100,8 +104,11 @@ export function HisabPage({
     <View style={styles.pageWrapper}>
       {/* Top Navigation Bar */}
       <TopNavBar
-        title="Hisab & Ledger"
-        subtitle="Money in, costs incurred & cash paid out"
+        title={t('hisabTitle', 'Hisab & Ledger')}
+        subtitle={t('hisabSubtitle', 'Money in, costs incurred & cash paid out')}
+        userInitials={data.user.name}
+        organizationName={data.organization.name}
+        onOpenProfile={onOpenProfile}
         onRefresh={onRefresh}
         refreshing={refreshing}
       />
@@ -126,12 +133,12 @@ export function HisabPage({
                 <View style={[styles.statIconBadge, { backgroundColor: '#DCFCE7' }]}>
                   <AppIcon name="arrow-down" size={14} color="#16A34A" />
                 </View>
-                <Text style={[styles.statKpiLabel, { color: '#166534' }]}>Total Inflow</Text>
+                <Text style={[styles.statKpiLabel, { color: '#166534' }]}>{t('totalInflow', 'Total Inflow')}</Text>
               </View>
               <Text style={[styles.statKpiValue, { color: '#15803D' }]}>
                 {money(stats.totalInflow)}
               </Text>
-              <Text style={styles.statKpiFoot}>Client Receipts</Text>
+              <Text style={styles.statKpiFoot}>{t('clientReceipts', 'Client Receipts')}</Text>
             </View>
 
             {/* Total Material Bills */}
@@ -140,12 +147,12 @@ export function HisabPage({
                 <View style={[styles.statIconBadge, { backgroundColor: '#FEF3C7' }]}>
                   <AppIcon name="cube" size={14} color="#D97706" />
                 </View>
-                <Text style={[styles.statKpiLabel, { color: '#92400E' }]}>Material Bills</Text>
+                <Text style={[styles.statKpiLabel, { color: '#92400E' }]}>{t('materialBills', 'Material Bills')}</Text>
               </View>
               <Text style={[styles.statKpiValue, { color: '#B45309' }]}>
                 {money(stats.totalMaterial)}
               </Text>
-              <Text style={styles.statKpiFoot}>Supplies Cost</Text>
+              <Text style={styles.statKpiFoot}>{t('suppliesCost', 'Supplies Cost')}</Text>
             </View>
 
             {/* Labour Payments */}
@@ -154,12 +161,12 @@ export function HisabPage({
                 <View style={[styles.statIconBadge, { backgroundColor: '#F3E8FF' }]}>
                   <AppIcon name="people" size={14} color="#7E22CE" />
                 </View>
-                <Text style={[styles.statKpiLabel, { color: '#6B21A8' }]}>Labour Paid</Text>
+                <Text style={[styles.statKpiLabel, { color: '#6B21A8' }]}>{t('labourPaid', 'Labour Paid')}</Text>
               </View>
               <Text style={[styles.statKpiValue, { color: '#7E22CE' }]}>
                 {money(stats.totalLabour)}
               </Text>
-              <Text style={styles.statKpiFoot}>Wages & Advance</Text>
+              <Text style={styles.statKpiFoot}>{t('wagesAndAdvance', 'Wages & Advance')}</Text>
             </View>
 
             {/* Other Expenses */}
@@ -168,12 +175,12 @@ export function HisabPage({
                 <View style={[styles.statIconBadge, { backgroundColor: '#FEE2E2' }]}>
                   <AppIcon name="receipt" size={14} color="#DC2626" />
                 </View>
-                <Text style={[styles.statKpiLabel, { color: '#991B1B' }]}>Other Expenses</Text>
+                <Text style={[styles.statKpiLabel, { color: '#991B1B' }]}>{t('otherExpenses', 'Other Expenses')}</Text>
               </View>
               <Text style={[styles.statKpiValue, { color: '#B91C1C' }]}>
                 {money(stats.totalExpense)}
               </Text>
-              <Text style={styles.statKpiFoot}>Chai, Rent, Fuel</Text>
+              <Text style={styles.statKpiFoot}>{t('chaiRentFuel', 'Chai, Rent, Fuel')}</Text>
             </View>
           </View>
 
@@ -193,8 +200,8 @@ export function HisabPage({
                 <AppIcon name="arrow-down-circle" size={20} color="#16A34A" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.actionTileTitle, { color: '#14532D' }]}>Receive Payment</Text>
-                <Text style={styles.actionTileSub}>Client Payment</Text>
+                <Text style={[styles.actionTileTitle, { color: '#14532D' }]}>{t('receivePayment', 'Receive Payment')}</Text>
+                <Text style={styles.actionTileSub}>{t('receivePaymentSub', 'Client Payment')}</Text>
               </View>
               <AppIcon name="add" size={16} color="#16A34A" />
             </Pressable>
@@ -213,8 +220,8 @@ export function HisabPage({
                 <AppIcon name="cube" size={20} color="#D97706" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.actionTileTitle, { color: '#78350F' }]}>Material Bill</Text>
-                <Text style={styles.actionTileSub}>Cement, Paint, Sand</Text>
+                <Text style={[styles.actionTileTitle, { color: '#78350F' }]}>{t('materialBill', 'Material Bill')}</Text>
+                <Text style={styles.actionTileSub}>{t('cementPaintSand', 'Cement, Paint, Sand')}</Text>
               </View>
               <AppIcon name="add" size={16} color="#D97706" />
             </Pressable>
@@ -233,8 +240,8 @@ export function HisabPage({
                 <AppIcon name="wallet" size={20} color="#7E22CE" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.actionTileTitle, { color: '#581C87' }]}>Labour Pay</Text>
-                <Text style={styles.actionTileSub}>Wages & Advance</Text>
+                <Text style={[styles.actionTileTitle, { color: '#581C87' }]}>{t('labourPay', 'Labour Pay')}</Text>
+                <Text style={styles.actionTileSub}>{t('wagesAndAdvance', 'Wages & Advance')}</Text>
               </View>
               <AppIcon name="add" size={16} color="#7E22CE" />
             </Pressable>
@@ -253,8 +260,8 @@ export function HisabPage({
                 <AppIcon name="receipt" size={20} color="#DC2626" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.actionTileTitle, { color: '#7F1D1D' }]}>Expense Bill</Text>
-                <Text style={styles.actionTileSub}>Chai, Rent, Fuel</Text>
+                <Text style={[styles.actionTileTitle, { color: '#7F1D1D' }]}>{t('expenseBill', 'Expense Bill')}</Text>
+                <Text style={styles.actionTileSub}>{t('chaiRentFuel', 'Chai, Rent, Fuel')}</Text>
               </View>
               <AppIcon name="add" size={16} color="#DC2626" />
             </Pressable>
@@ -268,7 +275,7 @@ export function HisabPage({
               <TextInput
                 value={search}
                 onChangeText={setSearch}
-                placeholder="Search description, party or site..."
+                placeholder={t('searchHisabPlaceholder', 'Search description, party or site...')}
                 placeholderTextColor="#94A3B8"
                 style={styles.searchInput}
               />
@@ -286,12 +293,12 @@ export function HisabPage({
               contentContainerStyle={styles.filterChipsRow}
             >
               {[
-                { key: 'ALL', label: 'All Entries' },
-                { key: 'RECEIPT', label: 'Payment In' },
-                { key: 'MATERIAL', label: 'Material' },
-                { key: 'WAGE_PAYMENT', label: 'Labour' },
-                { key: 'EXPENSE', label: 'Expense' },
-                { key: 'SUPPLIER_PAYMENT', label: 'Bill Paid' },
+                { key: 'ALL', label: t('allEntries', 'All Entries') },
+                { key: 'RECEIPT', label: t('paymentInFilter', 'Payment In') },
+                { key: 'MATERIAL', label: t('materialFilter', 'Material') },
+                { key: 'WAGE_PAYMENT', label: t('labourFilter', 'Labour') },
+                { key: 'EXPENSE', label: t('expenseFilter', 'Expense') },
+                { key: 'SUPPLIER_PAYMENT', label: t('billPaidFilter', 'Bill Paid') },
               ].map((tab) => {
                 const isSelected = kindFilter === tab.key;
                 return (
@@ -336,7 +343,7 @@ export function HisabPage({
                       siteFilter === 'ALL' && styles.siteFilterChipTextActive,
                     ]}
                   >
-                    All Sites ({data.sites.length})
+                    {t('allSitesFilterCount', 'All Sites ({count})').replace('{count}', String(data.sites.length))}
                   </Text>
                 </Pressable>
                 {data.sites.map((site) => {
@@ -374,11 +381,11 @@ export function HisabPage({
           <View style={styles.entriesListSection}>
             <View style={styles.listHeaderRow}>
               <Text style={styles.listHeaderTitle}>
-                Transactions ({filteredEntries.length})
+                {t('transactions', 'Transactions')} ({filteredEntries.length})
               </Text>
               {filteredEntries.length > 0 ? (
                 <Text style={styles.listHeaderSub}>
-                  Sorted by date (latest first)
+                  {t('sortedByDate', 'Sorted by date (latest first)')}
                 </Text>
               ) : null}
             </View>
@@ -452,7 +459,7 @@ export function HisabPage({
                         </Text>
                         {e.voided_at ? (
                           <View style={styles.voidTag}>
-                            <Text style={styles.voidTagText}>VOIDED</Text>
+                            <Text style={styles.voidTagText}>{t('voided', 'VOIDED')}</Text>
                           </View>
                         ) : null}
                       </View>
@@ -464,7 +471,7 @@ export function HisabPage({
                         </Text>
                         <Text style={styles.entryMetaDot}>•</Text>
                         <Text style={styles.entrySiteText} numberOfLines={1}>
-                          {siteName || 'Work Site'}
+                          {siteName || t('workSite', 'Work Site')}
                         </Text>
                         {workerName ? (
                           <>
@@ -505,7 +512,7 @@ export function HisabPage({
                   {e.reference ? (
                     <View style={styles.refRow}>
                       <AppIcon name="document-text-outline" size={12} color="#64748B" />
-                      <Text style={styles.refText}>Ref: {e.reference}</Text>
+                      <Text style={styles.refText}>{t('ref', 'Ref')}: {e.reference}</Text>
                     </View>
                   ) : null}
 
@@ -517,17 +524,17 @@ export function HisabPage({
                           {pendingAmount > 0 ? (
                             <View style={styles.pendingTag}>
                               <Text style={styles.pendingTagText}>
-                                Pending: {money(pendingAmount)}
+                                {t('pendingAmt', 'Pending: {amount}').replace('{amount}', money(pendingAmount))}
                               </Text>
                             </View>
                           ) : (
                             <View style={styles.paidTag}>
-                              <Text style={styles.paidTagText}>Full Paid</Text>
+                              <Text style={styles.paidTagText}>{t('fullPaid', 'Full Paid')}</Text>
                             </View>
                           )}
                           {paid > 0 ? (
                             <Text style={styles.paidSoFarText}>
-                              (Paid {money(paid)})
+                              {t('paidAmount', '(Paid {amount})').replace('{amount}', money(paid))}
                             </Text>
                           ) : null}
                         </View>
@@ -544,7 +551,7 @@ export function HisabPage({
                             style={styles.payBillBtn}
                           >
                             <AppIcon name="cash" size={13} color="#2563EB" />
-                            <Text style={styles.payBillBtnText}>Pay Bill</Text>
+                            <Text style={styles.payBillBtnText}>{t('payBill', 'Pay Bill')}</Text>
                           </Pressable>
                         ) : null}
 
@@ -553,7 +560,7 @@ export function HisabPage({
                           style={styles.voidBtn}
                         >
                           <AppIcon name="trash-outline" size={13} color="#DC2626" />
-                          <Text style={styles.voidBtnText}>Void</Text>
+                          <Text style={styles.voidBtnText}>{t('void', 'Void')}</Text>
                         </Pressable>
                       </View>
                     </View>
@@ -565,11 +572,11 @@ export function HisabPage({
             {/* Empty State */}
             {!filteredEntries.length ? (
               <EmptyState
-                title="No Ledger Entries Found"
+                title={t('noLedgerEntries', 'No Ledger Entries Found')}
                 description={
                   query
-                    ? 'No records match your search. Try a different query or clear filters.'
-                    : 'Add a payment, material bill, labour advance or expense to start tracking ledger.'
+                    ? t('noFilterMatchDesc', 'No records match your search. Try a different query or clear filters.')
+                    : t('noLedgerEntriesDesc', 'Add a payment, material bill, labour advance or expense to start tracking ledger.')
                 }
               />
             ) : null}

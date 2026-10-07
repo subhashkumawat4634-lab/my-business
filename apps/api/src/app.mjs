@@ -223,7 +223,8 @@ export function createApp(db, { testing = false } = {}) {
     const result = await db.transaction(async tx => {
       // Serialize snapshot with writes to avoid mixed financial revisions.
       await tx.query('SELECT id FROM organizations WHERE id=$1 FOR UPDATE',[req.user.org_id]);
-      const data = { organization: await one(tx,'SELECT id,name,revision FROM organizations WHERE id=$1',[req.user.org_id]), user:req.user };
+      const liveUser = await one(tx,'SELECT id,org_id,name,email,created_at FROM users WHERE id=$1',[req.user.id]);
+      const data = { organization: await one(tx,'SELECT id,name,revision FROM organizations WHERE id=$1',[req.user.org_id]), user: liveUser || req.user };
       for (const table of ['sites','workers','attendance','entries']) {
         data[table] = (await tx.query(`SELECT * FROM ${table} WHERE org_id=$1 ORDER BY id LIMIT 10001`,[req.user.org_id])).rows;
         requireThat(data[table].length <= 10000,'Account exceeds first-release report limit. Paginated reporting is required before adding more records.',413);
@@ -234,7 +235,7 @@ export function createApp(db, { testing = false } = {}) {
     res.json(result);
   });
   app.post('/commands', async (req,res) => {
-    const b = z.object({ key:id, action:z.enum(['site.create','site.update','worker.create','worker.update','attendance.save','entry.create','entry.void']), entity_id:id.optional(), data:z.record(z.string(),z.unknown()) }).strict().parse(req.body);
+    const b = z.object({ key:id, action:z.enum(['site.create','site.update','worker.create','worker.update','attendance.save','entry.create','entry.void','profile.update']), entity_id:id.optional(), data:z.record(z.string(),z.unknown()) }).strict().parse(req.body);
     const org = req.user.org_id, digest = hash(JSON.stringify({action:b.action,entity_id:b.entity_id,data:b.data}));
     const result = await db.transaction(async tx => {
       // One organization row lock prevents cross-site attendance and payment races.
@@ -280,6 +281,19 @@ export function createApp(db, { testing = false } = {}) {
           requireThat(Number(paid.n)+v.amount <= Number(bill.amount),'Payment exceeds bill balance');
         }
         after = await insert(tx,'entries',{id:entity,org_id:org,...v});
+      } else if (b.action === 'profile.update') {
+        const v = z.object({
+          name: z.string().trim().min(1).max(100).optional(),
+          organization_name: z.string().trim().min(1).max(100).optional(),
+        }).parse(b.data);
+        if (v.name) {
+          before = await one(tx, 'SELECT id,name FROM users WHERE id=$1', [req.user.id]);
+          await tx.query('UPDATE users SET name=$1 WHERE id=$2', [v.name, req.user.id]);
+        }
+        if (v.organization_name) {
+          await tx.query('UPDATE organizations SET name=$1 WHERE id=$2', [v.organization_name, org]);
+        }
+        after = { user_id: req.user.id, name: v.name, organization_name: v.organization_name };
       } else {
         requireThat(b.entity_id,'Entry ID required');
         const v = z.object({reason:z.string().trim().min(3).max(300)}).strict().parse(b.data);

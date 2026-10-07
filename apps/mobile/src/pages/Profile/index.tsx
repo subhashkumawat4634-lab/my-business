@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,14 @@ import {
   ActivityIndicator,
   Platform,
   useWindowDimensions,
+  BackHandler,
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Colors } from '../../theme/colors';
 import { AppIcon } from '../../components/icons/AppIcon';
-import { TopNavBar } from '../../components/common/TopNavBar';
+import { TopNavBar, formatNameInitials } from '../../components/common/TopNavBar';
 import { Snapshot } from '../../types';
-import { useLanguage } from '../../i18n';
+import { useLanguage, Language } from '../../i18n';
 
 export interface BusinessProfileData {
   contractorName: string;
@@ -89,9 +90,11 @@ export function ProfilePage({
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
 
+  const scrollRef = useRef<ScrollView>(null);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
+
   const [activeTab, setActiveTab] = useState<'business' | 'bank' | 'settings'>('business');
   const [statePickerOpen, setStatePickerOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -156,6 +159,23 @@ export function ProfilePage({
     }
   }, [copiedKey]);
 
+  // Handle hardware back button in Profile
+  useEffect(() => {
+    const backSub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (statePickerOpen) {
+        setStatePickerOpen(false);
+        return true;
+      }
+      if (confirmLogout) {
+        setConfirmLogout(false);
+        return true;
+      }
+      onBack();
+      return true;
+    });
+    return () => backSub.remove();
+  }, [statePickerOpen, confirmLogout, onBack]);
+
   const updateField = (key: keyof BusinessProfileData, val: string) => {
     setForm((prev) => ({ ...prev, [key]: val }));
   };
@@ -192,20 +212,23 @@ export function ProfilePage({
 
       setSuccessMsg(
         lang === 'hi'
-          ? '✅ फर्म और प्रोफ़ाइल की जानकारी सुरक्षित हो गई है।'
-          : '✅ Firm and contractor profile saved successfully.'
+          ? 'फर्म और प्रोफ़ाइल की जानकारी सुरक्षित हो गई है।'
+          : 'Firm and contractor profile saved successfully.'
       );
+
+      // Auto-scroll smoothly to top so user sees the confirmation popup banner
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
     } catch (e: any) {
       setSuccessMsg(`❌ Error: ${e.message}`);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
     } finally {
       setSaving(false);
     }
   };
 
-  const avatarLetters = (form.contractorName || data.user.name || 'Thekedar')
-    .trim()
-    .slice(0, 2)
-    .toUpperCase() || 'TB';
+  const contractorDisplayName =
+    form.contractorName || data.user.name || data.organization.name || 'ThekaBook';
+  const avatarLetters = formatNameInitials(contractorDisplayName, 'TB');
 
   return (
     <View style={styles.pageWrapper}>
@@ -213,6 +236,8 @@ export function ProfilePage({
       <TopNavBar
         title={t('businessProfile', 'Business & Firm Profile')}
         subtitle={form.firmName || data.organization.name}
+        userInitials={contractorDisplayName}
+        organizationName={form.firmName || data.organization.name}
         onBack={onBack}
         backText={t('back', 'Back')}
         onRefresh={onRefresh}
@@ -220,6 +245,7 @@ export function ProfilePage({
       />
 
       <ScrollView
+        ref={scrollRef}
         style={styles.root}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -248,19 +274,19 @@ export function ProfilePage({
 
               <View style={styles.heroMainInfo}>
                 <View style={styles.firmTitleRow}>
-                  <Text style={styles.firmTitle} numberOfLines={1}>
+                  <Text style={styles.firmTitle} numberOfLines={2}>
                     {form.firmName || data.organization.name || 'ThekaBook Business'}
                   </Text>
                   <View style={styles.verifiedBadge}>
-                    <AppIcon name="shield-checkmark" size={13} color="#16A34A" />
+                    <AppIcon name="shield-checkmark" size={12} color="#15803D" />
                     <Text style={styles.verifiedBadgeText}>Verified</Text>
                   </View>
                 </View>
 
                 <View style={styles.proprietorRow}>
-                  <AppIcon name="person" size={13} color="#475569" />
+                  <AppIcon name="person-outline" size={13} color="#475569" />
                   <Text style={styles.proprietorText} numberOfLines={1}>
-                    {form.contractorName || data.user.name || 'Thekedar Ji'}
+                    {form.contractorName || data.user.name || 'Contractor / Owner'}
                   </Text>
                 </View>
 
@@ -268,12 +294,12 @@ export function ProfilePage({
                   {form.city ? (
                     <View style={styles.metaPill}>
                       <AppIcon name="location-outline" size={11} color="#2563EB" />
-                      <Text style={styles.metaPillText}>{form.city}, {form.state}</Text>
+                      <Text style={styles.metaPillText} numberOfLines={1}>{form.city}, {form.state}</Text>
                     </View>
                   ) : (
                     <View style={styles.metaPill}>
                       <AppIcon name="location-outline" size={11} color="#2563EB" />
-                      <Text style={styles.metaPillText}>{form.state}</Text>
+                      <Text style={styles.metaPillText} numberOfLines={1}>{form.state}</Text>
                     </View>
                   )}
                   <View style={styles.statusPill}>
@@ -428,9 +454,9 @@ export function ProfilePage({
                 </View>
 
                 <View style={styles.fieldsContainer}>
-                  {/* Phone & Email */}
-                  <View style={styles.responsiveGridRow}>
-                    <View style={[styles.fieldItem, { flex: 1 }]}>
+                  {/* Phone & Email (Responsive: column on mobile, row on desktop) */}
+                  <View style={[styles.responsiveGridRow, !isDesktop && styles.responsiveGridCol]}>
+                    <View style={styles.flexFieldItem}>
                       <Text style={styles.fieldLabel}>{t('contactMobileLabel', 'Contact Mobile Number')}</Text>
                       <View style={styles.inputWrapper}>
                         <AppIcon name="call-outline" size={16} color="#64748B" style={styles.inputIcon} />
@@ -445,7 +471,7 @@ export function ProfilePage({
                       </View>
                     </View>
 
-                    <View style={[styles.fieldItem, { flex: 1 }]}>
+                    <View style={styles.flexFieldItem}>
                       <Text style={styles.fieldLabel}>{t('emailAddressLabel', 'Email Address')}</Text>
                       <View style={styles.inputWrapper}>
                         <AppIcon name="mail-outline" size={16} color="#64748B" style={styles.inputIcon} />
@@ -463,8 +489,8 @@ export function ProfilePage({
                   </View>
 
                   {/* State & City */}
-                  <View style={styles.responsiveGridRow}>
-                    <View style={[styles.fieldItem, { flex: 1 }]}>
+                  <View style={[styles.responsiveGridRow, !isDesktop && styles.responsiveGridCol]}>
+                    <View style={styles.flexFieldItem}>
                       <Text style={styles.fieldLabel}>{t('stateLabel', 'State / UT')}</Text>
                       <Pressable
                         onPress={() => setStatePickerOpen((v) => !v)}
@@ -521,7 +547,7 @@ export function ProfilePage({
                       )}
                     </View>
 
-                    <View style={[styles.fieldItem, { flex: 1 }]}>
+                    <View style={styles.flexFieldItem}>
                       <Text style={styles.fieldLabel}>{t('cityDistrictLabel', 'City / District')}</Text>
                       <View style={styles.inputWrapper}>
                         <AppIcon name="business-outline" size={16} color="#64748B" style={styles.inputIcon} />
@@ -569,9 +595,9 @@ export function ProfilePage({
                 </View>
 
                 <View style={styles.fieldsContainer}>
-                  <View style={styles.responsiveGridRow}>
+                  <View style={[styles.responsiveGridRow, !isDesktop && styles.responsiveGridCol]}>
                     {/* GSTIN */}
-                    <View style={[styles.fieldItem, { flex: 1 }]}>
+                    <View style={styles.flexFieldItem}>
                       <View style={styles.fieldLabelRow}>
                         <Text style={styles.fieldLabel}>{t('gstinLabel', 'GSTIN (GST Number)')}</Text>
                         {form.gstin ? (
@@ -597,7 +623,7 @@ export function ProfilePage({
                     </View>
 
                     {/* PAN */}
-                    <View style={[styles.fieldItem, { flex: 1 }]}>
+                    <View style={styles.flexFieldItem}>
                       <View style={styles.fieldLabelRow}>
                         <Text style={styles.fieldLabel}>{t('panLabel', 'PAN Card Number')}</Text>
                         {form.pan ? (
@@ -626,26 +652,28 @@ export function ProfilePage({
               </View>
 
               {/* Save Action Bar */}
-              <Pressable
-                onPress={handleSaveProfile}
-                disabled={saving}
-                style={({ pressed }) => [
-                  styles.primarySaveBtn,
-                  saving && { opacity: 0.6 },
-                  pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
-                ]}
-              >
-                {saving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <AppIcon name="checkmark-circle" size={19} color="#FFFFFF" />
-                    <Text style={styles.primarySaveBtnText}>
-                      {t('saveBusinessProfile', 'Save Business Profile')}
-                    </Text>
-                  </>
-                )}
-              </Pressable>
+              <View style={styles.primarySaveBtnWrap}>
+                <Pressable
+                  onPress={handleSaveProfile}
+                  disabled={saving}
+                  style={({ pressed }) => [
+                    styles.primarySaveBtn,
+                    saving && { opacity: 0.6 },
+                    pressed && { opacity: 0.88, transform: [{ scale: 0.98 }] },
+                  ]}
+                >
+                  {saving ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <AppIcon name="checkmark-circle" size={16} color="#FFFFFF" />
+                      <Text style={styles.primarySaveBtnText}>
+                        {t('saveBusinessProfile', 'Save Business Profile')}
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
             </View>
           )}
 
@@ -709,8 +737,8 @@ export function ProfilePage({
                   </View>
 
                   {/* Account Number & IFSC */}
-                  <View style={styles.responsiveGridRow}>
-                    <View style={[styles.fieldItem, { flex: 1.2 }]}>
+                  <View style={[styles.responsiveGridRow, !isDesktop && styles.responsiveGridCol]}>
+                    <View style={styles.flexFieldItem}>
                       <View style={styles.fieldLabelRow}>
                         <Text style={styles.fieldLabel}>{t('accountNumberLabel', 'Account Number')}</Text>
                         {form.accountNumber ? (
@@ -734,7 +762,7 @@ export function ProfilePage({
                       </View>
                     </View>
 
-                    <View style={[styles.fieldItem, { flex: 0.8 }]}>
+                    <View style={styles.flexFieldItem}>
                       <View style={styles.fieldLabelRow}>
                         <Text style={styles.fieldLabel}>{t('ifscCodeLabel', 'IFSC Code')}</Text>
                         {form.ifscCode ? (
@@ -763,24 +791,26 @@ export function ProfilePage({
               </View>
 
               {/* Save Button */}
-              <Pressable
-                onPress={handleSaveProfile}
-                disabled={saving}
-                style={({ pressed }) => [
-                  styles.primarySaveBtn,
-                  saving && { opacity: 0.6 },
-                  pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
-                ]}
-              >
-                {saving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <AppIcon name="checkmark-circle" size={19} color="#FFFFFF" />
-                    <Text style={styles.primarySaveBtnText}>{t('savePaymentDetails', 'Save Payment Details')}</Text>
-                  </>
-                )}
-              </Pressable>
+              <View style={styles.primarySaveBtnWrap}>
+                <Pressable
+                  onPress={handleSaveProfile}
+                  disabled={saving}
+                  style={({ pressed }) => [
+                    styles.primarySaveBtn,
+                    saving && { opacity: 0.6 },
+                    pressed && { opacity: 0.88, transform: [{ scale: 0.98 }] },
+                  ]}
+                >
+                  {saving ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <AppIcon name="checkmark-circle" size={16} color="#FFFFFF" />
+                      <Text style={styles.primarySaveBtnText}>{t('savePaymentDetails', 'Save Payment Details')}</Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
             </View>
           )}
 
@@ -805,13 +835,16 @@ export function ProfilePage({
 
                 <View style={styles.languageCardsRow}>
                   <Pressable
-                    onPress={() => {
-                      setLanguage('en');
-                      setSuccessMsg('🇬🇧 App language switched to English');
+                    onPress={async () => {
+                      if (lang !== 'en') {
+                        await setLanguage('en');
+                        setSuccessMsg('🇬🇧 App language switched to English');
+                      }
                     }}
-                    style={[
+                    style={({ pressed }) => [
                       styles.langCard,
                       lang === 'en' && styles.langCardActive,
+                      pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] },
                     ]}
                   >
                     <Text style={styles.langEmoji}>🇬🇧</Text>
@@ -827,13 +860,16 @@ export function ProfilePage({
                   </Pressable>
 
                   <Pressable
-                    onPress={() => {
-                      setLanguage('hi');
-                      setSuccessMsg('🇮🇳 ऐप की भाषा हिंदी में सेट कर दी गई है');
+                    onPress={async () => {
+                      if (lang !== 'hi') {
+                        await setLanguage('hi');
+                        setSuccessMsg('🇮🇳 ऐप की भाषा हिंदी में बदल दी गई है');
+                      }
                     }}
-                    style={[
+                    style={({ pressed }) => [
                       styles.langCard,
                       lang === 'hi' && styles.langCardActive,
+                      pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] },
                     ]}
                   >
                     <Text style={styles.langEmoji}>🇮🇳</Text>
@@ -887,14 +923,6 @@ export function ProfilePage({
                 </View>
               </View>
 
-              {/* Security Tag */}
-              <View style={styles.securityTagBox}>
-                <AppIcon name="shield-checkmark" size={15} color="#16A34A" />
-                <Text style={styles.securityTagText}>
-                  {t('securityFooter', 'ThekaBook v2.4.0 • 256-Bit Encrypted Contractor Accounting System')}
-                </Text>
-              </View>
-
               {/* Sign Out Card */}
               <View style={{ marginTop: 8 }}>
                 {!confirmLogout ? (
@@ -907,7 +935,7 @@ export function ProfilePage({
                   >
                     <AppIcon name="log-out-outline" size={17} color="#DC2626" />
                     <Text style={styles.signOutTriggerText}>
-                      {t('signOutAccount', 'Sign Out of Contractor Account')}
+                      {t('signOutAccount', 'Sign Out')}
                     </Text>
                   </Pressable>
                 ) : (
@@ -995,15 +1023,15 @@ const styles = StyleSheet.create({
   heroCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#E0E7FF',
+    shadowColor: '#1E40AF',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
-    gap: 16,
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 2,
+    gap: 12,
   },
   heroTopRow: {
     flexDirection: 'row',
@@ -1014,24 +1042,24 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   avatarCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#0F2851',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2.5,
-    borderColor: '#DBEAFE',
-    shadowColor: '#0F2851',
+    borderWidth: 2,
+    borderColor: '#BFDBFE',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   avatarText: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#1D4ED8',
     letterSpacing: 0.5,
   },
   avatarActiveDot: {
@@ -1056,10 +1084,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   firmTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '900',
     color: '#0F172A',
     letterSpacing: -0.3,
+    lineHeight: 22,
   },
   verifiedBadge: {
     flexDirection: 'row',
@@ -1068,14 +1097,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4',
     paddingHorizontal: 8,
     paddingVertical: 2.5,
-    borderRadius: 12,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: '#BBF7D0',
   },
   verifiedBadgeText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
-    color: '#16A34A',
+    color: '#15803D',
   },
   proprietorRow: {
     flexDirection: 'row',
@@ -1083,7 +1112,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   proprietorText: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '700',
     color: '#475569',
   },
@@ -1102,6 +1131,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2.5,
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
   },
   metaPillText: {
     fontSize: 11,
@@ -1109,15 +1140,17 @@ const styles = StyleSheet.create({
     color: '#1D4ED8',
   },
   statusPill: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F0FDF4',
     paddingHorizontal: 8,
     paddingVertical: 2.5,
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#DCFCE7',
   },
   statusPillText: {
     fontSize: 10.5,
     fontWeight: '700',
-    color: '#475569',
+    color: '#16A34A',
   },
 
   /* 3 Individual Stat Cards */
@@ -1164,7 +1197,7 @@ const styles = StyleSheet.create({
   /* ========================================================= */
   navSegmentContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F1F5F9',
     borderRadius: 12,
     padding: 4,
     borderWidth: 1,
@@ -1176,22 +1209,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
+    gap: 5,
+    paddingVertical: 9,
+    paddingHorizontal: 4,
     borderRadius: 9,
   },
   navSegmentBtnActive: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    borderColor: '#CBD5E1',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   navSegmentText: {
-    fontSize: 12.5,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     color: '#64748B',
   },
   navSegmentTextActive: {
-    fontWeight: '900',
+    fontWeight: '800',
     color: '#1D4ED8',
   },
 
@@ -1199,7 +1238,7 @@ const styles = StyleSheet.create({
   /* Form & Cards Styling */
   /* ========================================================= */
   tabContentBlock: {
-    gap: 14,
+    gap: 16,
   },
   premiumCard: {
     backgroundColor: '#FFFFFF',
@@ -1209,8 +1248,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
     elevation: 2,
     gap: 14,
   },
@@ -1218,11 +1257,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingBottom: 4,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   cardHeaderIcon: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1231,21 +1272,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardHeaderMainTitle: {
-    fontSize: 14.5,
-    fontWeight: '900',
+    fontSize: 15,
+    fontWeight: '800',
     color: '#0F172A',
   },
   cardHeaderSubtitle: {
     fontSize: 11.5,
     color: '#64748B',
-    marginTop: 1,
+    marginTop: 2,
+    lineHeight: 16,
   },
 
   fieldsContainer: {
-    gap: 12,
+    gap: 14,
   },
   fieldItem: {
-    gap: 5,
+    gap: 6,
+    width: '100%',
+  },
+  flexFieldItem: {
+    flex: 1,
+    gap: 6,
+    width: '100%',
   },
   fieldLabelRow: {
     flexDirection: 'row',
@@ -1253,39 +1301,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fieldLabel: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 12.5,
+    fontWeight: '700',
     color: '#334155',
   },
   copyHelperText: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    color: '#1D4ED8',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2563EB',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 6,
   },
   requiredAsterisk: {
     color: '#DC2626',
+    fontWeight: '900',
   },
   responsiveGridRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
+  },
+  responsiveGridCol: {
+    flexDirection: 'column',
+    gap: 12,
   },
 
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.2,
     borderColor: '#CBD5E1',
     borderRadius: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
+    minHeight: 46,
     gap: 8,
   },
   inputIcon: {
-    marginLeft: 2,
+    marginLeft: 1,
   },
   fieldInput: {
     flex: 1,
-    paddingVertical: 9,
+    paddingVertical: 8,
     fontSize: 13.5,
     color: '#0F172A',
     fontWeight: '600',
@@ -1358,26 +1416,33 @@ const styles = StyleSheet.create({
   },
 
   /* Primary Save Button */
+  primarySaveBtnWrap: {
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+  },
   primarySaveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#0F2851',
-    paddingVertical: 13,
-    borderRadius: 12,
-    marginTop: 4,
-    shadowColor: '#0F2851',
-    shadowOffset: { width: 0, height: 3 },
+    gap: 7,
+    backgroundColor: '#2563EB',
+    paddingVertical: 9,
+    paddingHorizontal: 22,
+    borderRadius: 10,
+    alignSelf: 'center',
+    minWidth: 190,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   primarySaveBtnText: {
-    fontSize: 14,
-    fontWeight: '900',
+    fontSize: 13,
+    fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
 
   /* Language Cards */
@@ -1416,6 +1481,30 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     color: '#64748B',
     marginTop: 1,
+  },
+  saveLangBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#1D4ED8',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 12,
+  },
+  saveLangBtnDisabled: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  saveLangBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  saveLangBtnTextSaved: {
+    color: '#16A34A',
   },
 
   /* Cloud Sync */

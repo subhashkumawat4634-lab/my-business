@@ -58,6 +58,33 @@ export async function saveToken(token:string|null) {
   if(token) await SecureStore.setItemAsync(TOKEN_KEY,token); else await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 
+const REMEMBERED_EMAIL_KEY = 'thekabook_remembered_email';
+
+export async function getRememberedEmail(): Promise<string | null> {
+  try {
+    if (Platform.OS === 'web') {
+      return typeof localStorage !== 'undefined' ? localStorage.getItem(REMEMBERED_EMAIL_KEY) : null;
+    }
+    return await SecureStore.getItemAsync(REMEMBERED_EMAIL_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export async function saveRememberedEmail(email: string | null): Promise<void> {
+  try {
+    if (Platform.OS === 'web') {
+      if (typeof localStorage !== 'undefined') {
+        if (email) localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+        else localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      }
+      return;
+    }
+    if (email) await SecureStore.setItemAsync(REMEMBERED_EMAIL_KEY, email);
+    else await SecureStore.deleteItemAsync(REMEMBERED_EMAIL_KEY);
+  } catch {}
+}
+
 export async function request(path:string, token:string|null, body?:unknown) {
   const baseUrl = getApiBaseUrl();
   let res: Response | null = null;

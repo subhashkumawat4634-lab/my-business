@@ -14,6 +14,7 @@ import { AppIcon } from '../../components/icons/AppIcon';
 import { Badge } from '../../components/common/Badge';
 import { Row, Snapshot } from '../../types';
 import { money, workerSummary } from '../../finance';
+import { useLanguage } from '../../i18n';
 
 export interface WorkerDetailPageProps {
   worker: Row;
@@ -65,17 +66,18 @@ function getInitials(name: string = '') {
   return name.slice(0, 2).toUpperCase() || 'W';
 }
 
-function formatDateSafely(dateVal: any) {
+function formatDateSafely(dateVal: any, lang: string = 'en') {
   if (!dateVal) return { day: '--', month: '', full: '', weekday: '' };
   const str = String(dateVal);
+  const locale = lang === 'hi' ? 'hi-IN' : 'en-IN';
   try {
     const d = new Date(str.length === 10 ? str + 'T00:00:00' : str);
     if (isNaN(d.getTime())) return { day: str.slice(-2) || '--', month: '', full: str, weekday: '' };
     return {
       day: String(d.getDate()).padStart(2, '0'),
-      month: d.toLocaleDateString('en-IN', { month: 'short' }),
-      full: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-      weekday: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+      month: d.toLocaleDateString(locale, { month: 'short' }),
+      full: d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }),
+      weekday: d.toLocaleDateString(locale, { weekday: 'short' }),
     };
   } catch {
     return { day: str.slice(-2) || '--', month: '', full: str, weekday: '' };
@@ -89,6 +91,7 @@ export function WorkerDetailPage({
   onOpenPaymentModal,
   onOpenWorkerModal,
 }: WorkerDetailPageProps) {
+  const { t, lang } = useLanguage();
   const [activeTab, setActiveTab] = useState<PageTab>('OVERVIEW');
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
@@ -164,9 +167,9 @@ export function WorkerDetailPage({
   };
 
   const TABS = [
-    { key: 'OVERVIEW' as PageTab, icon: 'bar-chart', label: 'Overview' },
-    { key: 'ATTENDANCE' as PageTab, icon: 'calendar', label: `Haziri (${workerAttendance.length})` },
-    { key: 'PAYMENTS' as PageTab, icon: 'wallet', label: `Payments (${workerPayments.length})` },
+    { key: 'OVERVIEW' as PageTab, icon: 'bar-chart', label: t('overview', 'Overview') },
+    { key: 'ATTENDANCE' as PageTab, icon: 'calendar', label: t('tabHaziriCount', 'Haziri ({count})').replace('{count}', String(workerAttendance.length)) },
+    { key: 'PAYMENTS' as PageTab, icon: 'wallet', label: t('tabPaymentsCount', 'Payments ({count})').replace('{count}', String(workerPayments.length)) },
   ];
 
   const balanceColor = isPending ? '#D97706' : isAdvance ? '#2563EB' : '#16A34A';
@@ -184,14 +187,14 @@ export function WorkerDetailPage({
           >
             <AppIcon name="arrow-back" size={18} color="#0F2851" />
           </Pressable>
-          <Text style={styles.topBarTitle} numberOfLines={1}>Worker Profile</Text>
+          <Text style={styles.topBarTitle} numberOfLines={1}>{t('workerProfile', 'Worker Profile')}</Text>
           <Pressable
             onPress={() => onOpenWorkerModal(worker)}
             style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.75 }]}
             accessibilityLabel="Edit worker"
           >
             <AppIcon name="create-outline" size={15} color="#0F2851" />
-            <Text style={styles.editBtnText}>Edit</Text>
+            <Text style={styles.editBtnText}>{t('edit', 'Edit')}</Text>
           </Pressable>
         </View>
       </View>
@@ -208,14 +211,14 @@ export function WorkerDetailPage({
             <View style={styles.heroInfo}>
               <View style={styles.heroNameRow}>
                 <Text style={styles.heroName} numberOfLines={1}>{worker.name}</Text>
-                {!worker.active && <Badge label="INACTIVE" tone="gray" />}
+                {!worker.active && <Badge label={t('inactive', 'INACTIVE')} tone="gray" />}
               </View>
               <View style={styles.heroBadgeRow}>
                 <View style={styles.skillChip}>
                   <AppIcon name={getSkillIcon(worker.skill) as any} size={11} color="#1E40AF" />
                   <Text style={styles.skillChipText}>{worker.skill || 'General Labour'}</Text>
                 </View>
-                <Text style={styles.rateChip}>{money(worker.daily_rate)}/day</Text>
+                <Text style={styles.rateChip}>{money(worker.daily_rate)}/{t('daily', 'day')}</Text>
                 {worker.overtime_rate ? (
                   <Text style={styles.otChip}>OT: {money(worker.overtime_rate)}/hr</Text>
                 ) : null}
@@ -224,7 +227,7 @@ export function WorkerDetailPage({
                 <Pressable onPress={handleCall} style={({ pressed }) => [styles.phoneRow, pressed && { opacity: 0.75 }]}>
                   <AppIcon name="call" size={12} color="#16A34A" />
                   <Text style={styles.phoneText}>{worker.phone}</Text>
-                  <View style={styles.callBadge}><Text style={styles.callBadgeText}>Call</Text></View>
+                  <View style={styles.callBadge}><Text style={styles.callBadgeText}>{t('call', 'Call')}</Text></View>
                 </Pressable>
               ) : null}
             </View>
@@ -234,10 +237,10 @@ export function WorkerDetailPage({
               <View style={[styles.balanceDot, { backgroundColor: balanceColor }]} />
               <View>
                 <Text style={styles.balanceLabel}>
-                  {isPending ? 'Unpaid Balance' : isAdvance ? 'Advance Given' : 'Account Settled'}
+                  {isPending ? t('unpaidBalance', 'Unpaid Balance') : isAdvance ? t('advanceGiven', 'Advance Given') : t('accountSettled', 'Account Settled')}
                 </Text>
                 <Text style={[styles.balanceAmount, { color: balanceColor }]}>
-                  {isPending ? `${money(summary.balance)} Due` : isAdvance ? `${money(-summary.balance)} Advance` : 'Settled'}
+                  {isPending ? `${money(summary.balance)} ${t('due', 'Due')}` : isAdvance ? `${money(-summary.balance)} ${t('advance', 'Advance')}` : t('settled', 'Settled')}
                 </Text>
               </View>
             </View>
@@ -251,7 +254,7 @@ export function WorkerDetailPage({
             >
               <AppIcon name="wallet" size={14} color={isPending ? '#FFF' : '#0F2851'} />
               <Text style={[styles.payBtnText, { color: isPending ? '#FFF' : '#0F2851' }]}>
-                {isPending ? 'Pay Now' : 'Advance'}
+                {isPending ? t('payNow', 'Pay Now') : t('advance', 'Advance')}
               </Text>
             </Pressable>
           </View>
@@ -260,19 +263,19 @@ export function WorkerDetailPage({
 
       <View style={styles.tabBarWrapper}>
         <View style={styles.tabBar}>
-          {TABS.map((t) => {
-            const isActive = activeTab === t.key;
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.key;
             return (
               <Pressable
-                key={t.key}
-                onPress={() => setActiveTab(t.key)}
+                key={tab.key}
+                onPress={() => setActiveTab(tab.key)}
                 style={[
                   styles.tabItem,
                   isActive && styles.tabItemActive,
                 ]}
               >
-                <AppIcon name={t.icon as any} size={14} color={isActive ? '#0F2851' : '#94A3B8'} />
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{t.label}</Text>
+                <AppIcon name={tab.icon as any} size={14} color={isActive ? '#0F2851' : '#94A3B8'} />
+                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{tab.label}</Text>
               </Pressable>
             );
           })}
@@ -288,10 +291,10 @@ export function WorkerDetailPage({
           <>
             <View style={styles.statsGrid}>
               {[
-                { bg: '#EFF6FF', iconBg: '#DBEAFE', icon: 'calendar', iconColor: '#2563EB', value: `${totalUnits}`, unit: 'Days', label: 'Total Haziri', sub: `${fullDays} Full + ${halfDays} Half` },
-                { bg: '#FFFBEB', iconBg: '#FDE68A', icon: 'time', iconColor: '#D97706', value: totalOtHours || '0', unit: 'Hrs OT', label: 'Overtime', sub: `${money(otEarnings)} earned` },
-                { bg: '#F0FDF4', iconBg: '#BBF7D0', icon: 'business', iconColor: '#16A34A', value: `${sitesBreakdown.length}`, unit: 'Sites', label: 'Sites Worked', sub: 'Contributed' },
-                { bg: '#F5F3FF', iconBg: '#DDD6FE', icon: 'trending-up', iconColor: '#7C3AED', value: money(avgDayEarning), unit: '', label: 'Avg Day Rate', sub: 'incl. OT' },
+                { bg: '#EFF6FF', iconBg: '#DBEAFE', icon: 'calendar', iconColor: '#2563EB', value: `${totalUnits}`, unit: t('days', 'Days'), label: t('totalHaziri', 'Total Haziri'), sub: t('fullAndHalfDays', '{full} Full + {half} Half').replace('{full}', String(fullDays)).replace('{half}', String(halfDays)) },
+                { bg: '#FFFBEB', iconBg: '#FDE68A', icon: 'time', iconColor: '#D97706', value: totalOtHours || '0', unit: t('hrsOt', 'Hrs OT'), label: t('overtime', 'Overtime'), sub: t('earnedSub', '{amount} earned').replace('{amount}', money(otEarnings)) },
+                { bg: '#F0FDF4', iconBg: '#BBF7D0', icon: 'business', iconColor: '#16A34A', value: `${sitesBreakdown.length}`, unit: t('navSites', 'Sites'), label: t('sitesWorked', 'Sites Worked'), sub: t('contributed', 'Contributed') },
+                { bg: '#F5F3FF', iconBg: '#DDD6FE', icon: 'trending-up', iconColor: '#7C3AED', value: money(avgDayEarning), unit: '', label: t('avgDayRate', 'Avg Day Rate'), sub: t('inclOt', 'incl. OT') },
               ].map((card, i) => (
                 <View key={i} style={[styles.statCard, { backgroundColor: card.bg }]}>
                   <View style={[styles.statIconBox, { backgroundColor: card.iconBg }]}>
@@ -310,13 +313,13 @@ export function WorkerDetailPage({
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderIcon}><AppIcon name="cash" size={14} color="#0F2851" /></View>
-                <Text style={styles.cardTitle}>Financial Summary</Text>
+                <Text style={styles.cardTitle}>{t('financialSummary', 'Financial Summary')}</Text>
               </View>
               <View style={styles.finGrid}>
                 {[
-                  { label: 'Total Earned', value: money(summary.earned), color: '#0F2851' },
-                  { label: 'Total Paid', value: money(summary.paid), color: '#16A34A' },
-                  { label: isPending ? 'Balance Due' : isAdvance ? 'Advance' : 'Balance', value: isPending ? money(summary.balance) : isAdvance ? money(-summary.balance) : 'Rs.0', color: balanceColor },
+                  { label: t('totalEarned', 'Total Earned'), value: money(summary.earned), color: '#0F2851' },
+                  { label: t('totalPaid', 'Total Paid'), value: money(summary.paid), color: '#16A34A' },
+                  { label: isPending ? t('balanceDue', 'Balance Due') : isAdvance ? t('advance', 'Advance') : t('balance', 'Balance'), value: isPending ? money(summary.balance) : isAdvance ? money(-summary.balance) : '₹0', color: balanceColor },
                 ].map((item, i, arr) => (
                   <React.Fragment key={item.label}>
                     <View style={styles.finItem}>
@@ -332,7 +335,7 @@ export function WorkerDetailPage({
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderIcon}><AppIcon name="business" size={14} color="#0F2851" /></View>
-                <Text style={styles.cardTitle}>Site Contributions</Text>
+                <Text style={styles.cardTitle}>{t('siteContributions', 'Site Contributions')}</Text>
                 <View style={styles.countBadge}><Text style={styles.countBadgeText}>{sitesBreakdown.length}</Text></View>
               </View>
               {sitesBreakdown.length > 0 ? (
@@ -341,7 +344,7 @@ export function WorkerDetailPage({
                     <View style={styles.siteIconWrap}><AppIcon name="location" size={15} color="#0284C7" /></View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.siteName} numberOfLines={1}>{s.siteName}</Text>
-                      <Text style={styles.siteDays}>{s.days} days worked</Text>
+                      <Text style={styles.siteDays}>{s.days} {t('daysWorked', 'days worked')}</Text>
                     </View>
                     <View style={styles.siteEarnedBox}><Text style={styles.siteEarned}>{money(s.earned)}</Text></View>
                   </View>
@@ -349,8 +352,8 @@ export function WorkerDetailPage({
               ) : (
                 <View style={styles.emptyState}>
                   <AppIcon name="business-outline" size={32} color="#CBD5E1" />
-                  <Text style={styles.emptyTitle}>No Sites Yet</Text>
-                  <Text style={styles.emptyDesc}>Attendance records will appear here.</Text>
+                  <Text style={styles.emptyTitle}>{t('noSitesYet', 'No Sites Yet')}</Text>
+                  <Text style={styles.emptyDesc}>{t('noSitesYetDesc', 'Attendance records will appear here.')}</Text>
                 </View>
               )}
             </View>
@@ -361,7 +364,7 @@ export function WorkerDetailPage({
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.cardHeaderIcon}><AppIcon name="calendar" size={14} color="#0F2851" /></View>
-              <Text style={styles.cardTitle}>Haziri Log</Text>
+              <Text style={styles.cardTitle}>{t('haziriLog', 'Haziri Log')}</Text>
               <View style={styles.countBadge}><Text style={styles.countBadgeText}>{workerAttendance.length}</Text></View>
             </View>
             {workerAttendance.length > 0 ? (
@@ -370,7 +373,7 @@ export function WorkerDetailPage({
                 const isFull = Number(a.units) === 1;
                 const hasOt = Number(a.overtime_minutes || 0) > 0;
                 const otHoursStr = (Number(a.overtime_minutes || 0) / 60).toFixed(1).replace(/\.0$/, '');
-                const dateInfo = formatDateSafely(a.date);
+                const dateInfo = formatDateSafely(a.date, lang);
                 return (
                   <View key={a.id} style={[styles.logRow, idx < workerAttendance.length - 1 && styles.logRowBorder]}>
                     <View style={styles.dateBox}>
@@ -378,11 +381,11 @@ export function WorkerDetailPage({
                       <Text style={styles.dateMonth}>{dateInfo.month}</Text>
                     </View>
                     <View style={styles.logMeta}>
-                      <Text style={styles.logSite} numberOfLines={1}>{site?.name || 'Project Site'}</Text>
+                      <Text style={styles.logSite} numberOfLines={1}>{site?.name || t('workSite', 'Project Site')}</Text>
                       <View style={styles.logBadges}>
                         <View style={[styles.shiftBadge, isFull ? styles.shiftFull : styles.shiftHalf]}>
                           <Text style={[styles.shiftText, isFull ? styles.shiftTextFull : styles.shiftTextHalf]}>
-                            {isFull ? 'Full Day' : 'Half Day'}
+                            {isFull ? t('present', 'Full Day') : t('halfDay', 'Half Day')}
                           </Text>
                         </View>
                         {hasOt ? (
@@ -396,7 +399,7 @@ export function WorkerDetailPage({
                     </View>
                     <View style={styles.logAmount}>
                       <Text style={styles.logAmountVal}>{money(a.amount)}</Text>
-                      <Text style={styles.logAmountLabel}>Earned</Text>
+                      <Text style={styles.logAmountLabel}>{t('earnedLabel', 'Earned')}</Text>
                     </View>
                   </View>
                 );
@@ -404,8 +407,8 @@ export function WorkerDetailPage({
             ) : (
               <View style={styles.emptyState}>
                 <AppIcon name="calendar-outline" size={32} color="#CBD5E1" />
-                <Text style={styles.emptyTitle}>No Attendance Yet</Text>
-                <Text style={styles.emptyDesc}>Mark daily attendance to see records here.</Text>
+                <Text style={styles.emptyTitle}>{t('noAttendanceYet', 'No Attendance Yet')}</Text>
+                <Text style={styles.emptyDesc}>{t('noAttendanceYetDesc', 'Mark daily attendance to see records here.')}</Text>
               </View>
             )}
           </View>
@@ -415,12 +418,12 @@ export function WorkerDetailPage({
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.cardHeaderIcon}><AppIcon name="wallet" size={14} color="#0F2851" /></View>
-              <Text style={styles.cardTitle}>Payment Ledger</Text>
+              <Text style={styles.cardTitle}>{t('paymentLedger', 'Payment Ledger')}</Text>
               <View style={styles.countBadge}><Text style={styles.countBadgeText}>{workerPayments.length}</Text></View>
             </View>
             {workerPayments.length > 0 ? (
               workerPayments.map((p, idx) => {
-                const dateInfo = formatDateSafely(p.date);
+                const dateInfo = formatDateSafely(p.date, lang);
                 const modeIcon = p.mode === 'UPI' ? 'qr-code' : p.mode === 'BANK' ? 'business' : 'cash';
                 const modeBg = p.mode === 'UPI' ? '#F5F3FF' : p.mode === 'BANK' ? '#EFF6FF' : '#F0FDF4';
                 const modeColor = p.mode === 'UPI' ? '#7C3AED' : p.mode === 'BANK' ? '#1D4ED8' : '#16A34A';
@@ -430,14 +433,14 @@ export function WorkerDetailPage({
                       <AppIcon name={modeIcon as any} size={17} color={modeColor} />
                     </View>
                     <View style={styles.logMeta}>
-                      <Text style={styles.logSite} numberOfLines={1}>{p.description || 'Wage Payment'}</Text>
+                      <Text style={styles.logSite} numberOfLines={1}>{p.description || t('labourWage', 'Wage Payment')}</Text>
                       <Text style={styles.payMeta}>
-                        {dateInfo.full}{p.mode ? ` · ${p.mode}` : ''}{p.reference ? ` · Ref: ${p.reference}` : ''}
+                        {dateInfo.full}{p.mode ? ` · ${p.mode}` : ''}{p.reference ? ` · ${t('ref', 'Ref')}: ${p.reference}` : ''}
                       </Text>
                     </View>
                     <View style={styles.logAmount}>
                       <Text style={styles.payAmountVal}>{money(p.amount)}</Text>
-                      <Text style={styles.logAmountLabel}>Paid</Text>
+                      <Text style={styles.logAmountLabel}>{t('paidLabel', 'Paid')}</Text>
                     </View>
                   </View>
                 );
@@ -445,14 +448,14 @@ export function WorkerDetailPage({
             ) : (
               <View style={styles.emptyState}>
                 <AppIcon name="wallet-outline" size={32} color="#CBD5E1" />
-                <Text style={styles.emptyTitle}>No Payments Yet</Text>
-                <Text style={styles.emptyDesc}>Record the first wage payment for this worker.</Text>
+                <Text style={styles.emptyTitle}>{t('noPaymentsYet', 'No Payments Yet')}</Text>
+                <Text style={styles.emptyDesc}>{t('noPaymentsYetDesc', 'Record the first wage payment for this worker.')}</Text>
                 <Pressable
                   onPress={() => onOpenPaymentModal(worker.id)}
                   style={({ pressed }) => [styles.emptyBtn, pressed && { opacity: 0.85 }]}
                 >
                   <AppIcon name="add" size={14} color="#FFF" />
-                  <Text style={styles.emptyBtnText}>Record Payment</Text>
+                  <Text style={styles.emptyBtnText}>{t('recordPayment', 'Record Payment')}</Text>
                 </Pressable>
               </View>
             )}

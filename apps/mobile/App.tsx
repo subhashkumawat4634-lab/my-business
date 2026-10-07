@@ -1,5 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  Platform,
+  BackHandler,
+  ToastAndroid,
+} from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
@@ -33,21 +41,23 @@ import { getToken, saveToken, request, commandKey } from './src/api';
 import { attendanceForm, entryForm, siteForm, workerForm, voidForm } from './src/forms';
 import { pdfReport, shareReport } from './src/report';
 import { FormSpec, Row, Snapshot } from './src/types';
-import { LanguageProvider } from './src/i18n';
-
-const NAV_TABS: TabItem[] = [
-  { key: 'home', label: 'Overview', icon: 'grid-outline' },
-  { key: 'sites', label: 'Sites', icon: 'business-outline' },
-  { key: 'attendance', label: 'Haziri', icon: 'calendar-outline' },
-  { key: 'team', label: 'Labour', icon: 'people-outline' },
-  { key: 'ledger', label: 'Hisab', icon: 'wallet-outline' },
-  { key: 'reports', label: 'Reports', icon: 'bar-chart-outline' },
-];
+import { LanguageProvider, useLanguage } from './src/i18n';
+import { RedirectingScreen } from './src/components/common/RedirectingScreen';
 
 function MainApp() {
+  const { t, lang } = useLanguage();
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [data, setData] = useState<Snapshot | null>(null);
+
+  const navTabs: TabItem[] = [
+    { key: 'home', label: t('navOverview', 'Overview'), icon: 'grid-outline' },
+    { key: 'sites', label: t('navSites', 'Sites'), icon: 'business-outline' },
+    { key: 'attendance', label: t('navAttendance', 'Haziri'), icon: 'calendar-outline' },
+    { key: 'team', label: t('navLabour', 'Labour'), icon: 'people-outline' },
+    { key: 'ledger', label: t('navHisab', 'Hisab'), icon: 'wallet-outline' },
+    { key: 'reports', label: t('navReports', 'Reports'), icon: 'bar-chart-outline' },
+  ];
 
   // Check initial browser path on Web
   const getInitialRouteState = () => {
@@ -232,14 +242,17 @@ function MainApp() {
         ...body,
         key: commandKey(),
       });
-      setToast('Profile updated successfully');
       await refresh();
     } catch (e: any) {
       setError(e.message);
+      throw e;
     } finally {
       setBusy(false);
     }
   }
+
+  const tabHistoryRef = useRef<string[]>(['home']);
+  const lastBackPressRef = useRef<number>(0);
 
   function navigate(
     newTab: string,
@@ -247,6 +260,9 @@ function MainApp() {
     siteId: string | null = null,
     newSite = false
   ) {
+    if (newTab !== tab) {
+      tabHistoryRef.current = [...tabHistoryRef.current.filter((t) => t !== newTab), newTab];
+    }
     setTab(newTab);
     setSelectedSiteId(siteId);
     setIsNewSite(newSite);
@@ -267,6 +283,80 @@ function MainApp() {
       }
     }
   }
+
+  // Handle hardware / Android system back button gracefully
+  useEffect(() => {
+    const onHardwareBackPress = () => {
+      // 1. If any modal form is open, close the modal
+      if (form) {
+        setForm(null);
+        setError('');
+        return true;
+      }
+
+      // 2. If creating new site, go back to sites list
+      if (isNewSite) {
+        setIsNewSite(false);
+        setSelectedSiteId(null);
+        setTab('sites');
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.history.pushState(null, '', '/sites');
+        }
+        return true;
+      }
+
+      // 3. If viewing a specific site detail, go back to sites list
+      if (selectedSiteId) {
+        setSelectedSiteId(null);
+        setTab('sites');
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.history.pushState(null, '', '/sites');
+        }
+        return true;
+      }
+
+      // 4. If in profile screen, go back to home tab
+      if (tab === 'profile') {
+        navigate('home', '/', null, false);
+        return true;
+      }
+
+      // 5. If on another tab, go back to previous tab or home
+      if (tab !== 'home') {
+        const prevStack = tabHistoryRef.current.filter((t) => t !== tab);
+        const prevTab = prevStack.length > 0 ? prevStack[prevStack.length - 1] : 'home';
+        tabHistoryRef.current = prevStack.length > 0 ? prevStack : ['home'];
+        navigate(prevTab, prevTab === 'home' ? '/' : `/${prevTab}`, null, false);
+        return true;
+      }
+
+      // 6. If already on Home (Overview) with nothing open -> Double back to exit
+      const now = Date.now();
+      if (lastBackPressRef.current && now - lastBackPressRef.current < 2000) {
+        BackHandler.exitApp();
+        return true;
+      }
+
+      lastBackPressRef.current = now;
+      const exitMsg =
+        lang === 'hi'
+          ? 'ऐप बंद करने के लिए दोबारा बैक दबाएं'
+          : 'Press back again to exit app';
+
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(exitMsg, ToastAndroid.SHORT);
+      } else {
+        setToast(exitMsg);
+      }
+      return true;
+    };
+
+    const backSub = BackHandler.addEventListener(
+      'hardwareBackPress',
+      onHardwareBackPress
+    );
+    return () => backSub.remove();
+  }, [form, isNewSite, selectedSiteId, tab, lang]);
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -405,9 +495,9 @@ function MainApp() {
   }
 
   if (!data) {
-    return (
-      <SafeAreaView style={styles.errorContainer}>
-        {error ? (
+    if (error) {
+      return (
+        <SafeAreaView style={styles.errorContainer}>
           <View style={styles.errorBox}>
             <Text style={styles.errorTitle}>Connection Error</Text>
             <Text style={styles.errorDesc}>{error}</Text>
@@ -423,10 +513,14 @@ function MainApp() {
               style={{ marginTop: 8 }}
             />
           </View>
-        ) : (
-          <ActivityIndicator size="large" color={Colors.primary} />
-        )}
-      </SafeAreaView>
+        </SafeAreaView>
+      );
+    }
+    return (
+      <RedirectingScreen
+        title="Loading Workspace..."
+        subtitle="Synchronizing project ledger, sites & attendance records"
+      />
     );
   }
 
@@ -478,6 +572,7 @@ function MainApp() {
                 onOpenEntry={openEntryModal}
                 onOpenAttendance={openAttendanceModal}
                 onShareReport={(sId) => handleShareReport(false, sId)}
+                onOpenProfile={() => handleNavigate('profile')}
                 refreshing={refreshing}
                 onRefresh={() => refresh()}
               />
@@ -487,6 +582,7 @@ function MainApp() {
           <AttendancePage
             data={data}
             onOpenAttendanceModal={openAttendanceModal}
+            onOpenProfile={() => handleNavigate('profile')}
             refreshing={refreshing}
             onRefresh={() => refresh()}
           />
@@ -499,6 +595,7 @@ function MainApp() {
             onOpenPaymentModal={(wId) =>
               openEntryModal('WAGE_PAYMENT', undefined, wId)
             }
+            onOpenProfile={() => handleNavigate('profile')}
             refreshing={refreshing}
             onRefresh={() => refresh()}
           />
@@ -509,6 +606,7 @@ function MainApp() {
             data={data}
             onOpenEntry={openEntryModal}
             onOpenVoidModal={(entry) => openForm(voidForm(entry))}
+            onOpenProfile={() => handleNavigate('profile')}
             refreshing={refreshing}
             onRefresh={() => refresh()}
           />
@@ -518,6 +616,7 @@ function MainApp() {
           <ReportsPage
             data={data}
             onGenerateReport={handleShareReport}
+            onOpenProfile={() => handleNavigate('profile')}
             refreshing={refreshing}
             onRefresh={() => refresh()}
           />
@@ -539,7 +638,7 @@ function MainApp() {
 
       {/* BHIM UPI Style Footer Bottom Navigation */}
       <BottomNav
-        tabs={NAV_TABS}
+        tabs={navTabs}
         activeTab={tab}
         onTabPress={handleNavigate}
       />

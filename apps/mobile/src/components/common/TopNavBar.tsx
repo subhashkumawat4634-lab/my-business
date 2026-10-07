@@ -47,6 +47,20 @@ export interface TopNavBarProps {
   style?: any;
 }
 
+export function formatNameInitials(name?: string | null, fallback = 'TB'): string {
+  if (!name || !name.trim()) return fallback;
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return fallback;
+  if (parts.length === 1) {
+    // Single word name (e.g. "Subhash" -> 'S', "Vikesh" -> 'V')
+    return (parts[0][0] || fallback).toUpperCase();
+  }
+  // Multiple words (e.g. "Subhash Kumawat" -> "S" + "K" = "SK")
+  const first = parts[0][0] || '';
+  const last = parts[parts.length - 1][0] || '';
+  return (first + last).toUpperCase() || fallback;
+}
+
 export function TopNavBar({
   title,
   subtitle,
@@ -84,8 +98,7 @@ export function TopNavBar({
   };
 
   const badgeTheme = badgeObj ? getBadgeStyle(badgeObj.tone) : null;
-  const userName = userInitials || 'Thekedar Ji';
-  const avatarText = userName.trim().slice(0, 2).toUpperCase() || 'TB';
+  const avatarText = formatNameInitials(userInitials || organizationName, 'TB');
 
   const handleAvatarPress = () => {
     if (onOpenProfile) {
