@@ -262,18 +262,26 @@ export function ClockPickerModal({
             </View>
           </ScrollView>
 
-          {/* Footer Action Buttons */}
+          {/* Premium Clean Footer Action Buttons */}
           <View style={styles.modalFooter}>
             <Pressable
               onPress={() => {
-                setSelectedHours(0);
-                setSelectedMinutes(0);
-                onConfirm(0);
-                onClose();
+                if (totalMinutes > 0) {
+                  setSelectedHours(0);
+                  setSelectedMinutes(0);
+                } else {
+                  onClose();
+                }
               }}
-              style={styles.resetButton}
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && { opacity: 0.75 },
+              ]}
+              accessibilityLabel={totalMinutes > 0 ? 'Clear overtime' : 'Cancel'}
             >
-              <Text style={styles.resetButtonText}>Reset (0m)</Text>
+              <Text style={styles.secondaryButtonText}>
+                {totalMinutes > 0 ? 'Clear (0m)' : 'Cancel'}
+              </Text>
             </Pressable>
 
             <Pressable
@@ -282,13 +290,13 @@ export function ClockPickerModal({
                 onClose();
               }}
               style={({ pressed }) => [
-                styles.confirmButton,
+                styles.primaryButton,
                 pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
               ]}
             >
-              <AppIcon name="checkmark-circle" size={17} color="#FFFFFF" />
-              <Text style={styles.confirmButtonText}>
-                Set {formattedDuration}
+              <AppIcon name="checkmark-circle" size={18} color="#FFFFFF" />
+              <Text style={styles.primaryButtonText}>
+                {totalMinutes > 0 ? `Apply ${formattedDuration}` : 'Done'}
               </Text>
             </Pressable>
           </View>
@@ -524,35 +532,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     backgroundColor: '#FFFFFF',
-    gap: 10,
+    gap: 12,
   },
-  resetButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
+  secondaryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
     backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  resetButtonText: {
-    fontSize: 12,
+  secondaryButtonText: {
+    fontSize: 13,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#475569',
   },
-  confirmButton: {
+  primaryButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
     backgroundColor: '#2563EB',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  confirmButtonText: {
-    fontSize: 13,
+  primaryButtonText: {
+    fontSize: 14,
     fontWeight: '800',
     color: '#FFFFFF',
   },

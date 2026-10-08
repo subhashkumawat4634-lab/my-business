@@ -180,13 +180,6 @@ export function WorkerDetailPage({
     <SafeAreaView style={styles.pageRoot} edges={['top', 'bottom']}>
       <View style={styles.topBarWrapper}>
         <View style={[styles.topBar, isDesktop && styles.topBarDesktop]}>
-          <Pressable
-            onPress={onBack}
-            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7, transform: [{ scale: 0.93 }] }]}
-            accessibilityLabel="Go back"
-          >
-            <AppIcon name="arrow-back" size={18} color="#0F2851" />
-          </Pressable>
           <Text style={styles.topBarTitle} numberOfLines={1}>{t('workerProfile', 'Worker Profile')}</Text>
           <Pressable
             onPress={() => onOpenWorkerModal(worker)}
@@ -385,7 +378,7 @@ export function WorkerDetailPage({
                       <View style={styles.logBadges}>
                         <View style={[styles.shiftBadge, isFull ? styles.shiftFull : styles.shiftHalf]}>
                           <Text style={[styles.shiftText, isFull ? styles.shiftTextFull : styles.shiftTextHalf]}>
-                            {isFull ? t('present', 'Full Day') : t('halfDay', 'Half Day')}
+                            {isFull ? t('present', 'Present') : t('halfDay', 'Half Day')}
                           </Text>
                         </View>
                         {hasOt ? (

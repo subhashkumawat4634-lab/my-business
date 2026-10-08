@@ -35,7 +35,7 @@ export function attendanceForm(data:Snapshot, siteId?:string, workerId?:string, 
     fields:[{key:'site_id',label:'Work site',options:data.sites.map(s=>({label:s.name,value:s.id}))},
       {key:'worker_id',label:'Worker',options:data.workers.filter(w=>w.active).map(w=>({label:w.name,value:w.id}))},
       {key:'date',label:'Work date · YYYY-MM-DD'},
-      {key:'units',label:'Attendance',options:[{value:'1',label:'Present · 1 day'},{value:'0.5',label:'Half day'},{value:'0',label:'Absent'}]},
+      {key:'units',label:'Attendance',options:[{value:'1',label:'Present'},{value:'0.5',label:'Half Day'},{value:'0',label:'Absent'}]},
       {key:'overtime_minutes',label:'Overtime in minutes (60 = 1 hour)',numeric:true},{key:'notes',label:'Note / correction reason'}],
     initial:{site_id:existing?.site_id||siteId||data.sites[0]?.id||'',worker_id:existing?.worker_id||workerId||data.workers.find(w=>w.active)?.id||'',date:existing?String(existing.date).slice(0,10):today(),units:String(existing?.units??1),overtime_minutes:String(existing?.overtime_minutes||0),notes:''},
     transform:v=>({...v,units:Number(v.units),overtime_minutes:Number(v.overtime_minutes)})};

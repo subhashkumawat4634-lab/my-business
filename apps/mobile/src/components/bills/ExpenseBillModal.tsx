@@ -347,13 +347,9 @@ export function ExpenseBillModal({
                     <Text style={styles.selectorTitle} numberOfLines={1}>
                       {selectedSite?.name || 'Select Work Site'}
                     </Text>
-                    {selectedSite?.owner_name ? (
-                      <Text style={styles.selectorSubtitle} numberOfLines={1}>
-                        Client: {selectedSite.owner_name}
-                      </Text>
-                    ) : (
-                      <Text style={styles.selectorSubtitle}>Select site</Text>
-                    )}
+                    <Text style={styles.selectorSubtitle} numberOfLines={1}>
+                      {selectedSite?.name ? 'Work Site' : 'Select site'}
+                    </Text>
                   </View>
                   <AppIcon
                     name={isSiteDropdownOpen ? 'chevron-up' : 'chevron-down'}
@@ -412,11 +408,9 @@ export function ExpenseBillModal({
                               >
                                 {s.name}
                               </Text>
-                              {s.owner_name ? (
-                                <Text style={styles.dropdownRowSubtitle} numberOfLines={1}>
-                                  Client: {s.owner_name}
-                                </Text>
-                              ) : null}
+                              <Text style={styles.dropdownRowSubtitle} numberOfLines={1}>
+                                Work Site
+                              </Text>
                             </View>
                             {isSelected && (
                               <AppIcon name="checkmark-circle" size={16} color="#2563EB" />

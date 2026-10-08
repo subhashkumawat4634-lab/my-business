@@ -488,7 +488,7 @@ export function AttendancePage({
                       <option value="ALL">👥 All Workers (All Labour Register)</option>
                       {data.workers.map((w) => (
                         <option key={w.id} value={w.id}>
-                          {w.name} {w.skill ? `(${w.skill})` : ''} — ₹{w.daily_rate}/day
+                          {w.name} {w.skill ? `(${w.skill})` : ''}
                         </option>
                       ))}
                     </select>

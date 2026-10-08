@@ -278,13 +278,9 @@ export function MaterialBillModal({
                     <Text style={styles.siteMainText} numberOfLines={1}>
                       {selectedSite?.name || 'Select Work Site'}
                     </Text>
-                    {selectedSite?.owner_name ? (
-                      <Text style={styles.siteSubText} numberOfLines={1}>
-                        Client: {selectedSite.owner_name}
-                      </Text>
-                    ) : (
-                      <Text style={styles.siteSubText}>Select work site</Text>
-                    )}
+                    <Text style={styles.siteSubText} numberOfLines={1}>
+                      {selectedSite?.name ? 'Work Site' : 'Select work site'}
+                    </Text>
                   </View>
                   <AppIcon
                     name="chevron-down"
@@ -311,7 +307,7 @@ export function MaterialBillModal({
                     >
                       {data.sites.map((s) => (
                         <option key={s.id} value={s.id}>
-                          🏢 {s.name} {s.owner_name ? `(Client: ${s.owner_name})` : ''}
+                          🏢 {s.name}
                         </option>
                       ))}
                     </select>
@@ -376,7 +372,7 @@ export function MaterialBillModal({
                                 {s.name}
                               </Text>
                               <Text style={styles.siteMenuItemDesc} numberOfLines={1}>
-                                {s.owner_name ? `Client: ${s.owner_name}` : 'No client specified'}
+                                Work Site
                               </Text>
                             </View>
                             {isSelected && (

@@ -264,13 +264,9 @@ export function ExtraWorkModal({
                     <Text style={styles.siteMainText} numberOfLines={1}>
                       {selectedSite?.name || 'Select Work Site'}
                     </Text>
-                    {selectedSite?.owner_name ? (
-                      <Text style={styles.siteSubText} numberOfLines={1}>
-                        Client: {selectedSite.owner_name}
-                      </Text>
-                    ) : (
-                      <Text style={styles.siteSubText}>Tap to change work site</Text>
-                    )}
+                    <Text style={styles.siteSubText} numberOfLines={1}>
+                      {selectedSite?.name ? 'Work Site' : 'Tap to change work site'}
+                    </Text>
                   </View>
                   <AppIcon
                     name={isSiteDropdownOpen ? 'chevron-up' : 'chevron-down'}
@@ -340,7 +336,7 @@ export function ExtraWorkModal({
                                 {s.name}
                               </Text>
                               <Text style={styles.siteMenuItemDesc} numberOfLines={1}>
-                                {s.owner_name ? `Client: ${s.owner_name}` : 'No client specified'}
+                                Work Site
                               </Text>
                             </View>
                             {isSelected && (

@@ -487,7 +487,7 @@ export function WorkerDetailModal({
                                       isFull ? styles.shiftBadgeTextFull : styles.shiftBadgeTextHalf,
                                     ]}
                                   >
-                                    {isFull ? '1.0 Full Day' : '0.5 Half Day'}
+                                    {isFull ? 'Present' : 'Half Day'}
                                   </Text>
                                 </View>
 

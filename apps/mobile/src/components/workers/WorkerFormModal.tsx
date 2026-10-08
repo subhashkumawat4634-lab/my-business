@@ -363,14 +363,7 @@ export function WorkerFormModal({
               </View>
             </View>
 
-            {/* Reassurance Banner */}
-            <View style={styles.reassuranceBanner}>
-              <AppIcon name="shield-checkmark" size={15} color={Colors.primary} />
-              <Text style={styles.reassuranceText}>
-                <Text style={{ fontWeight: '700' }}>Wage Rate Protection: </Text>
-                Historical attendance entries permanently retain their original rates. New rates apply only to future work dates.
-              </Text>
-            </View>
+
           </View>
         )}
 
@@ -435,9 +428,7 @@ export function WorkerFormModal({
                 </Pressable>
               ) : null}
             </View>
-            <Text style={styles.inputHelp}>
-              Used for quick calling and sharing attendance/wage statements via WhatsApp.
-            </Text>
+
           </View>
         </View>
 

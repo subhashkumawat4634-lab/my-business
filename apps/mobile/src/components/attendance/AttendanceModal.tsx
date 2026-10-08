@@ -33,7 +33,6 @@ export interface AttendanceModalProps {
 const STATUS_OPTIONS: Array<{
   units: '1' | '0.5' | '0';
   label: string;
-  desc: string;
   icon: string;
   color: string;
   bgColor: string;
@@ -42,7 +41,6 @@ const STATUS_OPTIONS: Array<{
   {
     units: '1',
     label: 'Present',
-    desc: 'Full Day · 1.0',
     icon: 'checkmark-circle',
     color: '#15803D',
     bgColor: '#DCFCE7',
@@ -51,7 +49,6 @@ const STATUS_OPTIONS: Array<{
   {
     units: '0.5',
     label: 'Half Day',
-    desc: 'Half Day · 0.5',
     icon: 'time',
     color: '#B45309',
     bgColor: '#FEF3C7',
@@ -60,7 +57,6 @@ const STATUS_OPTIONS: Array<{
   {
     units: '0',
     label: 'Absent',
-    desc: 'Chhutti · 0.0',
     icon: 'close-circle',
     color: '#B91C1C',
     bgColor: '#FEE2E2',
@@ -362,9 +358,7 @@ export function AttendanceModal({
                         {selectedSite?.name || 'Select Site'}
                       </Text>
                       <Text style={styles.dropdownSubText} numberOfLines={1}>
-                        {selectedSite?.owner_name
-                          ? `Client: ${selectedSite.owner_name}`
-                          : 'Select site'}
+                        {selectedSite?.name ? 'Work Site' : 'Select site'}
                       </Text>
                     </View>
                     <AppIcon
@@ -392,7 +386,7 @@ export function AttendanceModal({
                       >
                         {data.sites.map((s) => (
                           <option key={s.id} value={s.id}>
-                            🏢 {s.name} {s.owner_name ? `(Client: ${s.owner_name})` : ''}
+                            🏢 {s.name}
                           </option>
                         ))}
                       </select>
@@ -457,7 +451,7 @@ export function AttendanceModal({
                                   {s.name}
                                 </Text>
                                 <Text style={styles.statusMenuItemDesc} numberOfLines={1}>
-                                  {s.owner_name ? `Client: ${s.owner_name}` : 'No client specified'}
+                                  Work Site
                                 </Text>
                               </View>
                               {isSelected && (
@@ -493,7 +487,7 @@ export function AttendanceModal({
                       </Text>
                       <Text style={styles.dropdownSubText} numberOfLines={1}>
                         {selectedWorker
-                          ? `${selectedWorker.skill || 'Worker'} • ${money(selectedWorker.daily_rate)}/d`
+                          ? (selectedWorker.skill || 'Worker')
                           : 'Select worker'}
                       </Text>
                     </View>
@@ -522,7 +516,7 @@ export function AttendanceModal({
                       >
                         {data.workers.filter((w) => w.active).map((w) => (
                           <option key={w.id} value={w.id}>
-                            👷 {w.name} {w.skill ? `(${w.skill})` : ''} — ₹{w.daily_rate}/day
+                            👷 {w.name} {w.skill ? `(${w.skill})` : ''}
                           </option>
                         ))}
                       </select>
@@ -591,7 +585,7 @@ export function AttendanceModal({
                                   {w.name}
                                 </Text>
                                 <Text style={styles.statusMenuItemDesc} numberOfLines={1}>
-                                  {w.skill || 'Worker'} • {money(w.daily_rate)}/d
+                                  {w.skill || 'Worker'}
                                 </Text>
                               </View>
                               {isSelected && (
@@ -629,13 +623,8 @@ export function AttendanceModal({
                     <Text style={styles.colLabel}>Attendance Status *</Text>
                   </View>
 
-                  <Pressable
-                    onPress={() => {
-                      setIsStatusDropdownOpen((prev) => !prev);
-                      setIsSiteDropdownOpen(false);
-                      setIsWorkerDropdownOpen(false);
-                    }}
-                    style={({ pressed }) => [
+                  <View
+                    style={[
                       styles.statusDropdownBtn,
                       {
                         borderColor: currentStatusOpt.borderColor,
@@ -643,9 +632,7 @@ export function AttendanceModal({
                           ? '#F8FAFC'
                           : currentStatusOpt.bgColor,
                       },
-                      pressed && { opacity: 0.85 },
                     ]}
-                    accessibilityLabel="Select attendance status"
                   >
                     <View
                       style={[
@@ -672,10 +659,10 @@ export function AttendanceModal({
                       </Text>
                       <Text style={styles.statusDropdownSubText} numberOfLines={1}>
                         {units === '1'
-                          ? `Full Day (1.0) • ${money(selectedWorker ? selectedWorker.daily_rate : 0)}`
+                          ? (selectedWorker ? money(selectedWorker.daily_rate) : 'Present')
                           : units === '0.5'
-                          ? `Half Day (0.5) • ${money(selectedWorker ? Math.round(Number(selectedWorker.daily_rate) * 0.5) : 0)}`
-                          : 'Chhutti (0.0) • ₹0'}
+                          ? (selectedWorker ? money(Math.round(Number(selectedWorker.daily_rate) * 0.5)) : 'Half Day')
+                          : 'Absent (₹0)'}
                       </Text>
                     </View>
 
@@ -684,10 +671,49 @@ export function AttendanceModal({
                       size={15}
                       color="#64748B"
                     />
-                  </Pressable>
 
-                  {/* Dropdown Options (when open) */}
-                  {isStatusDropdownOpen && (
+                    {/* Native HTML Select Bar for Web */}
+                    {Platform.OS === 'web' ? (
+                      <select
+                        value={units}
+                        onChange={(e: any) => {
+                          const newUnits = e.target.value as '1' | '0.5' | '0';
+                          setUnits(newUnits);
+                          if (newUnits === '0') {
+                            setOvertimeMinutes('0');
+                          }
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer',
+                          zIndex: 10,
+                        }}
+                        title="Select Attendance Status"
+                      >
+                        <option value="1">🟢 Present</option>
+                        <option value="0.5">🟡 Half Day</option>
+                        <option value="0">🔴 Absent</option>
+                      </select>
+                    ) : (
+                      <Pressable
+                        onPress={() => {
+                          setIsStatusDropdownOpen((prev) => !prev);
+                          setIsSiteDropdownOpen(false);
+                          setIsWorkerDropdownOpen(false);
+                        }}
+                        style={StyleSheet.absoluteFill}
+                        accessibilityLabel="Select attendance status"
+                      />
+                    )}
+                  </View>
+
+                  {/* Dropdown Options (when open on Mobile) */}
+                  {Platform.OS !== 'web' && isStatusDropdownOpen && (
                     <View style={styles.statusDropdownMenu}>
                       {STATUS_OPTIONS.map((opt) => {
                         const isSelected = units === opt.units;
@@ -736,7 +762,7 @@ export function AttendanceModal({
                               >
                                 {opt.label}
                               </Text>
-                              <Text style={styles.statusMenuItemDesc}>{opt.desc}</Text>
+                              
                             </View>
 
                             <Text
@@ -1251,6 +1277,7 @@ const styles = StyleSheet.create({
 
   /* Status Dropdown Trigger Button */
   statusDropdownBtn: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,

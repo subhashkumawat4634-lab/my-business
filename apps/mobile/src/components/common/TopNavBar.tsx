@@ -117,25 +117,9 @@ export function TopNavBar({
 
   return (
     <View style={[styles.container, style]}>
-      {/* Left Area: Back Button OR Page Icon */}
+      {/* Left Area: Page Icon */}
       <View style={styles.left}>
-        {onBack ? (
-          <Pressable
-            onPress={onBack}
-            style={({ pressed }) => [
-              styles.backBtn,
-              pressed && { opacity: 0.7, transform: [{ scale: 0.97 }] },
-            ]}
-            accessibilityLabel={backText ? `Back to ${backText}` : 'Go back'}
-          >
-            <AppIcon name="arrow-back" size={20} color={Colors.primary} />
-            {backText ? (
-              <Text style={styles.backBtnText} numberOfLines={1}>
-                {backText}
-              </Text>
-            ) : null}
-          </Pressable>
-        ) : icon ? (
+        {icon ? (
           <View style={styles.iconBadge}>
             <AppIcon
               name={icon}

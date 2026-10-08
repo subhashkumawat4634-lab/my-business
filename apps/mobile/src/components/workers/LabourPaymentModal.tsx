@@ -482,7 +482,7 @@ export function LabourPaymentModal({
                     </Text>
                     <Text style={styles.selectorSubtitle}>
                       {selectedWorker
-                        ? `${money(selectedWorker.daily_rate)}/day${
+                        ? `${selectedWorker.skill || 'Worker'}${
                             selectedWorker.phone ? ` • ${selectedWorker.phone}` : ''
                           }`
                         : 'Select worker'}
@@ -514,7 +514,7 @@ export function LabourPaymentModal({
                     >
                       {data.workers.map((w) => (
                         <option key={w.id} value={w.id}>
-                          👷 {w.name} {w.skill ? `(${w.skill})` : ''} — ₹{w.daily_rate}/day
+                          👷 {w.name} {w.skill ? `(${w.skill})` : ''}
                         </option>
                       ))}
                     </select>
@@ -582,7 +582,7 @@ export function LabourPaymentModal({
                                 {w.name}
                               </Text>
                               <Text style={styles.dropdownRowSubtitle} numberOfLines={1}>
-                                {w.skill || 'Worker'} • {money(w.daily_rate)}/day
+                                {w.skill || 'Worker'}{w.phone ? ` • ${w.phone}` : ''}
                               </Text>
                             </View>
 
@@ -677,13 +677,9 @@ export function LabourPaymentModal({
                     <Text style={styles.selectorTitle} numberOfLines={1}>
                       {selectedSite?.name || 'Select Work Site'}
                     </Text>
-                    {selectedSite?.owner_name ? (
-                      <Text style={styles.selectorSubtitle} numberOfLines={1}>
-                        Client: {selectedSite.owner_name}
-                      </Text>
-                    ) : (
-                      <Text style={styles.selectorSubtitle}>Select site</Text>
-                    )}
+                    <Text style={styles.selectorSubtitle} numberOfLines={1}>
+                      {selectedSite?.name ? 'Work Site' : 'Select site'}
+                    </Text>
                   </View>
                   <AppIcon
                     name="chevron-down"
@@ -710,7 +706,7 @@ export function LabourPaymentModal({
                     >
                       {data.sites.map((s) => (
                         <option key={s.id} value={s.id}>
-                          🏢 {s.name} {s.owner_name ? `(Client: ${s.owner_name})` : ''}
+                          🏢 {s.name}
                         </option>
                       ))}
                     </select>
@@ -767,11 +763,9 @@ export function LabourPaymentModal({
                               >
                                 {s.name}
                               </Text>
-                              {s.owner_name ? (
-                                <Text style={styles.dropdownRowSubtitle} numberOfLines={1}>
-                                  Client: {s.owner_name}
-                                </Text>
-                              ) : null}
+                              <Text style={styles.dropdownRowSubtitle} numberOfLines={1}>
+                                Work Site
+                              </Text>
                             </View>
                             {isSelected && (
                               <AppIcon name="checkmark-circle" size={16} color="#0284C7" />
