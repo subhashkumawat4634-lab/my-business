@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Picker } from '@react-native-picker/picker';
 import { Colors } from '../../theme/colors';
 import { AppIcon } from '../icons/AppIcon';
 import { FormSpec, Row, Snapshot } from '../../types';
@@ -202,9 +203,9 @@ export function MaterialBillModal({
   return (
     <Modal
       visible
-      animationType="slide"
+      animationType={isDesktop ? 'fade' : 'slide'}
       onRequestClose={() => !busy && onClose()}
-      presentationStyle="pageSheet"
+      presentationStyle={isDesktop ? 'overFullScreen' : 'fullScreen'}
       transparent={isDesktop}
     >
       <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
@@ -217,623 +218,615 @@ export function MaterialBillModal({
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={styles.headerIconBadge}>
-                <AppIcon name="cube" size={20} color="#D97706" />
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <View style={styles.headerIconBadge}>
+                  <AppIcon name="cube" size={20} color="#D97706" />
+                </View>
+                <View>
+                  <Text style={styles.headerTitle}>Add Material Bill</Text>
+                  <Text style={styles.headerSubtitle}>
+                    Record purchase of cement, paint, steel & hardware
+                  </Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.headerTitle}>Add Material Bill</Text>
-                <Text style={styles.headerSubtitle}>
-                  Record purchase of cement, paint, steel & hardware
-                </Text>
-              </View>
+
+              <Pressable
+                onPress={() => !busy && onClose()}
+                style={({ pressed }) => [
+                  styles.closeBtn,
+                  pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
+                ]}
+                accessibilityLabel="Close"
+              >
+                <AppIcon name="close" size={18} color={Colors.textPrimary} />
+              </Pressable>
             </View>
 
-            <Pressable
-              onPress={() => !busy && onClose()}
-              style={({ pressed }) => [
-                styles.closeBtn,
-                pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
-              ]}
-              accessibilityLabel="Close"
+            {/* Error Banner */}
+            {displayError ? (
+              <View style={styles.errorBanner}>
+                <AppIcon name="alert-circle" size={16} color={Colors.danger} />
+                <Text style={styles.errorBannerText}>{displayError}</Text>
+              </View>
+            ) : null}
+
+            {/* Scrollable Form Body */}
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scrollBody}
             >
-              <AppIcon name="close" size={18} color={Colors.textPrimary} />
-            </Pressable>
-          </View>
+              {/* 1. WORK SITE & BILL DATE (Top Row Card) */}
+              <View style={[styles.sectionCard, { zIndex: 20 }]}>
+                <View style={styles.sectionHeadingRow}>
+                  <AppIcon name="business-outline" size={16} color="#0284C7" />
+                  <Text style={styles.sectionTitle}>Site & Bill Date</Text>
+                </View>
 
-          {/* Error Banner */}
-          {displayError ? (
-            <View style={styles.errorBanner}>
-              <AppIcon name="alert-circle" size={16} color={Colors.danger} />
-              <Text style={styles.errorBannerText}>{displayError}</Text>
-            </View>
-          ) : null}
+                {/* Work Site Selector Dropdown / Select Bar */}
+                <View style={{ gap: 4 }}>
+                  <Text style={styles.fieldLabel}>Work Site *</Text>
+                  <View
+                    style={[
+                      styles.siteDropdownBtn,
+                      { position: 'relative' },
+                    ]}
+                  >
+                    <View style={styles.siteIconBox}>
+                      <AppIcon name="business" size={16} color="#0284C7" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.siteMainText} numberOfLines={1}>
+                        {selectedSite?.name || 'Select Work Site'}
+                      </Text>
+                      <Text style={styles.siteSubText} numberOfLines={1}>
+                        {selectedSite?.name ? 'Work Site' : 'Select work site'}
+                      </Text>
+                    </View>
+                    <AppIcon
+                      name="chevron-down"
+                      size={16}
+                      color="#64748B"
+                    />
 
-          {/* Scrollable Form Body */}
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollBody}
-          >
-            {/* 1. WORK SITE & BILL DATE (Top Row Card) */}
-            <View style={[styles.sectionCard, { zIndex: 20 }]}>
-              <View style={styles.sectionHeadingRow}>
-                <AppIcon name="business-outline" size={16} color="#0284C7" />
-                <Text style={styles.sectionTitle}>Site & Bill Date</Text>
-              </View>
-
-              {/* Work Site Selector Dropdown / Select Bar */}
-              <View style={{ gap: 4 }}>
-                <Text style={styles.fieldLabel}>Work Site *</Text>
-                <View
-                  style={[
-                    styles.siteDropdownBtn,
-                    { position: 'relative' },
-                  ]}
-                >
-                  <View style={styles.siteIconBox}>
-                    <AppIcon name="business" size={16} color="#0284C7" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.siteMainText} numberOfLines={1}>
-                      {selectedSite?.name || 'Select Work Site'}
-                    </Text>
-                    <Text style={styles.siteSubText} numberOfLines={1}>
-                      {selectedSite?.name ? 'Work Site' : 'Select work site'}
-                    </Text>
-                  </View>
-                  <AppIcon
-                    name="chevron-down"
-                    size={16}
-                    color="#64748B"
-                  />
-
-                  {/* Native HTML Select Bar for direct dropdown selection */}
-                  {Platform.OS === 'web' && (
-                    <select
-                      value={siteId}
-                      onChange={(e: any) => setSiteId(e.target.value)}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0,
-                        cursor: 'pointer',
-                        zIndex: 10,
-                      }}
-                      title="Select Work Site"
+                    {/* Universal Native Picker for Mobile & Web */}
+                    <Picker
+                      selectedValue={siteId}
+                      onValueChange={(val: any) => setSiteId(String(val))}
+                      style={styles.nativeHiddenPicker}
+                      dropdownIconColor="transparent"
+                      prompt="Select Work Site"
                     >
                       {data.sites.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          🏢 {s.name}
-                        </option>
+                        <Picker.Item
+                          key={s.id}
+                          label={`🏢 ${s.name}`}
+                          value={s.id}
+                        />
                       ))}
-                    </select>
+                    </Picker>
+                  </View>
+
+                  {/* Inline Work Site Dropdown Menu */}
+                  {isSiteDropdownOpen && (
+                    <View style={styles.siteDropdownMenu}>
+                      {data.sites.length > 5 && (
+                        <View style={styles.inlineSearchBox}>
+                          <AppIcon name="search" size={13} color={Colors.textMuted} />
+                          <TextInput
+                            value={siteSearch}
+                            onChangeText={setSiteSearch}
+                            placeholder="Search site or client..."
+                            placeholderTextColor={Colors.textSubtle}
+                            style={styles.inlineSearchInput}
+                          />
+                        </View>
+                      )}
+                      <ScrollView
+                        style={{ maxHeight: 220 }}
+                        nestedScrollEnabled
+                        showsVerticalScrollIndicator
+                      >
+                        {filteredSites.map((s) => {
+                          const isSelected = s.id === siteId;
+                          return (
+                            <Pressable
+                              key={s.id}
+                              onPress={() => {
+                                setSiteId(s.id);
+                                setIsSiteDropdownOpen(false);
+                              }}
+                              style={({ pressed }) => [
+                                styles.siteMenuItem,
+                                isSelected && styles.siteMenuItemActive,
+                                pressed && { opacity: 0.8 },
+                              ]}
+                            >
+                              <View
+                                style={[
+                                  styles.siteMenuItemIcon,
+                                  { backgroundColor: isSelected ? '#E0F2FE' : '#F1F5F9' },
+                                ]}
+                              >
+                                <AppIcon
+                                  name="business"
+                                  size={14}
+                                  color={isSelected ? '#0284C7' : '#64748B'}
+                                />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text
+                                  style={[
+                                    styles.siteMenuItemTitle,
+                                    isSelected && { color: '#0284C7', fontWeight: '800' },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {s.name}
+                                </Text>
+                                <Text style={styles.siteMenuItemDesc} numberOfLines={1}>
+                                  Work Site
+                                </Text>
+                              </View>
+                              {isSelected && (
+                                <AppIcon name="checkmark" size={14} color="#0284C7" />
+                              )}
+                            </Pressable>
+                          );
+                        })}
+                        {!filteredSites.length && (
+                          <Text style={styles.pickerEmptyText}>No sites found.</Text>
+                        )}
+                      </ScrollView>
+                    </View>
                   )}
                 </View>
 
-                {/* Inline Work Site Dropdown Menu */}
-                {isSiteDropdownOpen && (
-                  <View style={styles.siteDropdownMenu}>
-                    {data.sites.length > 5 && (
-                      <View style={styles.inlineSearchBox}>
-                        <AppIcon name="search" size={13} color={Colors.textMuted} />
-                        <TextInput
-                          value={siteSearch}
-                          onChangeText={setSiteSearch}
-                          placeholder="Search site or client..."
-                          placeholderTextColor={Colors.textSubtle}
-                          style={styles.inlineSearchInput}
-                        />
-                      </View>
-                    )}
-                    <ScrollView
-                      style={{ maxHeight: 220 }}
-                      nestedScrollEnabled
-                      showsVerticalScrollIndicator
-                    >
-                      {filteredSites.map((s) => {
-                        const isSelected = s.id === siteId;
-                        return (
-                          <Pressable
-                            key={s.id}
-                            onPress={() => {
-                              setSiteId(s.id);
-                              setIsSiteDropdownOpen(false);
-                            }}
-                            style={({ pressed }) => [
-                              styles.siteMenuItem,
-                              isSelected && styles.siteMenuItemActive,
-                              pressed && { opacity: 0.8 },
-                            ]}
-                          >
-                            <View
-                              style={[
-                                styles.siteMenuItemIcon,
-                                { backgroundColor: isSelected ? '#E0F2FE' : '#F1F5F9' },
-                              ]}
-                            >
-                              <AppIcon
-                                name="business"
-                                size={14}
-                                color={isSelected ? '#0284C7' : '#64748B'}
-                              />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                              <Text
-                                style={[
-                                  styles.siteMenuItemTitle,
-                                  isSelected && { color: '#0284C7', fontWeight: '800' },
-                                ]}
-                                numberOfLines={1}
-                              >
-                                {s.name}
-                              </Text>
-                              <Text style={styles.siteMenuItemDesc} numberOfLines={1}>
-                                Work Site
-                              </Text>
-                            </View>
-                            {isSelected && (
-                              <AppIcon name="checkmark" size={14} color="#0284C7" />
-                            )}
-                          </Pressable>
-                        );
-                      })}
-                      {!filteredSites.length && (
-                        <Text style={styles.pickerEmptyText}>No sites found.</Text>
-                      )}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-
-              {/* Bill Date */}
-              <View style={{ gap: 4, marginTop: 4 }}>
-                <Text style={styles.fieldLabel}>Bill / Purchase Date *</Text>
-                <Pressable
-                  onPress={() => setCalendarTarget('billDate')}
-                  style={({ pressed }) => [
-                    styles.datePickerBtn,
-                    pressed && { opacity: 0.8 },
-                  ]}
-                >
-                  <Text style={styles.datePickerText}>{formatDateDisplay(date)}</Text>
-                  {isToday ? (
-                    <View style={styles.todayPill}>
-                      <Text style={styles.todayPillText}>Today</Text>
-                    </View>
-                  ) : null}
-                  <View style={{ marginLeft: 'auto' }}>
-                    <AppIcon name="calendar" size={16} color="#2563EB" />
-                  </View>
-                </Pressable>
-              </View>
-            </View>
-
-            {/* 2. MATERIAL DETAILS & CATEGORIES */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeadingRow}>
-                <AppIcon name="cube-outline" size={16} color="#D97706" />
-                <Text style={styles.sectionTitle}>Material Item Details</Text>
-              </View>
-
-              {/* Quick Categories Bar */}
-              <View style={{ gap: 6 }}>
-                <Text style={styles.fieldSubNotice}>Quick Select Category:</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.categoryScroll}
-                >
-                  {MATERIAL_CATEGORIES.map((cat) => {
-                    const isSelected =
-                      description.toLowerCase().includes(cat.label.toLowerCase()) ||
-                      (cat.label === 'Cement' && description.toLowerCase().includes('cement'));
-                    return (
-                      <Pressable
-                        key={cat.label}
-                        onPress={() => handleSelectCategory(cat)}
-                        style={[
-                          styles.categoryChip,
-                          isSelected && styles.categoryChipActive,
-                        ]}
-                      >
-                        <AppIcon
-                          name={cat.icon as any}
-                          size={14}
-                          color={isSelected ? '#D97706' : '#64748B'}
-                        />
-                        <Text
-                          style={[
-                            styles.categoryChipText,
-                            isSelected && styles.categoryChipTextActive,
-                          ]}
-                        >
-                          {cat.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-
-              {/* Description Input */}
-              <View style={{ gap: 4 }}>
-                <Text style={styles.fieldLabel}>Material Description *</Text>
-                <TextInput
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="e.g. UltraTech Cement 50 bags, Asian Paints Apex 20L"
-                  placeholderTextColor={Colors.textSubtle}
-                  style={styles.textInput}
-                />
-              </View>
-
-              {/* Quantity & Unit Row */}
-              <View style={styles.qtyUnitRow}>
-                {/* Quantity */}
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={styles.fieldLabel}>Quantity (Optional)</Text>
-                  <TextInput
-                    value={quantity}
-                    onChangeText={(t) => setQuantity(t.replace(/[^0-9.]/g, ''))}
-                    placeholder="e.g. 50"
-                    placeholderTextColor={Colors.textSubtle}
-                    keyboardType="numeric"
-                    style={styles.textInput}
-                  />
-                </View>
-
-                {/* Unit */}
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={styles.fieldLabel}>Unit</Text>
-                  <TextInput
-                    value={unit}
-                    onChangeText={setUnit}
-                    placeholder="bags / litres / pcs"
-                    placeholderTextColor={Colors.textSubtle}
-                    style={styles.textInput}
-                  />
-                </View>
-              </View>
-
-              {/* Common Unit Chips */}
-              <View style={styles.commonUnitsRow}>
-                {COMMON_UNITS.map((u) => {
-                  const isSelected = unit.toLowerCase() === u;
-                  return (
-                    <Pressable
-                      key={u}
-                      onPress={() => setUnit(u)}
-                      style={[
-                        styles.unitPill,
-                        isSelected && styles.unitPillActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.unitPillText,
-                          isSelected && styles.unitPillTextActive,
-                        ]}
-                      >
-                        {u}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* 3. BILL AMOUNT & CALCULATION */}
-            <View style={styles.amountCard}>
-              <View style={styles.amountTopRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <AppIcon name="cash" size={17} color="#15803D" />
-                  <Text style={styles.amountHeading}>Total Bill Amount (₹) *</Text>
-                </View>
-                {unitRateCalc !== null ? (
-                  <View style={styles.unitRateBadge}>
-                    <Text style={styles.unitRateBadgeText}>
-                      ₹{unitRateCalc} / {unit || 'unit'}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-
-              <View style={styles.amountInputRow}>
-                <Text style={styles.currencySymbol}>₹</Text>
-                <TextInput
-                  value={amount}
-                  onChangeText={(t) => setAmount(t.replace(/[^0-9.]/g, ''))}
-                  placeholder="0.00"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="numeric"
-                  style={styles.amountLargeInput}
-                />
-              </View>
-
-              {Number(amount) > 0 && (
-                <Text style={styles.amountInWords}>
-                  Total: {money(Number(amount) * 100)}
-                </Text>
-              )}
-            </View>
-
-            {/* 4. SUPPLIER (PARTY) & BILL REFERENCE */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeadingRow}>
-                <AppIcon name="storefront-outline" size={16} color="#475569" />
-                <Text style={styles.sectionTitle}>Supplier & Invoice</Text>
-              </View>
-
-              {/* Supplier Input */}
-              <View style={{ gap: 4 }}>
-                <Text style={styles.fieldLabel}>Supplier / Dukan Name (Party)</Text>
-                <TextInput
-                  value={party}
-                  onChangeText={setParty}
-                  placeholder="e.g. Gupta Building Materials, Laxmi Hardware..."
-                  placeholderTextColor={Colors.textSubtle}
-                  style={styles.textInput}
-                />
-
-                {/* Past Supplier Chips */}
-                {pastSuppliers.length > 0 && (
-                  <View style={{ marginTop: 4, gap: 4 }}>
-                    <Text style={styles.fieldSubNotice}>Recent Suppliers (Tap to auto-fill):</Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.categoryScroll}
-                    >
-                      {pastSuppliers.map((s) => (
-                        <Pressable
-                          key={s}
-                          onPress={() => setParty(s)}
-                          style={[
-                            styles.supplierChip,
-                            party === s && styles.supplierChipActive,
-                          ]}
-                        >
-                          <AppIcon
-                            name="storefront"
-                            size={12}
-                            color={party === s ? '#1D4ED8' : '#64748B'}
-                          />
-                          <Text
-                            style={[
-                              styles.supplierChipText,
-                              party === s && styles.supplierChipTextActive,
-                            ]}
-                          >
-                            {s}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-
-              {/* Bill / Invoice Reference */}
-              <View style={{ gap: 4, marginTop: 4 }}>
-                <Text style={styles.fieldLabel}>Invoice / Bill No. / Challan (Optional)</Text>
-                <TextInput
-                  value={reference}
-                  onChangeText={setReference}
-                  placeholder="e.g. Bill #8924, Challan 14"
-                  placeholderTextColor={Colors.textSubtle}
-                  style={styles.textInput}
-                />
-              </View>
-            </View>
-
-            {/* 5. PAYMENT STATUS & DUE DATE */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeadingRow}>
-                <AppIcon name="wallet-outline" size={16} color="#7C3AED" />
-                <Text style={styles.sectionTitle}>Payment Terms</Text>
-              </View>
-
-              {/* Two Big Tactile Cards: Credit vs Paid */}
-              <View style={styles.paymentTermsRow}>
-                {/* Credit / Udhar (Pay Later) */}
-                <Pressable
-                  onPress={() => setPaymentType('CREDIT')}
-                  style={[
-                    styles.paymentOptionCard,
-                    styles.paymentOptionCredit,
-                    paymentType === 'CREDIT' && styles.paymentOptionCreditActive,
-                  ]}
-                >
-                  <View style={styles.paymentOptionTop}>
-                    <AppIcon
-                      name="document-text"
-                      size={18}
-                      color={paymentType === 'CREDIT' ? '#B45309' : '#D97706'}
-                    />
-                    <Text
-                      style={[
-                        styles.paymentOptionTitle,
-                        paymentType === 'CREDIT' && { color: '#B45309' },
-                      ]}
-                    >
-                      Credit / Udhar
-                    </Text>
-                  </View>
-                  <Text style={styles.paymentOptionSub}>Pay later (Accrued cost)</Text>
-                </Pressable>
-
-                {/* Paid Now */}
-                <Pressable
-                  onPress={() => setPaymentType('PAID')}
-                  style={[
-                    styles.paymentOptionCard,
-                    styles.paymentOptionPaid,
-                    paymentType === 'PAID' && styles.paymentOptionPaidActive,
-                  ]}
-                >
-                  <View style={styles.paymentOptionTop}>
-                    <AppIcon
-                      name="checkmark-circle"
-                      size={18}
-                      color={paymentType === 'PAID' ? '#15803D' : '#16A34A'}
-                    />
-                    <Text
-                      style={[
-                        styles.paymentOptionTitle,
-                        paymentType === 'PAID' && { color: '#15803D' },
-                      ]}
-                    >
-                      Paid Immediately
-                    </Text>
-                  </View>
-                  <Text style={styles.paymentOptionSub}>Paid on spot</Text>
-                </Pressable>
-              </View>
-
-              {/* If Credit: Optional Due Date */}
-              {paymentType === 'CREDIT' && (
-                <View style={styles.dueDateSection}>
-                  <Text style={styles.fieldLabel}>Payment Due Date (Optional):</Text>
-
+                {/* Bill Date */}
+                <View style={{ gap: 4, marginTop: 4 }}>
+                  <Text style={styles.fieldLabel}>Bill / Purchase Date *</Text>
                   <Pressable
-                    onPress={() => setCalendarTarget('dueDate')}
-                    style={styles.dueDateBtn}
+                    onPress={() => setCalendarTarget('billDate')}
+                    style={({ pressed }) => [
+                      styles.datePickerBtn,
+                      pressed && { opacity: 0.8 },
+                    ]}
                   >
-                    <AppIcon name="calendar-outline" size={15} color="#D97706" />
-                    <Text style={styles.dueDateBtnText}>
-                      {dueDate ? formatDateDisplay(dueDate) : 'Set Due Date'}
-                    </Text>
-                    {dueDate ? (
-                      <Pressable onPress={() => setDueDate('')}>
-                        <AppIcon name="close-circle" size={15} color="#64748B" />
-                      </Pressable>
-                    ) : (
-                      <View style={{ marginLeft: 'auto' }}>
-                        <AppIcon
-                          name="chevron-forward"
-                          size={15}
-                          color={Colors.textMuted}
-                        />
+                    <Text style={styles.datePickerText}>{formatDateDisplay(date)}</Text>
+                    {isToday ? (
+                      <View style={styles.todayPill}>
+                        <Text style={styles.todayPillText}>Today</Text>
                       </View>
-                    )}
+                    ) : null}
+                    <View style={{ marginLeft: 'auto' }}>
+                      <AppIcon name="calendar" size={16} color="#2563EB" />
+                    </View>
                   </Pressable>
-
-                  {/* Quick Due Date Chips */}
-                  <View style={styles.quickDateRow}>
-                    <Pressable
-                      onPress={() => setDueDate(getFutureDate(7))}
-                      style={styles.quickDateChip}
-                    >
-                      <Text style={styles.quickDateChipText}>+7 Days</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setDueDate(getFutureDate(15))}
-                      style={styles.quickDateChip}
-                    >
-                      <Text style={styles.quickDateChipText}>+15 Days</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setDueDate(getFutureDate(30))}
-                      style={styles.quickDateChip}
-                    >
-                      <Text style={styles.quickDateChipText}>+30 Days</Text>
-                    </Pressable>
-                  </View>
                 </View>
-              )}
+              </View>
 
-              {/* If Paid Immediately: Payment Method (Cash, UPI, Bank) */}
-              {paymentType === 'PAID' && (
-                <View style={styles.paidMethodSection}>
-                  <Text style={styles.fieldLabel}>Payment Mode:</Text>
-                  <View style={styles.paidModePillsRow}>
-                    {[
-                      { key: 'CASH', label: 'Cash', icon: 'cash-outline' },
-                      { key: 'UPI', label: 'UPI (GPay/PhonePe)', icon: 'phone-portrait-outline' },
-                      { key: 'BANK', label: 'Bank / NEFT', icon: 'business-outline' },
-                    ].map((m) => {
-                      const isSelected = paidMode === m.key;
+              {/* 2. MATERIAL DETAILS & CATEGORIES */}
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeadingRow}>
+                  <AppIcon name="cube-outline" size={16} color="#D97706" />
+                  <Text style={styles.sectionTitle}>Material Item Details</Text>
+                </View>
+
+                {/* Quick Categories Bar */}
+                <View style={{ gap: 6 }}>
+                  <Text style={styles.fieldSubNotice}>Quick Select Category:</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.categoryScroll}
+                  >
+                    {MATERIAL_CATEGORIES.map((cat) => {
+                      const isSelected =
+                        description.toLowerCase().includes(cat.label.toLowerCase()) ||
+                        (cat.label === 'Cement' && description.toLowerCase().includes('cement'));
                       return (
                         <Pressable
-                          key={m.key}
-                          onPress={() => setPaidMode(m.key as any)}
+                          key={cat.label}
+                          onPress={() => handleSelectCategory(cat)}
                           style={[
-                            styles.paidModePill,
-                            isSelected && styles.paidModePillActive,
+                            styles.categoryChip,
+                            isSelected && styles.categoryChipActive,
                           ]}
                         >
                           <AppIcon
-                            name={m.icon as any}
+                            name={cat.icon as any}
                             size={14}
-                            color={isSelected ? '#15803D' : '#64748B'}
+                            color={isSelected ? '#D97706' : '#64748B'}
                           />
                           <Text
                             style={[
-                              styles.paidModePillText,
-                              isSelected && styles.paidModePillTextActive,
+                              styles.categoryChipText,
+                              isSelected && styles.categoryChipTextActive,
                             ]}
                           >
-                            {m.label}
+                            {cat.label}
                           </Text>
                         </Pressable>
                       );
                     })}
+                  </ScrollView>
+                </View>
+
+                {/* Description Input */}
+                <View style={{ gap: 4 }}>
+                  <Text style={styles.fieldLabel}>Material Description *</Text>
+                  <TextInput
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="e.g. UltraTech Cement 50 bags, Asian Paints Apex 20L"
+                    placeholderTextColor={Colors.textSubtle}
+                    style={styles.textInput}
+                  />
+                </View>
+
+                {/* Quantity & Unit Row */}
+                <View style={styles.qtyUnitRow}>
+                  {/* Quantity */}
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text style={styles.fieldLabel}>Quantity (Optional)</Text>
+                    <TextInput
+                      value={quantity}
+                      onChangeText={(t) => setQuantity(t.replace(/[^0-9.]/g, ''))}
+                      placeholder="e.g. 50"
+                      placeholderTextColor={Colors.textSubtle}
+                      keyboardType="numeric"
+                      style={styles.textInput}
+                    />
+                  </View>
+
+                  {/* Unit */}
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text style={styles.fieldLabel}>Unit</Text>
+                    <TextInput
+                      value={unit}
+                      onChangeText={setUnit}
+                      placeholder="bags / litres / pcs"
+                      placeholderTextColor={Colors.textSubtle}
+                      style={styles.textInput}
+                    />
                   </View>
                 </View>
-              )}
+
+                {/* Common Unit Chips */}
+                <View style={styles.commonUnitsRow}>
+                  {COMMON_UNITS.map((u) => {
+                    const isSelected = unit.toLowerCase() === u;
+                    return (
+                      <Pressable
+                        key={u}
+                        onPress={() => setUnit(u)}
+                        style={[
+                          styles.unitPill,
+                          isSelected && styles.unitPillActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.unitPillText,
+                            isSelected && styles.unitPillTextActive,
+                          ]}
+                        >
+                          {u}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* 3. BILL AMOUNT & CALCULATION */}
+              <View style={styles.amountCard}>
+                <View style={styles.amountTopRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <AppIcon name="cash" size={17} color="#15803D" />
+                    <Text style={styles.amountHeading}>Total Bill Amount (₹) *</Text>
+                  </View>
+                  {unitRateCalc !== null ? (
+                    <View style={styles.unitRateBadge}>
+                      <Text style={styles.unitRateBadgeText}>
+                        ₹{unitRateCalc} / {unit || 'unit'}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                <View style={styles.amountInputRow}>
+                  <Text style={styles.currencySymbol}>₹</Text>
+                  <TextInput
+                    value={amount}
+                    onChangeText={(t) => setAmount(t.replace(/[^0-9.]/g, ''))}
+                    placeholder="0.00"
+                    placeholderTextColor="#94A3B8"
+                    keyboardType="numeric"
+                    style={styles.amountLargeInput}
+                  />
+                </View>
+
+                {Number(amount) > 0 && (
+                  <Text style={styles.amountInWords}>
+                    Total: {money(Number(amount) * 100)}
+                  </Text>
+                )}
+              </View>
+
+              {/* 4. SUPPLIER (PARTY) & BILL REFERENCE */}
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeadingRow}>
+                  <AppIcon name="storefront-outline" size={16} color="#475569" />
+                  <Text style={styles.sectionTitle}>Supplier & Invoice</Text>
+                </View>
+
+                {/* Supplier Input */}
+                <View style={{ gap: 4 }}>
+                  <Text style={styles.fieldLabel}>Supplier / Dukan Name (Party)</Text>
+                  <TextInput
+                    value={party}
+                    onChangeText={setParty}
+                    placeholder="e.g. Gupta Building Materials, Laxmi Hardware..."
+                    placeholderTextColor={Colors.textSubtle}
+                    style={styles.textInput}
+                  />
+
+                  {/* Past Supplier Chips */}
+                  {pastSuppliers.length > 0 && (
+                    <View style={{ marginTop: 4, gap: 4 }}>
+                      <Text style={styles.fieldSubNotice}>Recent Suppliers (Tap to auto-fill):</Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.categoryScroll}
+                      >
+                        {pastSuppliers.map((s) => (
+                          <Pressable
+                            key={s}
+                            onPress={() => setParty(s)}
+                            style={[
+                              styles.supplierChip,
+                              party === s && styles.supplierChipActive,
+                            ]}
+                          >
+                            <AppIcon
+                              name="storefront"
+                              size={12}
+                              color={party === s ? '#1D4ED8' : '#64748B'}
+                            />
+                            <Text
+                              style={[
+                                styles.supplierChipText,
+                                party === s && styles.supplierChipTextActive,
+                              ]}
+                            >
+                              {s}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+
+                {/* Bill / Invoice Reference */}
+                <View style={{ gap: 4, marginTop: 4 }}>
+                  <Text style={styles.fieldLabel}>Invoice / Bill No. / Challan (Optional)</Text>
+                  <TextInput
+                    value={reference}
+                    onChangeText={setReference}
+                    placeholder="e.g. Bill #8924, Challan 14"
+                    placeholderTextColor={Colors.textSubtle}
+                    style={styles.textInput}
+                  />
+                </View>
+              </View>
+
+              {/* 5. PAYMENT STATUS & DUE DATE */}
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeadingRow}>
+                  <AppIcon name="wallet-outline" size={16} color="#7C3AED" />
+                  <Text style={styles.sectionTitle}>Payment Terms</Text>
+                </View>
+
+                {/* Two Big Tactile Cards: Credit vs Paid */}
+                <View style={styles.paymentTermsRow}>
+                  {/* Credit / Udhar (Pay Later) */}
+                  <Pressable
+                    onPress={() => setPaymentType('CREDIT')}
+                    style={[
+                      styles.paymentOptionCard,
+                      styles.paymentOptionCredit,
+                      paymentType === 'CREDIT' && styles.paymentOptionCreditActive,
+                    ]}
+                  >
+                    <View style={styles.paymentOptionTop}>
+                      <AppIcon
+                        name="document-text"
+                        size={18}
+                        color={paymentType === 'CREDIT' ? '#B45309' : '#D97706'}
+                      />
+                      <Text
+                        style={[
+                          styles.paymentOptionTitle,
+                          paymentType === 'CREDIT' && { color: '#B45309' },
+                        ]}
+                      >
+                        Credit / Udhar
+                      </Text>
+                    </View>
+                    <Text style={styles.paymentOptionSub}>Pay later (Accrued cost)</Text>
+                  </Pressable>
+
+                  {/* Paid Now */}
+                  <Pressable
+                    onPress={() => setPaymentType('PAID')}
+                    style={[
+                      styles.paymentOptionCard,
+                      styles.paymentOptionPaid,
+                      paymentType === 'PAID' && styles.paymentOptionPaidActive,
+                    ]}
+                  >
+                    <View style={styles.paymentOptionTop}>
+                      <AppIcon
+                        name="checkmark-circle"
+                        size={18}
+                        color={paymentType === 'PAID' ? '#15803D' : '#16A34A'}
+                      />
+                      <Text
+                        style={[
+                          styles.paymentOptionTitle,
+                          paymentType === 'PAID' && { color: '#15803D' },
+                        ]}
+                      >
+                        Paid Immediately
+                      </Text>
+                    </View>
+                    <Text style={styles.paymentOptionSub}>Paid on spot</Text>
+                  </Pressable>
+                </View>
+
+                {/* If Credit: Optional Due Date */}
+                {paymentType === 'CREDIT' && (
+                  <View style={styles.dueDateSection}>
+                    <Text style={styles.fieldLabel}>Payment Due Date (Optional):</Text>
+
+                    <Pressable
+                      onPress={() => setCalendarTarget('dueDate')}
+                      style={styles.dueDateBtn}
+                    >
+                      <AppIcon name="calendar-outline" size={15} color="#D97706" />
+                      <Text style={styles.dueDateBtnText}>
+                        {dueDate ? formatDateDisplay(dueDate) : 'Set Due Date'}
+                      </Text>
+                      {dueDate ? (
+                        <Pressable onPress={() => setDueDate('')}>
+                          <AppIcon name="close-circle" size={15} color="#64748B" />
+                        </Pressable>
+                      ) : (
+                        <View style={{ marginLeft: 'auto' }}>
+                          <AppIcon
+                            name="chevron-forward"
+                            size={15}
+                            color={Colors.textMuted}
+                          />
+                        </View>
+                      )}
+                    </Pressable>
+
+                    {/* Quick Due Date Chips */}
+                    <View style={styles.quickDateRow}>
+                      <Pressable
+                        onPress={() => setDueDate(getFutureDate(7))}
+                        style={styles.quickDateChip}
+                      >
+                        <Text style={styles.quickDateChipText}>+7 Days</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => setDueDate(getFutureDate(15))}
+                        style={styles.quickDateChip}
+                      >
+                        <Text style={styles.quickDateChipText}>+15 Days</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => setDueDate(getFutureDate(30))}
+                        style={styles.quickDateChip}
+                      >
+                        <Text style={styles.quickDateChipText}>+30 Days</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )}
+
+                {/* If Paid Immediately: Payment Method (Cash, UPI, Bank) */}
+                {paymentType === 'PAID' && (
+                  <View style={styles.paidMethodSection}>
+                    <Text style={styles.fieldLabel}>Payment Mode:</Text>
+                    <View style={styles.paidModePillsRow}>
+                      {[
+                        { key: 'CASH', label: 'Cash', icon: 'cash-outline' },
+                        { key: 'UPI', label: 'UPI (GPay/PhonePe)', icon: 'phone-portrait-outline' },
+                        { key: 'BANK', label: 'Bank / NEFT', icon: 'business-outline' },
+                      ].map((m) => {
+                        const isSelected = paidMode === m.key;
+                        return (
+                          <Pressable
+                            key={m.key}
+                            onPress={() => setPaidMode(m.key as any)}
+                            style={[
+                              styles.paidModePill,
+                              isSelected && styles.paidModePillActive,
+                            ]}
+                          >
+                            <AppIcon
+                              name={m.icon as any}
+                              size={14}
+                              color={isSelected ? '#15803D' : '#64748B'}
+                            />
+                            <Text
+                              style={[
+                                styles.paidModePillText,
+                                isSelected && styles.paidModePillTextActive,
+                              ]}
+                            >
+                              {m.label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
+              </View>
+            </ScrollView>
+
+            {/* Bottom Action Footer */}
+            <View style={styles.footerBar}>
+              <Pressable
+                onPress={() => !busy && onClose()}
+                disabled={busy}
+                style={styles.cancelBtn}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleSave}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.saveBtn,
+                  busy && { opacity: 0.6 },
+                  pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                ]}
+              >
+                {busy ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save</Text>
+                )}
+              </Pressable>
             </View>
-          </ScrollView>
+          </KeyboardAvoidingView>
 
-          {/* Bottom Action Footer */}
-          <View style={styles.footerBar}>
-            <Pressable
-              onPress={() => !busy && onClose()}
-              disabled={busy}
-              style={styles.cancelBtn}
-            >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={handleSave}
-              disabled={busy}
-              style={({ pressed }) => [
-                styles.saveBtn,
-                busy && { opacity: 0.6 },
-                pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-              ]}
-            >
-              {busy ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveBtnText}>Save</Text>
-              )}
-            </Pressable>
-          </View>
-        </KeyboardAvoidingView>
-
-        {/* Calendar Picker Modal */}
-        {calendarTarget !== null && (
-          <CalendarPickerModal
-            visible={calendarTarget !== null}
-            title={calendarTarget === 'dueDate' ? 'Select Payment Due Date' : 'Select Bill Date'}
-            selectedDate={calendarTarget === 'dueDate' ? dueDate || today() : date}
-            onSelect={(newDate) => {
-              if (newDate) {
-                if (calendarTarget === 'dueDate') {
-                  setDueDate(newDate);
-                } else {
-                  setDate(newDate);
+          {/* Calendar Picker Modal */}
+          {calendarTarget !== null && (
+            <CalendarPickerModal
+              visible={calendarTarget !== null}
+              title={calendarTarget === 'dueDate' ? 'Select Payment Due Date' : 'Select Bill Date'}
+              selectedDate={calendarTarget === 'dueDate' ? dueDate || today() : date}
+              onSelect={(newDate) => {
+                if (newDate) {
+                  if (calendarTarget === 'dueDate') {
+                    setDueDate(newDate);
+                  } else {
+                    setDate(newDate);
+                  }
                 }
-              }
-            }}
-            onClose={() => setCalendarTarget(null)}
-          />
-        )}
+              }}
+              onClose={() => setCalendarTarget(null)}
+            />
+          )}
         </SafeAreaView>
       </View>
     </Modal>
@@ -1437,5 +1430,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 16,
     fontStyle: 'italic',
+  },
+  nativeHiddenPicker: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
 });

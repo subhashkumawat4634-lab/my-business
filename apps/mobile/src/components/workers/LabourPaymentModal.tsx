@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Picker } from '@react-native-picker/picker';
 import { AppIcon } from '../icons/AppIcon';
 import { FormSpec, Row, Snapshot } from '../../types';
 import { CalendarPickerModal } from '../common/CalendarPickerModal';
@@ -103,9 +104,9 @@ export function LabourPaymentModal({
   // Selected Worker
   const [workerId, setWorkerId] = useState<string>(
     spec.initial.worker_id ||
-      data.workers.find((w) => w.active)?.id ||
-      data.workers[0]?.id ||
-      ''
+    data.workers.find((w) => w.active)?.id ||
+    data.workers[0]?.id ||
+    ''
   );
 
   // Selected Project Site
@@ -272,9 +273,9 @@ export function LabourPaymentModal({
   return (
     <Modal
       visible
-      animationType="slide"
+      animationType={isDesktop ? 'fade' : 'slide'}
       onRequestClose={() => !busy && onClose()}
-      presentationStyle="pageSheet"
+      presentationStyle={isDesktop ? 'overFullScreen' : 'fullScreen'}
       transparent={isDesktop}
     >
       <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
@@ -394,8 +395,8 @@ export function LabourPaymentModal({
                         {projectedBalance > 0
                           ? `New Due: ₹${Math.round(projectedBalance)}`
                           : projectedBalance < 0
-                          ? `New Adv: ₹${Math.round(-projectedBalance)}`
-                          : '₹0 Settled'}
+                            ? `New Adv: ₹${Math.round(-projectedBalance)}`
+                            : '₹0 Settled'}
                       </Text>
                     </View>
                   ) : null}
@@ -482,9 +483,8 @@ export function LabourPaymentModal({
                     </Text>
                     <Text style={styles.selectorSubtitle}>
                       {selectedWorker
-                        ? `${selectedWorker.skill || 'Worker'}${
-                            selectedWorker.phone ? ` • ${selectedWorker.phone}` : ''
-                          }`
+                        ? `${selectedWorker.skill || 'Worker'}${selectedWorker.phone ? ` • ${selectedWorker.phone}` : ''
+                        }`
                         : 'Select worker'}
                     </Text>
                   </View>
@@ -495,30 +495,22 @@ export function LabourPaymentModal({
                     color="#64748B"
                   />
 
-                  {/* Native HTML Select Bar for direct Worker selection */}
-                  {Platform.OS === 'web' && (
-                    <select
-                      value={workerId}
-                      onChange={(e: any) => setWorkerId(e.target.value)}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0,
-                        cursor: 'pointer',
-                        zIndex: 10,
-                      }}
-                      title="Select Worker"
-                    >
-                      {data.workers.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          👷 {w.name} {w.skill ? `(${w.skill})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  {/* Universal Native Picker for Mobile & Web */}
+                  <Picker
+                    selectedValue={workerId}
+                    onValueChange={(val: any) => setWorkerId(String(val))}
+                    style={styles.nativeHiddenPicker}
+                    dropdownIconColor="transparent"
+                    prompt="Select Worker"
+                  >
+                    {data.workers.map((w) => (
+                      <Picker.Item
+                        key={w.id}
+                        label={`👷 ${w.name}${w.skill ? ` (${w.skill})` : ''}`}
+                        value={w.id}
+                      />
+                    ))}
+                  </Picker>
                 </View>
 
                 {/* Inline Worker Dropdown */}
@@ -619,16 +611,16 @@ export function LabourPaymentModal({
                               color: isPendingWage
                                 ? '#EA580C'
                                 : isAdvanceTaken
-                                ? '#2563EB'
-                                : '#16A34A',
+                                  ? '#2563EB'
+                                  : '#16A34A',
                             },
                           ]}
                         >
                           {isPendingWage
                             ? `${money(workerSummaryData.balance)} Due`
                             : isAdvanceTaken
-                            ? `${money(-workerSummaryData.balance)} Advance`
-                            : '₹0 Settled'}
+                              ? `${money(-workerSummaryData.balance)} Advance`
+                              : '₹0 Settled'}
                         </Text>
                       </View>
 
@@ -687,30 +679,22 @@ export function LabourPaymentModal({
                     color="#64748B"
                   />
 
-                  {/* Native HTML Select Bar for direct Site selection */}
-                  {Platform.OS === 'web' && (
-                    <select
-                      value={siteId}
-                      onChange={(e: any) => setSiteId(e.target.value)}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0,
-                        cursor: 'pointer',
-                        zIndex: 10,
-                      }}
-                      title="Select Work Site"
-                    >
-                      {data.sites.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          🏢 {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  {/* Universal Native Picker for Mobile & Web */}
+                  <Picker
+                    selectedValue={siteId}
+                    onValueChange={(val: any) => setSiteId(String(val))}
+                    style={styles.nativeHiddenPicker}
+                    dropdownIconColor="transparent"
+                    prompt="Select Work Site"
+                  >
+                    {data.sites.map((s) => (
+                      <Picker.Item
+                        key={s.id}
+                        label={`🏢 ${s.name}`}
+                        value={s.id}
+                      />
+                    ))}
+                  </Picker>
                 </View>
 
                 {/* Inline Site Dropdown */}
@@ -914,16 +898,13 @@ export function LabourPaymentModal({
                 {busy ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <>
-                    <AppIcon name="checkmark" size={16} color="#FFFFFF" />
-                    <Text style={styles.footerSubmitText}>
-                      {amount.trim() && Number(amount) > 0
-                        ? `Record ${paymentType === 'ADVANCE' ? 'Advance' : 'Payment'} (${money(
-                            (Number(amount) || 0) * 100
-                          )})`
-                        : `Save ${paymentType === 'ADVANCE' ? 'Advance' : 'Payment'}`}
-                    </Text>
-                  </>
+                  <Text style={styles.footerSubmitText}>
+                    {amount.trim() && Number(amount) > 0
+                      ? `Record ${paymentType === 'ADVANCE' ? 'Advance' : 'Payment'} (${money(
+                        (Number(amount) || 0) * 100
+                      )})`
+                      : `Save ${paymentType === 'ADVANCE' ? 'Advance' : 'Payment'}`}
+                  </Text>
                 )}
               </Pressable>
             </View>
@@ -1564,5 +1545,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     color: '#FFFFFF',
+  },
+  nativeHiddenPicker: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
 });

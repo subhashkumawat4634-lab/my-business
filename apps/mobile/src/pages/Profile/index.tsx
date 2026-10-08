@@ -251,8 +251,19 @@ export function ProfilePage({
           {/* Notification Banner */}
           {successMsg ? (
             <View style={styles.notificationBanner}>
-              <AppIcon name="checkmark-circle" size={16} color="#16A34A" />
-              <Text style={styles.notificationText}>{successMsg}</Text>
+              <AppIcon
+                name={successMsg.includes('❌') || successMsg.toLowerCase().includes('error') ? 'alert-circle' : 'checkmark-circle'}
+                size={17}
+                color={successMsg.includes('❌') || successMsg.toLowerCase().includes('error') ? '#DC2626' : '#059669'}
+              />
+              <Text
+                style={[
+                  styles.notificationText,
+                  (successMsg.includes('❌') || successMsg.toLowerCase().includes('error')) && styles.notificationTextError,
+                ]}
+              >
+                {successMsg}
+              </Text>
             </View>
           ) : null}
 
@@ -666,12 +677,9 @@ export function ProfilePage({
                   {saving ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
-                    <>
-                      <AppIcon name="checkmark-circle" size={16} color="#FFFFFF" />
-                      <Text style={styles.primarySaveBtnText}>
-                        {t('saveBusinessProfile', 'Save Business Profile')}
-                      </Text>
-                    </>
+                    <Text style={styles.primarySaveBtnText}>
+                      {t('saveBusinessProfile', 'Save Business Profile')}
+                    </Text>
                   )}
                 </Pressable>
               </View>
@@ -805,10 +813,7 @@ export function ProfilePage({
                   {saving ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
-                    <>
-                      <AppIcon name="checkmark-circle" size={16} color="#FFFFFF" />
-                      <Text style={styles.primarySaveBtnText}>{t('savePaymentDetails', 'Save Payment Details')}</Text>
-                    </>
+                    <Text style={styles.primarySaveBtnText}>{t('savePaymentDetails', 'Save Payment Details')}</Text>
                   )}
                 </Pressable>
               </View>
@@ -1004,18 +1009,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#ECFDF5',
     borderWidth: 1,
-    borderColor: '#BBF7D0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderColor: '#A7F3D0',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    marginBottom: 8,
   },
   notificationText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#15803D',
+    color: '#065F46',
     textAlign: 'center',
+  },
+  notificationTextError: {
+    color: '#991B1B',
   },
 
   /* ========================================================= */

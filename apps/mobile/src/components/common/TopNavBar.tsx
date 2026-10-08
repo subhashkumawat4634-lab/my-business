@@ -179,7 +179,7 @@ export function TopNavBar({
             {avatarText ? (
               <Text style={styles.avatarText}>{avatarText}</Text>
             ) : (
-              <AppIcon name="person" size={17} color="#FFFFFF" />
+              <AppIcon name="person" size={16} color="#2563EB" />
             )}
             <View style={styles.avatarStatusBadge} />
           </Pressable>
@@ -239,10 +239,10 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#0F2851',
+    backgroundColor: '#1E40AF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0F2851',
+    shadowColor: '#1E40AF',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
@@ -294,21 +294,21 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#0F2851',
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: '#0F2851',
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
     position: 'relative',
   },
   avatarText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+    color: '#1D4ED8',
+    fontSize: 12.5,
     fontWeight: '900',
     letterSpacing: 0.5,
   },

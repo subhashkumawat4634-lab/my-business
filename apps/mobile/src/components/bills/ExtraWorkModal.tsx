@@ -185,9 +185,9 @@ export function ExtraWorkModal({
   return (
     <Modal
       visible
-      animationType="slide"
+      animationType={isDesktop ? 'fade' : 'slide'}
       onRequestClose={() => !busy && onClose()}
-      presentationStyle="pageSheet"
+      presentationStyle={isDesktop ? 'overFullScreen' : 'fullScreen'}
       transparent={isDesktop}
     >
       <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
@@ -711,10 +711,7 @@ export function ExtraWorkModal({
               {busy ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <>
-                  <AppIcon name="checkmark" size={18} color="#FFFFFF" />
-                  <Text style={styles.saveBtnText}>Save Extra Work</Text>
-                </>
+                <Text style={styles.saveBtnText}>Save Extra Work</Text>
               )}
             </Pressable>
           </View>

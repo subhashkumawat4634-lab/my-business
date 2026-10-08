@@ -917,12 +917,9 @@ export function WorkerFormModal({
           {busy ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <>
-              <AppIcon name="checkmark" size={16} color="#FFFFFF" />
-              <Text style={styles.saveBtnText}>
-                {isEdit ? 'Save Worker' : 'Add Worker'}
-              </Text>
-            </>
+            <Text style={styles.saveBtnText}>
+              {isEdit ? 'Save Worker' : 'Add Worker'}
+            </Text>
           )}
         </Pressable>
       </View>
@@ -945,9 +942,9 @@ export function WorkerFormModal({
   return (
     <Modal
       visible
-      animationType="slide"
+      animationType={isDesktop ? 'fade' : 'slide'}
       onRequestClose={() => !busy && onClose()}
-      presentationStyle="pageSheet"
+      presentationStyle={isDesktop ? 'overFullScreen' : 'fullScreen'}
       transparent={isDesktop}
     >
       <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>

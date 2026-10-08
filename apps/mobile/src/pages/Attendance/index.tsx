@@ -9,7 +9,9 @@ import {
   TextInput,
   Modal,
   Platform,
+  Share,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { Colors } from '../../theme/colors';
 import { AppIcon } from '../../components/icons/AppIcon';
 import { Card } from '../../components/common/Card';
@@ -21,6 +23,7 @@ import { Snapshot, Row } from '../../types';
 import { money } from '../../finance';
 import { today } from '../../forms';
 import { useLanguage } from '../../i18n';
+import { printWorkerMonthlySlipPdf, printMusterRollPdf } from '../../report';
 
 interface AttendancePageProps {
   data: Snapshot;
@@ -159,17 +162,38 @@ export function AttendancePage({
     );
   }, [data.workers, workerPickerSearch]);
 
-  // Days in month calculation for the calendar grid
-  const daysInCurrentMonth = useMemo(() => {
+  // Days in month calculation for the 7-column calendar grid (Monday-first with leading blanks)
+  const calendarGridDays = useMemo(() => {
+    const firstDayDate = new Date(monthYear.year, monthYear.month - 1, 1);
+    const jsDay = firstDayDate.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const startDayOfWeek = jsDay === 0 ? 6 : jsDay - 1; // 0 = Mon, ..., 6 = Sun
     const count = new Date(monthYear.year, monthYear.month, 0).getDate();
-    const daysArr = [];
-    for (let day = 1; day <= count; day++) {
-      const dayStr = `${monthPrefix}-${String(day).padStart(2, '0')}`;
-      const dayDate = new Date(monthYear.year, monthYear.month - 1, day);
-      const weekday = dayDate.toLocaleDateString('en-IN', { weekday: 'short' });
-      daysArr.push({ day, dateStr: dayStr, weekday });
+    const grid: Array<{
+      isBlank: boolean;
+      day?: number;
+      dateStr?: string;
+      isSunday?: boolean;
+      weekday?: string;
+    }> = [];
+
+    for (let i = 0; i < startDayOfWeek; i++) {
+      grid.push({ isBlank: true });
     }
-    return daysArr;
+
+    for (let d = 1; d <= count; d++) {
+      const dStr = `${monthPrefix}-${String(d).padStart(2, '0')}`;
+      const dt = new Date(monthYear.year, monthYear.month - 1, d);
+      const isSunday = dt.getDay() === 0;
+      const weekday = dt.toLocaleDateString('en-IN', { weekday: 'short' });
+      grid.push({
+        isBlank: false,
+        day: d,
+        dateStr: dStr,
+        isSunday,
+        weekday,
+      });
+    }
+    return grid;
   }, [monthYear, monthPrefix]);
 
   // Worker Monthly Stats calculation
@@ -255,6 +279,84 @@ export function AttendancePage({
       totalActive: activeWorkers.length,
     };
   }, [dateMode, selectedDateRecords, data.attendance, activeWorkers]);
+
+  const [exportingReport, setExportingReport] = useState(false);
+
+  const handleDownloadWorkerSlip = async (worker: Row) => {
+    try {
+      setExportingReport(true);
+      await printWorkerMonthlySlipPdf(
+        data,
+        worker,
+        monthYear.year,
+        monthYear.month,
+        selectedSiteId
+      );
+    } catch (err: any) {
+      console.warn('Could not print worker slip:', err);
+    } finally {
+      setExportingReport(false);
+    }
+  };
+
+  const handleShareWorkerSlipWhatsapp = async (worker: Row) => {
+    try {
+      const summary = allWorkersMonthSummary.find((s) => s.worker.id === worker.id);
+      const present = summary ? summary.present : workerMonthStats.present;
+      const half = summary ? summary.half : workerMonthStats.half;
+      const absent = summary ? summary.absent : workerMonthStats.absent;
+      const otHours = summary ? summary.otHours : workerMonthStats.totalOtHours;
+      const earned = summary ? summary.earned : workerMonthStats.totalWage;
+      const totalUnits = summary ? summary.totalUnits : workerMonthStats.totalUnits;
+
+      const orgName = data.organization.name || data.user.name || 'ThekaBook';
+      const msg = `🏗️ *${orgName}* - Monthly Attendance Slip\n\n` +
+        `👤 *Worker:* ${worker.name} (${worker.skill || 'Labour'})\n` +
+        `📅 *Month:* ${monthName}\n` +
+        `💰 *Daily Rate:* ₹${worker.daily_rate || 0}/day\n\n` +
+        `📊 *Attendance Summary:*\n` +
+        `🟢 Present: ${present} Days\n` +
+        (half > 0 ? `🟡 Half Day: ${half} Days\n` : '') +
+        (absent > 0 ? `🔴 Absent/Leave: ${absent} Days\n` : '') +
+        (Number(otHours) > 0 ? `⏰ Overtime: +${otHours} Hours\n` : '') +
+        `📌 Total Work Units: ${totalUnits} Units\n\n` +
+        `💵 *Gross Month Wage Earned:* ₹${Number(earned).toLocaleString('en-IN')}\n\n` +
+        `_Generated via ThekaBook Digital Contractor Ledger_`;
+
+      if (Platform.OS === 'web') {
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          await navigator.clipboard.writeText(msg);
+        }
+        if (typeof window !== 'undefined') {
+          window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+      } else {
+        await Share.share({
+          message: msg,
+          title: `${worker.name} - ${monthName} Attendance`,
+        });
+      }
+    } catch (err: any) {
+      console.warn('Could not share via WhatsApp:', err);
+    }
+  };
+
+  const handlePrintAllMusterRoll = async () => {
+    try {
+      setExportingReport(true);
+      await printMusterRollPdf(
+        data,
+        monthYear.year,
+        monthYear.month,
+        selectedSiteId,
+        'ALL'
+      );
+    } catch (err: any) {
+      console.warn('Could not print muster roll:', err);
+    } finally {
+      setExportingReport(false);
+    }
+  };
 
   // Unmarked active workers for the selected date
   const unmarkedWorkers = useMemo(() => {
@@ -444,6 +546,7 @@ export function AttendancePage({
                   style={[
                     styles.filterBoxEqual,
                     styles.labourDropdownTrigger,
+                    { position: 'relative' },
                     selectedWorkerId !== 'ALL' && styles.labourDropdownTriggerSelected,
                   ]}
                 >
@@ -473,31 +576,23 @@ export function AttendancePage({
 
                   <AppIcon name="chevron-down" size={16} color="#64748B" />
 
-                  {/* Native HTML Select Bar Element for direct dropdown selection */}
-                  {Platform.OS === 'web' && (
-                    <select
-                      value={selectedWorkerId}
-                      onChange={(e: any) => setSelectedWorkerId(e.target.value)}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0,
-                        cursor: 'pointer',
-                        zIndex: 10,
-                      }}
-                      title="Select Labour / Worker"
-                    >
-                      <option value="ALL">👥 All Workers (All Labour Register)</option>
-                      {data.workers.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name} {w.skill ? `(${w.skill})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  {/* Universal Native Picker for Mobile (Android/iOS) & Web */}
+                  <Picker
+                    selectedValue={selectedWorkerId}
+                    onValueChange={(val: any) => setSelectedWorkerId(String(val))}
+                    style={styles.nativeHiddenPicker}
+                    dropdownIconColor="transparent"
+                    prompt="Select Labour / Worker"
+                  >
+                    <Picker.Item label="👥 All Workers (All Labour Register)" value="ALL" />
+                    {data.workers.map((w) => (
+                      <Picker.Item
+                        key={w.id}
+                        label={`${w.name}${w.skill ? ` (${w.skill})` : ''}`}
+                        value={w.id}
+                      />
+                    ))}
+                  </Picker>
                 </View>
 
               </View>
@@ -559,18 +654,68 @@ export function AttendancePage({
                 </View>
               </View>
 
-              {/* IF SINGLE WORKER IS SELECTED: SHOW DETAILED CALENDAR MATRIX */}
+              {/* IF SINGLE WORKER IS SELECTED: SHOW DETAILED CALENDAR MATRIX & DOWNLOAD SLIP */}
               {currentMonthlyWorker ? (
                 <View style={styles.calendarMatrixCard}>
-                  <View style={styles.calendarCardHeader}>
-                    <Text style={styles.calendarCardTitle}>
-                      {currentMonthlyWorker.name} — {monthName}
-                    </Text>
+                  {/* Worker Header & Quick Action Buttons */}
+                  <View style={styles.workerReportHeaderBox}>
+                    <View style={styles.workerReportHeaderInfo}>
+                      <Text style={styles.workerReportTitle}>
+                        {currentMonthlyWorker.name}
+                      </Text>
+                      <View style={styles.workerReportSkillBadge}>
+                        <Text style={styles.workerReportSkillText}>
+                          {currentMonthlyWorker.skill || 'Worker'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Action Icon Buttons: PDF Download & WhatsApp */}
+                    <View style={styles.workerActionBtnsRow}>
+                      <Pressable
+                        onPress={() => handleDownloadWorkerSlip(currentMonthlyWorker)}
+                        disabled={exportingReport}
+                        style={({ pressed }) => [
+                          styles.workerPdfSlipBtn,
+                          pressed && { opacity: 0.8, transform: [{ scale: 0.94 }] },
+                        ]}
+                        accessibilityLabel="Download monthly attendance PDF report"
+                      >
+                        <AppIcon name="download-outline" size={16} color="#1D4ED8" />
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() => handleShareWorkerSlipWhatsapp(currentMonthlyWorker)}
+                        style={({ pressed }) => [
+                          styles.workerWaSlipBtn,
+                          pressed && { opacity: 0.8, transform: [{ scale: 0.94 }] },
+                        ]}
+                        accessibilityLabel="Share monthly attendance slip on WhatsApp"
+                      >
+                        <AppIcon name="logo-whatsapp" size={16} color="#15803D" />
+                      </Pressable>
+                    </View>
                   </View>
 
-                  {/* Day-by-Day Grid */}
-                  <View style={styles.monthDaysGrid}>
-                    {daysInCurrentMonth.map(({ day, dateStr, weekday }) => {
+                  {/* 7-Column Weekday Header Row (Monday to Sunday) */}
+                  <View style={styles.calendarWeekdaysRow}>
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w, idx) => (
+                      <View key={w} style={styles.calendarWeekdayCol}>
+                        <Text style={[styles.calendarWeekdayLabel, idx === 6 && { color: '#EF4444' }]}>
+                          {w}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* 7-Column Circular Bubble Grid (Exact Matching Reference) */}
+                  <View style={styles.calendarBubblesGrid}>
+                    {calendarGridDays.map((cell, idx) => {
+                      if (cell.isBlank || !cell.day || !cell.dateStr) {
+                        return <View key={`blank-${idx}`} style={styles.bubbleCol} />;
+                      }
+
+                      const { day, dateStr, isSunday } = cell;
                       const att = data.attendance.find(
                         (a) => String(a.date).slice(0, 10) === dateStr && a.worker_id === currentMonthlyWorker.id
                       );
@@ -579,64 +724,80 @@ export function AttendancePage({
                       const isHD = units === 0.5;
                       const isA = units === 0;
                       const isUnmarked = units === null;
+                      const isWeeklyOff = isUnmarked && isSunday;
                       const otMins = att ? Number(att.overtime_minutes || 0) : 0;
-                      const site = att ? data.sites.find((s) => s.id === att.site_id) : null;
+                      const formattedDay = String(day).padStart(2, '0');
 
                       return (
-                        <Pressable
-                          key={dateStr}
-                          onPress={() => {
-                            onOpenAttendanceModal(
-                              att?.site_id || data.sites[0]?.id,
-                              currentMonthlyWorker.id,
-                              att
-                            );
-                          }}
-                          style={({ pressed }) => [
-                            styles.dayCell,
-                            isP && styles.dayCellP,
-                            isHD && styles.dayCellHD,
-                            isA && styles.dayCellA,
-                            isUnmarked && styles.dayCellUnmarked,
-                            pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] },
-                          ]}
-                          accessibilityLabel={`Date ${day} ${weekday}, status: ${isP ? 'Present' : isHD ? 'Half Day' : isA ? 'Absent' : 'Unmarked'}`}
-                        >
-                          <View style={styles.dayCellTop}>
-                            <Text style={[styles.dayNumberText, isP && { color: '#15803D' }, isHD && { color: '#B45309' }, isA && { color: '#B91C1C' }]}>
-                              {day}
+                        <View key={dateStr} style={styles.bubbleCol}>
+                          <Pressable
+                            onPress={() => {
+                              onOpenAttendanceModal(
+                                att?.site_id || data.sites[0]?.id,
+                                currentMonthlyWorker.id,
+                                att
+                              );
+                            }}
+                            style={({ pressed }) => [
+                              styles.bubbleCircle,
+                              isP && styles.bubbleP,
+                              isHD && styles.bubbleHD,
+                              isA && styles.bubbleA,
+                              isWeeklyOff && styles.bubbleW,
+                              isUnmarked && !isWeeklyOff && styles.bubbleUnmarked,
+                              pressed && { opacity: 0.8, transform: [{ scale: 0.93 }] },
+                            ]}
+                            accessibilityLabel={`Day ${day}, status: ${isP ? 'Present' : isHD ? 'Half Day' : isA ? 'Absent' : isWeeklyOff ? 'Weekly Off' : 'Unmarked'}`}
+                          >
+                            <Text
+                              style={[
+                                styles.bubbleDayNum,
+                                isP && styles.bubbleTextDark,
+                                isHD && styles.bubbleTextDark,
+                                isA && styles.bubbleTextDark,
+                                isWeeklyOff && styles.bubbleTextDark,
+                                isUnmarked && !isWeeklyOff && styles.bubbleDayNumUnmarked,
+                              ]}
+                            >
+                              {formattedDay}
                             </Text>
-                            <Text style={styles.dayWeekdayText}>{weekday}</Text>
-                          </View>
 
-                          <View style={styles.dayStatusBox}>
                             {isP ? (
-                              <Text style={styles.badgeP}>P</Text>
+                              <Text style={[styles.bubbleStatusLetter, styles.bubbleTextDark]}>P</Text>
                             ) : isHD ? (
-                              <Text style={styles.badgeHD}>HD</Text>
+                              <Text style={[styles.bubbleStatusLetter, styles.bubbleTextDark]}>H</Text>
                             ) : isA ? (
-                              <Text style={styles.badgeA}>A</Text>
-                            ) : (
-                              <Text style={styles.badgeUnmarked}>--</Text>
-                            )}
-                          </View>
+                              <Text style={[styles.bubbleStatusLetter, styles.bubbleTextDark]}>A</Text>
+                            ) : isWeeklyOff ? (
+                              <Text style={[styles.bubbleStatusLetter, styles.bubbleTextDark]}>W</Text>
+                            ) : null}
 
-                          {otMins > 0 ? (
-                            <View style={styles.dayOtBadge}>
-                              <Text style={styles.dayOtBadgeText} numberOfLines={1}>+{(otMins / 60).toFixed(1)}h</Text>
-                            </View>
-                          ) : site ? (
-                            <View style={styles.daySiteBadge}>
-                              <Text style={styles.daySiteText} numberOfLines={1} ellipsizeMode="tail">
-                                {site.name}
-                              </Text>
-                            </View>
-                          ) : (
-                            <View style={styles.dayEmptyPlaceholder} />
-                          )}
-                        </Pressable>
+                            {/* Red Overtime Indicator Dot */}
+                            {otMins > 0 ? <View style={styles.bubbleOtDot} /> : null}
+                          </Pressable>
+                        </View>
                       );
                     })}
+                  </View>
+
+                  {/* Clean Legend Strip */}
+                  <View style={styles.calendarLegendStrip}>
+                    <View style={styles.legendItemClean}>
+                      <View style={[styles.legendCircleMini, { backgroundColor: '#67E8F9' }]} />
+                      <Text style={styles.legendLabelClean}>P - Present</Text>
+                    </View>
+                    <View style={styles.legendItemClean}>
+                      <View style={[styles.legendCircleMini, { backgroundColor: '#4ADE80' }]} />
+                      <Text style={styles.legendLabelClean}>H - Half Day</Text>
+                    </View>
+                    <View style={styles.legendItemClean}>
+                      <View style={[styles.legendCircleMini, { backgroundColor: '#F87171' }]} />
+                      <Text style={styles.legendLabelClean}>A - Absent</Text>
+                    </View>
+                    <View style={styles.legendItemClean}>
+                      <View style={[styles.legendCircleMini, { backgroundColor: '#9CA3AF' }]} />
+                      <Text style={styles.legendLabelClean}>W - Off</Text>
+                    </View>
                   </View>
                 </View>
               ) : (
@@ -675,7 +836,7 @@ export function AttendancePage({
                             </View>
                           </View>
 
-                          {/* Attendance Count Chips */}
+                          {/* Attendance Count Chips & Quick Export Actions */}
                           <View style={styles.workerChipsRow}>
                             <View style={[styles.chipBadge, { backgroundColor: '#DCFCE7' }]}>
                               <Text style={[styles.chipText, { color: '#166534' }]}>
@@ -2025,115 +2186,121 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#64748B',
   },
-  monthDaysGrid: {
+  /* Circular Bubble 7-Column Calendar Styles (Reference UI) */
+  calendarWeekdaysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  calendarWeekdayCol: {
+    width: '14.28%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarWeekdayLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  calendarBubblesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'flex-start',
+    paddingTop: 6,
+    rowGap: 8,
   },
-  dayCell: {
-    width: '13.1%',
-    minWidth: 44,
-    minHeight: 68,
-    borderRadius: 10,
+  bubbleCol: {
+    width: '14.28%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 38,
+  },
+  bubbleCircle: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  bubbleP: {
+    backgroundColor: '#67E8F9', // Cyan
+  },
+  bubbleHD: {
+    backgroundColor: '#4ADE80', // Fresh Green
+  },
+  bubbleA: {
+    backgroundColor: '#F87171', // Coral Red
+  },
+  bubbleW: {
+    backgroundColor: '#9CA3AF', // Gray for weekly off
+  },
+  bubbleUnmarked: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    paddingVertical: 5,
-    paddingHorizontal: 3,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F8FAFC',
-    overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  dayCellP: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#86EFAC',
-  },
-  dayCellHD: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
-  },
-  dayCellA: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
-  },
-  dayCellUnmarked: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
-  },
-  dayCellTop: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 2,
-  },
-  dayNumberText: {
-    fontSize: 11,
+  bubbleDayNum: {
+    fontSize: 10,
     fontWeight: '800',
+    lineHeight: 11,
+  },
+  bubbleDayNumUnmarked: {
+    color: '#475569',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  bubbleStatusLetter: {
+    fontSize: 10,
+    fontWeight: '900',
+    lineHeight: 11,
+  },
+  bubbleTextDark: {
     color: '#0F172A',
   },
-  dayWeekdayText: {
-    fontSize: 8.5,
-    color: '#94A3B8',
-    fontWeight: '600',
+  bubbleOtDot: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#DC2626',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
-  dayStatusBox: {
+  calendarLegendStrip: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 1,
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    marginTop: 6,
   },
-  badgeP: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#15803D',
-  },
-  badgeHD: {
-    fontSize: 10.5,
-    fontWeight: '900',
-    color: '#B45309',
-  },
-  badgeA: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#B91C1C',
-  },
-  badgeUnmarked: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#CBD5E1',
-  },
-  dayOtBadge: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 4,
-    paddingHorizontal: 2,
-    paddingVertical: 1.5,
-    width: '100%',
+  legendItemClean: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
   },
-  dayOtBadgeText: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: '#1E40AF',
-    textAlign: 'center',
-  },
-  daySiteBadge: {
-    width: '100%',
-    backgroundColor: 'rgba(15, 23, 42, 0.04)',
-    borderRadius: 4,
-    paddingHorizontal: 2,
-    paddingVertical: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  daySiteText: {
-    fontSize: 7.5,
-    color: '#475569',
-    fontWeight: '700',
-    textAlign: 'center',
-    width: '100%',
-  },
-  dayEmptyPlaceholder: {
+  legendCircleMini: {
+    width: 12,
     height: 12,
+    borderRadius: 6,
+  },
+  legendLabelClean: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#475569',
   },
 
   /* All Workers Register List */
@@ -2242,4 +2409,124 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#2563EB',
   },
+  nativeHiddenPicker: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
+  },
+
+  /* Worker Monthly Report & Action Styles */
+  workerReportHeaderBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    gap: 8,
+  },
+  workerReportHeaderInfo: {
+    flexShrink: 1,
+  },
+  workerReportNameBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  workerReportTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  workerReportSkillBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignSelf: 'flex-start',
+    marginTop: 2,
+  },
+  workerReportSkillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#1D4ED8',
+  },
+  workerActionBtnsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  workerPdfSlipBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1.2,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  workerWaSlipBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1.2,
+    borderColor: '#86EFAC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+
+  /* Bottom Download Slip Bar inside Worker Card */
+  bottomSlipDownloadBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1.2,
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 12,
+  },
+  bottomSlipIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomSlipTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#1E40AF',
+  },
+  bottomSlipSub: {
+    fontSize: 10.5,
+    color: '#475569',
+    fontWeight: '600',
+    marginTop: 1,
+  },
+
 });

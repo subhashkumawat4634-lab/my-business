@@ -424,7 +424,6 @@ export function CalendarPickerModal({
                   pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
                 ]}
               >
-                <AppIcon name="checkmark" size={17} color="#FFFFFF" />
                 <Text style={styles.confirmBtnText}>Confirm</Text>
               </Pressable>
             </View>

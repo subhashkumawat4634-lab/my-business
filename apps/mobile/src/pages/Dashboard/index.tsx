@@ -176,18 +176,15 @@ export function DashboardPage({
             {/* Row 1: Actions */}
             <View style={styles.hubGridRow}>
               <Pressable
-                onPress={onOpenAttendance}
+                onPress={() => onNavigateTab('attendance')}
                 style={({ pressed }) => [
                   styles.hubActionItem,
                   pressed && { opacity: 0.75, transform: [{ scale: 0.95 }] },
                 ]}
                 accessibilityLabel="Daily Attendance"
               >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="calendar-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
+                <View style={[styles.quickIconCircle, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}>
+                  <AppIcon name="calendar-outline" size={24} color="#4F46E5" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('dailyAttendance', 'Daily Attendance')}
@@ -202,11 +199,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Material Bill"
               >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="cube-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
+                <View style={[styles.quickIconCircle, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+                  <AppIcon name="cube-outline" size={24} color="#D97706" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('materialBill', 'Material Bill')}
@@ -221,11 +215,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Labour Wage"
               >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="cash-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
+                <View style={[styles.quickIconCircle, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
+                  <AppIcon name="cash-outline" size={24} color="#059669" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('labourWage', 'Labour Wage')}
@@ -243,11 +234,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Receive Payment"
               >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="card-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
+                <View style={[styles.quickIconCircle, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
+                  <AppIcon name="card-outline" size={24} color="#16A34A" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('receivePayment', 'Receive Payment')}
@@ -262,11 +250,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Other Expense"
               >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="receipt-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
+                <View style={[styles.quickIconCircle, { backgroundColor: '#FFF1F2', borderColor: '#FECDD3' }]}>
+                  <AppIcon name="receipt-outline" size={24} color="#E11D48" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('otherExpense', 'Other Expense')}
@@ -281,11 +266,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Extra Work"
               >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="add-circle-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
+                <View style={[styles.quickIconCircle, { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE' }]}>
+                  <AppIcon name="add-circle-outline" size={24} color="#7C3AED" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('extraWork', 'Extra Work')}
@@ -303,11 +285,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Work Sites"
               >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="business-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
+                <View style={[styles.quickIconCircle, { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }]}>
+                  <AppIcon name="business-outline" size={24} color="#0284C7" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('workSites', 'Work Sites')}
@@ -315,18 +294,15 @@ export function DashboardPage({
               </Pressable>
 
               <Pressable
-                onPress={() => onNavigateTab('workers')}
+                onPress={() => onNavigateTab('team')}
                 style={({ pressed }) => [
                   styles.hubActionItem,
                   pressed && { opacity: 0.75, transform: [{ scale: 0.95 }] },
                 ]}
                 accessibilityLabel="Labour / Workers"
               >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="people-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
+                <View style={[styles.quickIconCircle, { backgroundColor: '#FDF4FF', borderColor: '#F5D0FE' }]}>
+                  <AppIcon name="people-outline" size={24} color="#C026D3" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('navLabour', 'Labour / Workers')}
@@ -341,11 +317,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="P&L Reports"
               >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="bar-chart-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
+                <View style={[styles.quickIconCircle, { backgroundColor: '#F0FDFA', borderColor: '#99F6E4' }]}>
+                  <AppIcon name="bar-chart-outline" size={24} color="#0D9488" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('plReports', 'P&L Reports')}
@@ -777,33 +750,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   quickIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#E6EEF8',
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: '#D4E2F0',
-  },
-  quickCheckmarkBadge: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 1,
-    elevation: 1,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
   },
   quickActionLabel: {
     fontSize: 11.5,

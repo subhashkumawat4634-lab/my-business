@@ -14,6 +14,7 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Picker } from '@react-native-picker/picker';
 import { Colors } from '../../theme/colors';
 import { AppIcon } from '../icons/AppIcon';
 import { FormSpec } from '../../types';
@@ -1062,28 +1063,17 @@ export function SiteFormModal({
                     <AppIcon name="chevron-down" size={16} color="#64748B" />
                   </View>
 
-                  {/* Native HTML Select Bar for direct dropdown selection */}
-                  {Platform.OS === 'web' && (
-                    <select
-                      value={workType}
-                      onChange={(e: any) => setWorkType(e.target.value)}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0,
-                        cursor: 'pointer',
-                        zIndex: 10,
-                        fontSize: 16,
-                      }}
-                      title="Select Contract Inclusions"
-                    >
-                      <option value="LABOUR">🔨 Labour Only</option>
-                      <option value="MATERIAL">🏗️ Labour + Material</option>
-                    </select>
-                  )}
+                  {/* Universal Native Picker for Mobile & Web */}
+                  <Picker
+                    selectedValue={workType}
+                    onValueChange={(val: any) => setWorkType(val as any)}
+                    style={styles.nativeHiddenPicker}
+                    dropdownIconColor="transparent"
+                    prompt="Select Contract Inclusions"
+                  >
+                    <Picker.Item label="🔨 Labour Only" value="LABOUR" />
+                    <Picker.Item label="🏗️ Labour + Material" value="MATERIAL" />
+                  </Picker>
                 </View>
               </View>
 
@@ -1728,12 +1718,9 @@ export function SiteFormModal({
               {busy ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <>
-                  <AppIcon name="checkmark" size={17} color="#FFFFFF" />
-                  <Text style={styles.saveBtnText}>
-                    {isEdit ? 'Save Changes' : 'Save Site'}
-                  </Text>
-                </>
+                <Text style={styles.saveBtnText}>
+                  {isEdit ? 'Save Changes' : 'Save Site'}
+                </Text>
               )}
             </Pressable>
           </View>
@@ -1885,9 +1872,9 @@ export function SiteFormModal({
   return (
     <Modal
       visible
-      animationType="slide"
+      animationType={isDesktop ? 'fade' : 'slide'}
       onRequestClose={() => !busy && onClose()}
-      presentationStyle="pageSheet"
+      presentationStyle={isDesktop ? 'overFullScreen' : 'fullScreen'}
       transparent={isDesktop}
     >
       <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
@@ -2929,5 +2916,16 @@ const styles = StyleSheet.create({
   },
   stateCodeBadgeTextActive: {
     color: '#1D4ED8',
+  },
+  nativeHiddenPicker: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
 });

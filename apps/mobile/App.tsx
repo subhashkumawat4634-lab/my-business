@@ -13,6 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 
 // Theme & Common Components
 import { Colors } from './src/theme/colors';
+import { Ionicons } from '@expo/vector-icons';
 import { BottomNav, TabItem } from './src/components/common/BottomNav';
 import { Button } from './src/components/common/Button';
 import { FormModal } from './src/ui';
@@ -220,7 +221,7 @@ function MainApp() {
       });
       setForm(null);
       pendingRef.current = null;
-      setToast('Successfully saved');
+      setToast(lang === 'hi' ? 'सफलतापूर्वक सुरक्षित हो गया' : 'Saved successfully');
       await refresh();
     } catch (e: any) {
       setError(e.message);
@@ -406,7 +407,13 @@ function MainApp() {
   }, []);
 
   function handleNavigate(targetTab: string) {
-    navigate(targetTab, targetTab === 'home' ? '/' : `/${targetTab}`, null, false);
+    let actualTab = targetTab;
+    if (targetTab === 'workers' || targetTab === 'labour') {
+      actualTab = 'team';
+    } else if (targetTab === 'hisab') {
+      actualTab = 'ledger';
+    }
+    navigate(actualTab, actualTab === 'home' ? '/' : `/${actualTab}`, null, false);
   }
 
   async function handleCreateNewSite(values: Record<string, string>) {
@@ -429,7 +436,7 @@ function MainApp() {
         key: pendingRef.current.key,
       });
       pendingRef.current = null;
-      setToast('Site successfully created');
+      setToast(lang === 'hi' ? 'नई साइट सफलतापूर्वक बन गई' : 'New site created successfully');
       await refresh();
       navigate('sites', '/sites', null, false);
     } catch (e: any) {
@@ -460,11 +467,11 @@ function MainApp() {
     bill?: Row
   ) => {
     if (!data?.sites.length) {
-      setToast('Please add a work site first');
+      setToast(lang === 'hi' ? 'कृपया पहले एक साइट जोड़ें' : 'Please add a work site first');
       return;
     }
     if (kind === 'WAGE_PAYMENT' && !data?.workers.length) {
-      setToast('Please add a worker first');
+      setToast(lang === 'hi' ? 'कृपया पहले एक मजदूर (Labour) जोड़ें' : 'Please add a worker first');
       return;
     }
     openForm(entryForm(data, kind, siteId, workerId, bill));
@@ -476,7 +483,7 @@ function MainApp() {
     existing?: Row
   ) => {
     if (!data?.sites.length || !data?.workers.some((w) => w.active)) {
-      setToast('Add an active worker and site first');
+      setToast(lang === 'hi' ? 'कृपया पहले साइट और एक्टिव मजदूर जोड़ें' : 'Add an active worker and site first');
       return;
     }
     openForm(attendanceForm(data, siteId, workerId, existing));
@@ -521,8 +528,47 @@ function MainApp() {
 
       {/* Toast notification */}
       {toast ? (
-        <View style={styles.toast}>
-          <Text style={styles.toastText}>{toast}</Text>
+        <View style={styles.toastContainer}>
+          <View
+            style={[
+              styles.toast,
+              toast.toLowerCase().includes('error') || toast.toLowerCase().includes('fail')
+                ? styles.toastError
+                : toast.toLowerCase().includes('please') || toast.toLowerCase().includes('कृपया') || toast.toLowerCase().includes('add')
+                ? styles.toastWarning
+                : styles.toastSuccess,
+            ]}
+          >
+            <Ionicons
+              name={
+                toast.toLowerCase().includes('error') || toast.toLowerCase().includes('fail')
+                  ? 'alert-circle'
+                  : toast.toLowerCase().includes('please') || toast.toLowerCase().includes('कृपया') || toast.toLowerCase().includes('add')
+                  ? 'information-circle'
+                  : 'checkmark-circle'
+              }
+              size={18}
+              color={
+                toast.toLowerCase().includes('error') || toast.toLowerCase().includes('fail')
+                  ? '#DC2626'
+                  : toast.toLowerCase().includes('please') || toast.toLowerCase().includes('कृपया') || toast.toLowerCase().includes('add')
+                  ? '#D97706'
+                  : '#059669'
+              }
+            />
+            <Text
+              style={[
+                styles.toastText,
+                toast.toLowerCase().includes('error') || toast.toLowerCase().includes('fail')
+                  ? styles.toastTextError
+                  : toast.toLowerCase().includes('please') || toast.toLowerCase().includes('कृपया') || toast.toLowerCase().includes('add')
+                  ? styles.toastTextWarning
+                  : styles.toastTextSuccess,
+              ]}
+            >
+              {toast}
+            </Text>
+          </View>
         </View>
       ) : null}
 
@@ -829,24 +875,52 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
   },
-  toast: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 10,
+  toastContainer: {
     paddingHorizontal: 16,
-    marginHorizontal: 20,
-    marginTop: 8,
-    borderRadius: 10,
+    paddingTop: 8,
+    paddingBottom: 4,
+    zIndex: 9999,
+  },
+  toast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  toastSuccess: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  toastWarning: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
+  toastError: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
   },
   toastText: {
-    color: '#FFFFFF',
-    textAlign: 'center',
     fontSize: 13,
     fontWeight: '700',
+    textAlign: 'center',
+  },
+  toastTextSuccess: {
+    color: '#065F46',
+  },
+  toastTextWarning: {
+    color: '#92400E',
+  },
+  toastTextError: {
+    color: '#991B1B',
   },
   content: {
     flex: 1,

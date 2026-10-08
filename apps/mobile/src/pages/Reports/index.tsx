@@ -457,14 +457,14 @@ export function ReportsPage({
                               f.site.status === 'COMPLETED'
                                 ? '#EFF6FF'
                                 : f.site.status === 'PAUSED'
-                                ? '#FFFBEB'
-                                : '#F0FDF4',
+                                  ? '#FFFBEB'
+                                  : '#F0FDF4',
                             borderColor:
                               f.site.status === 'COMPLETED'
                                 ? '#BFDBFE'
                                 : f.site.status === 'PAUSED'
-                                ? '#FDE68A'
-                                : '#BBF7D0',
+                                  ? '#FDE68A'
+                                  : '#BBF7D0',
                           },
                         ]}
                       >
@@ -476,16 +476,16 @@ export function ReportsPage({
                                 f.site.status === 'COMPLETED'
                                   ? '#1D4ED8'
                                   : f.site.status === 'PAUSED'
-                                  ? '#B45309'
-                                  : '#15803D',
+                                    ? '#B45309'
+                                    : '#15803D',
                             },
                           ]}
                         >
                           {f.site.status === 'COMPLETED'
                             ? t('completed', 'Completed')
                             : f.site.status === 'PAUSED'
-                            ? t('paused', 'Paused')
-                            : t('active', 'Ongoing')}
+                              ? t('paused', 'Paused')
+                              : t('active', 'Ongoing')}
                         </Text>
                       </View>
                     </View>

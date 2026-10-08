@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Picker } from '@react-native-picker/picker';
 import { Colors } from '../../theme/colors';
 import { AppIcon } from '../icons/AppIcon';
 import { FormSpec, Row, Snapshot } from '../../types';
@@ -179,9 +180,9 @@ export function ReceivePaymentModal({
   return (
     <Modal
       visible
-      animationType="slide"
+      animationType={isDesktop ? 'fade' : 'slide'}
       onRequestClose={() => !busy && onClose()}
-      presentationStyle="pageSheet"
+      presentationStyle={isDesktop ? 'overFullScreen' : 'fullScreen'}
       transparent={isDesktop}
     >
       <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
@@ -194,50 +195,50 @@ export function ReceivePaymentModal({
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={styles.headerIconBadge}>
-                <AppIcon name="arrow-down-circle" size={20} color="#15803D" />
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <View style={styles.headerIconBadge}>
+                  <AppIcon name="arrow-down-circle" size={20} color="#15803D" />
+                </View>
+                <View>
+                  <Text style={styles.headerTitle}>Receive Payment</Text>
+                  <Text style={styles.headerSubtitle}>
+                    Record client payment, milestone receipt & cash in
+                  </Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.headerTitle}>Receive Payment</Text>
-                <Text style={styles.headerSubtitle}>
-                  Record client payment, milestone receipt & cash in
-                </Text>
-              </View>
+
+              <Pressable
+                onPress={() => !busy && onClose()}
+                style={({ pressed }) => [
+                  styles.closeBtn,
+                  pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
+                ]}
+                accessibilityLabel="Close"
+              >
+                <AppIcon name="close" size={18} color={Colors.textPrimary} />
+              </Pressable>
             </View>
 
-            <Pressable
-              onPress={() => !busy && onClose()}
-              style={({ pressed }) => [
-                styles.closeBtn,
-                pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
-              ]}
-              accessibilityLabel="Close"
+            {/* Error Banner */}
+            {displayError ? (
+              <View style={styles.errorBanner}>
+                <AppIcon name="alert-circle" size={16} color={Colors.danger} />
+                <Text style={styles.errorBannerText}>{displayError}</Text>
+              </View>
+            ) : null}
+
+            {/* Scrollable Form Body */}
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scrollBody}
             >
-              <AppIcon name="close" size={18} color={Colors.textPrimary} />
-            </Pressable>
-          </View>
-
-          {/* Error Banner */}
-          {displayError ? (
-            <View style={styles.errorBanner}>
-              <AppIcon name="alert-circle" size={16} color={Colors.danger} />
-              <Text style={styles.errorBannerText}>{displayError}</Text>
-            </View>
-          ) : null}
-
-          {/* Scrollable Form Body */}
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollBody}
-          >
-            {/* 1. WORK SITE SELECTOR & FINANCIAL OVERVIEW CARD */}
-            <View style={[styles.sectionCard, { zIndex: 20 }]}>
-              <View style={styles.sectionHeadingRow}>
-                <AppIcon name="business-outline" size={16} color="#0284C7" />
-                <Text style={styles.sectionTitle}>Work Site & Client</Text>
-              </View>
+              {/* 1. WORK SITE SELECTOR & FINANCIAL OVERVIEW CARD */}
+              <View style={[styles.sectionCard, { zIndex: 20 }]}>
+                <View style={styles.sectionHeadingRow}>
+                  <AppIcon name="business-outline" size={16} color="#0284C7" />
+                  <Text style={styles.sectionTitle}>Work Site & Client</Text>
+                </View>
 
                 {/* Work Site Selector Dropdown / Select Bar */}
                 <View style={{ gap: 4 }}>
@@ -265,420 +266,409 @@ export function ReceivePaymentModal({
                       color="#64748B"
                     />
 
-                    {/* Native HTML Select Bar for direct dropdown selection */}
-                    {Platform.OS === 'web' && (
-                      <select
-                        value={siteId}
-                        onChange={(e: any) => {
-                          const newSiteId = e.target.value;
-                          setSiteId(newSiteId);
-                          const s = data.sites.find((item) => item.id === newSiteId);
-                          if (s?.owner_name) {
-                            setParty(s.owner_name);
-                          }
-                        }}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          opacity: 0,
-                          cursor: 'pointer',
-                          zIndex: 10,
-                        }}
-                        title="Select Work Site"
-                      >
-                        {data.sites.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            🏢 {s.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                    {/* Universal Native Picker for Mobile & Web */}
+                    <Picker
+                      selectedValue={siteId}
+                      onValueChange={(val: any) => {
+                        const newSiteId = String(val);
+                        setSiteId(newSiteId);
+                        const s = data.sites.find((item) => item.id === newSiteId);
+                        if (s?.owner_name) {
+                          setParty(s.owner_name);
+                        }
+                      }}
+                      style={styles.nativeHiddenPicker}
+                      dropdownIconColor="transparent"
+                      prompt="Select Work Site"
+                    >
+                      {data.sites.map((s) => (
+                        <Picker.Item
+                          key={s.id}
+                          label={`🏢 ${s.name}`}
+                          value={s.id}
+                        />
+                      ))}
+                    </Picker>
                   </View>
 
-                {/* Inline Work Site Dropdown Menu */}
-                {isSiteDropdownOpen && (
-                  <View style={styles.siteDropdownMenu}>
-                    {data.sites.length > 5 && (
-                      <View style={styles.inlineSearchBox}>
-                        <AppIcon name="search" size={13} color={Colors.textMuted} />
-                        <TextInput
-                          value={siteSearch}
-                          onChangeText={setSiteSearch}
-                          placeholder="Search site or client..."
-                          placeholderTextColor={Colors.textSubtle}
-                          style={styles.inlineSearchInput}
-                        />
-                      </View>
-                    )}
-                    <ScrollView
-                      style={{ maxHeight: 220 }}
-                      nestedScrollEnabled
-                      showsVerticalScrollIndicator
-                    >
-                      {filteredSites.map((s) => {
-                        const isSelected = s.id === siteId;
-                        return (
-                          <Pressable
-                            key={s.id}
-                            onPress={() => {
-                              setSiteId(s.id);
-                              if (s.owner_name && !party) {
-                                setParty(s.owner_name);
-                              }
-                              setIsSiteDropdownOpen(false);
-                            }}
-                            style={({ pressed }) => [
-                              styles.siteMenuItem,
-                              isSelected && styles.siteMenuItemActive,
-                              pressed && { opacity: 0.8 },
-                            ]}
-                          >
-                            <View
-                              style={[
-                                styles.siteMenuItemIcon,
-                                { backgroundColor: isSelected ? '#E0F2FE' : '#F1F5F9' },
+                  {/* Inline Work Site Dropdown Menu */}
+                  {isSiteDropdownOpen && (
+                    <View style={styles.siteDropdownMenu}>
+                      {data.sites.length > 5 && (
+                        <View style={styles.inlineSearchBox}>
+                          <AppIcon name="search" size={13} color={Colors.textMuted} />
+                          <TextInput
+                            value={siteSearch}
+                            onChangeText={setSiteSearch}
+                            placeholder="Search site or client..."
+                            placeholderTextColor={Colors.textSubtle}
+                            style={styles.inlineSearchInput}
+                          />
+                        </View>
+                      )}
+                      <ScrollView
+                        style={{ maxHeight: 220 }}
+                        nestedScrollEnabled
+                        showsVerticalScrollIndicator
+                      >
+                        {filteredSites.map((s) => {
+                          const isSelected = s.id === siteId;
+                          return (
+                            <Pressable
+                              key={s.id}
+                              onPress={() => {
+                                setSiteId(s.id);
+                                if (s.owner_name && !party) {
+                                  setParty(s.owner_name);
+                                }
+                                setIsSiteDropdownOpen(false);
+                              }}
+                              style={({ pressed }) => [
+                                styles.siteMenuItem,
+                                isSelected && styles.siteMenuItemActive,
+                                pressed && { opacity: 0.8 },
                               ]}
                             >
-                              <AppIcon
-                                name="business"
-                                size={14}
-                                color={isSelected ? '#0284C7' : '#64748B'}
-                              />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                              <Text
+                              <View
                                 style={[
-                                  styles.siteMenuItemTitle,
-                                  isSelected && { color: '#0284C7', fontWeight: '800' },
+                                  styles.siteMenuItemIcon,
+                                  { backgroundColor: isSelected ? '#E0F2FE' : '#F1F5F9' },
                                 ]}
-                                numberOfLines={1}
                               >
-                                {s.name}
-                              </Text>
-                              <Text style={styles.siteMenuItemDesc} numberOfLines={1}>
-                                Work Site
-                              </Text>
-                            </View>
-                            {isSelected && (
-                              <AppIcon name="checkmark" size={14} color="#0284C7" />
-                            )}
-                          </Pressable>
-                        );
-                      })}
-                      {!filteredSites.length && (
-                        <Text style={styles.pickerEmptyText}>No sites found.</Text>
-                      )}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-
-              {/* Outstanding Balance Banner */}
-              {selectedSite && (
-                <View style={styles.financialsBanner}>
-                  <View style={styles.financialCol}>
-                    <Text style={styles.financialLabel}>Total Contract</Text>
-                    <Text style={styles.financialValue}>
-                      {money(siteFinancials.totalContract)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.financialDivider} />
-
-                  <View style={styles.financialCol}>
-                    <Text style={styles.financialLabel}>Already Received</Text>
-                    <Text style={[styles.financialValue, { color: '#15803D' }]}>
-                      {money(siteFinancials.received)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.financialDivider} />
-
-                  <View style={styles.financialCol}>
-                    <Text style={styles.financialLabel}>Pending Due</Text>
-                    <Text style={[styles.financialValue, { color: '#B45309' }]}>
-                      {money(siteFinancials.pending)}
-                    </Text>
-                  </View>
+                                <AppIcon
+                                  name="business"
+                                  size={14}
+                                  color={isSelected ? '#0284C7' : '#64748B'}
+                                />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text
+                                  style={[
+                                    styles.siteMenuItemTitle,
+                                    isSelected && { color: '#0284C7', fontWeight: '800' },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {s.name}
+                                </Text>
+                                <Text style={styles.siteMenuItemDesc} numberOfLines={1}>
+                                  Work Site
+                                </Text>
+                              </View>
+                              {isSelected && (
+                                <AppIcon name="checkmark" size={14} color="#0284C7" />
+                              )}
+                            </Pressable>
+                          );
+                        })}
+                        {!filteredSites.length && (
+                          <Text style={styles.pickerEmptyText}>No sites found.</Text>
+                        )}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
 
-            {/* 2. AMOUNT RECEIVED CARD */}
-            <View style={styles.amountCard}>
-              <View style={styles.amountTopRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <AppIcon name="cash" size={17} color="#15803D" />
-                  <Text style={styles.amountHeading}>Amount Received (₹) *</Text>
-                </View>
-                {Number(amount) > 0 && (
-                  <View style={styles.remainingPill}>
-                    <Text style={styles.remainingPillText}>
-                      Bal Due: {money(remainingAfterPayment)}
-                    </Text>
+                {/* Outstanding Balance Banner */}
+                {selectedSite && (
+                  <View style={styles.financialsBanner}>
+                    <View style={styles.financialCol}>
+                      <Text style={styles.financialLabel}>Total Contract</Text>
+                      <Text style={styles.financialValue}>
+                        {money(siteFinancials.totalContract)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.financialDivider} />
+
+                    <View style={styles.financialCol}>
+                      <Text style={styles.financialLabel}>Already Received</Text>
+                      <Text style={[styles.financialValue, { color: '#15803D' }]}>
+                        {money(siteFinancials.received)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.financialDivider} />
+
+                    <View style={styles.financialCol}>
+                      <Text style={styles.financialLabel}>Pending Due</Text>
+                      <Text style={[styles.financialValue, { color: '#B45309' }]}>
+                        {money(siteFinancials.pending)}
+                      </Text>
+                    </View>
                   </View>
                 )}
               </View>
 
-              <View style={styles.amountInputRow}>
-                <Text style={styles.currencySymbol}>₹</Text>
-                <TextInput
-                  value={amount}
-                  onChangeText={(t) => setAmount(t.replace(/[^0-9.]/g, ''))}
-                  placeholder="0.00"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="numeric"
-                  style={styles.amountLargeInput}
-                />
-              </View>
+              {/* 2. AMOUNT RECEIVED CARD */}
+              <View style={styles.amountCard}>
+                <View style={styles.amountTopRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <AppIcon name="cash" size={17} color="#15803D" />
+                    <Text style={styles.amountHeading}>Amount Received (₹) *</Text>
+                  </View>
+                  {Number(amount) > 0 && (
+                    <View style={styles.remainingPill}>
+                      <Text style={styles.remainingPillText}>
+                        Bal Due: {money(remainingAfterPayment)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
 
-              {/* Quick Amount Suggestion Chips */}
-              <View style={styles.quickAmountRow}>
-                {siteFinancials.pending > 0 && (
-                  <Pressable
-                    onPress={() => handleQuickAmount(siteFinancials.pending / 100)}
-                    style={styles.quickAmountChip}
-                  >
-                    <Text style={styles.quickAmountChipText}>
-                      Full Due ({money(siteFinancials.pending)})
-                    </Text>
-                  </Pressable>
-                )}
-                {[10000, 25000, 50000, 100000].map((amt) => (
-                  <Pressable
-                    key={amt}
-                    onPress={() => handleQuickAmount(amt)}
-                    style={styles.quickAmountChip}
-                  >
-                    <Text style={styles.quickAmountChipText}>
-                      +{money(amt * 100)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
+                <View style={styles.amountInputRow}>
+                  <Text style={styles.currencySymbol}>₹</Text>
+                  <TextInput
+                    value={amount}
+                    onChangeText={(t) => setAmount(t.replace(/[^0-9.]/g, ''))}
+                    placeholder="0.00"
+                    placeholderTextColor="#94A3B8"
+                    keyboardType="numeric"
+                    style={styles.amountLargeInput}
+                  />
+                </View>
 
-            {/* 3. PAYMENT MODE SELECTION */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeadingRow}>
-                <AppIcon name="wallet-outline" size={16} color="#15803D" />
-                <Text style={styles.sectionTitle}>Payment Mode *</Text>
-              </View>
-
-              <View style={styles.modeCardsRow}>
-                {PAYMENT_MODES.map((m) => {
-                  const isSelected = mode === m.key;
-                  return (
+                {/* Quick Amount Suggestion Chips */}
+                <View style={styles.quickAmountRow}>
+                  {siteFinancials.pending > 0 && (
                     <Pressable
-                      key={m.key}
-                      onPress={() => setMode(m.key as any)}
-                      style={[
-                        styles.modeCard,
-                        isSelected && styles.modeCardActive,
-                      ]}
+                      onPress={() => handleQuickAmount(siteFinancials.pending / 100)}
+                      style={styles.quickAmountChip}
                     >
-                      <View style={styles.modeTop}>
-                        <AppIcon
-                          name={m.icon as any}
-                          size={18}
-                          color={isSelected ? '#15803D' : '#64748B'}
-                        />
-                        <View
-                          style={[
-                            styles.modeBadge,
-                            isSelected && { backgroundColor: '#DCFCE7' },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.modeBadgeText,
-                              isSelected && { color: '#15803D' },
-                            ]}
-                          >
-                            {m.badge}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text
-                        style={[
-                          styles.modeTitle,
-                          isSelected && styles.modeTitleActive,
-                        ]}
-                      >
-                        {m.label}
+                      <Text style={styles.quickAmountChipText}>
+                        Full Due ({money(siteFinancials.pending)})
                       </Text>
                     </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* 4. RECEIPT DATE & PAYMENT DETAILS */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeadingRow}>
-                <AppIcon name="calendar-outline" size={16} color="#2563EB" />
-                <Text style={styles.sectionTitle}>Receipt Date & Stage</Text>
-              </View>
-
-              {/* Receipt Date */}
-              <View style={{ gap: 4 }}>
-                <Text style={styles.fieldLabel}>Payment Date *</Text>
-                <Pressable
-                  onPress={() => setIsCalendarOpen(true)}
-                  style={({ pressed }) => [
-                    styles.datePickerBtn,
-                    pressed && { opacity: 0.8 },
-                  ]}
-                >
-                  <Text style={styles.datePickerText}>{formatDateDisplay(date)}</Text>
-                  {isToday ? (
-                    <View style={styles.todayPill}>
-                      <Text style={styles.todayPillText}>Today</Text>
-                    </View>
-                  ) : null}
-                  <View style={{ marginLeft: 'auto' }}>
-                    <AppIcon name="calendar" size={16} color="#15803D" />
-                  </View>
-                </Pressable>
+                  )}
+                  {[10000, 25000, 50000, 100000].map((amt) => (
+                    <Pressable
+                      key={amt}
+                      onPress={() => handleQuickAmount(amt)}
+                      style={styles.quickAmountChip}
+                    >
+                      <Text style={styles.quickAmountChipText}>
+                        +{money(amt * 100)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
               </View>
 
-              {/* Milestone / Stage Presets */}
-              <View style={{ gap: 4, marginTop: 4 }}>
-                <Text style={styles.fieldSubNotice}>Payment Stage (Quick select):</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.stageScroll}
-                >
-                  {STAGE_PRESETS.map((stage) => {
-                    const isSelected = description.includes(stage);
+              {/* 3. PAYMENT MODE SELECTION */}
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeadingRow}>
+                  <AppIcon name="wallet-outline" size={16} color="#15803D" />
+                  <Text style={styles.sectionTitle}>Payment Mode *</Text>
+                </View>
+
+                <View style={styles.modeCardsRow}>
+                  {PAYMENT_MODES.map((m) => {
+                    const isSelected = mode === m.key;
                     return (
                       <Pressable
-                        key={stage}
-                        onPress={() => setDescription(stage)}
+                        key={m.key}
+                        onPress={() => setMode(m.key as any)}
                         style={[
-                          styles.stageChip,
-                          isSelected && styles.stageChipActive,
+                          styles.modeCard,
+                          isSelected && styles.modeCardActive,
                         ]}
                       >
+                        <View style={styles.modeTop}>
+                          <AppIcon
+                            name={m.icon as any}
+                            size={18}
+                            color={isSelected ? '#15803D' : '#64748B'}
+                          />
+                          <View
+                            style={[
+                              styles.modeBadge,
+                              isSelected && { backgroundColor: '#DCFCE7' },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.modeBadgeText,
+                                isSelected && { color: '#15803D' },
+                              ]}
+                            >
+                              {m.badge}
+                            </Text>
+                          </View>
+                        </View>
                         <Text
                           style={[
-                            styles.stageChipText,
-                            isSelected && styles.stageChipTextActive,
+                            styles.modeTitle,
+                            isSelected && styles.modeTitleActive,
                           ]}
                         >
-                          {stage}
+                          {m.label}
                         </Text>
                       </Pressable>
                     );
                   })}
-                </ScrollView>
+                </View>
               </View>
 
-              {/* Description Input */}
-              <View style={{ gap: 4, marginTop: 2 }}>
-                <Text style={styles.fieldLabel}>Payment Note / Description</Text>
-                <TextInput
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="e.g. 2nd milestone payment, slab completion cash"
-                  placeholderTextColor={Colors.textSubtle}
-                  style={styles.textInput}
-                />
-              </View>
-            </View>
+              {/* 4. RECEIPT DATE & PAYMENT DETAILS */}
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeadingRow}>
+                  <AppIcon name="calendar-outline" size={16} color="#2563EB" />
+                  <Text style={styles.sectionTitle}>Receipt Date & Stage</Text>
+                </View>
 
-            {/* 5. PAYER & TRANSACTION REFERENCE */}
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeadingRow}>
-                <AppIcon name="receipt-outline" size={16} color="#475569" />
-                <Text style={styles.sectionTitle}>Payer & Transaction Reference</Text>
+                {/* Receipt Date */}
+                <View style={{ gap: 4 }}>
+                  <Text style={styles.fieldLabel}>Payment Date *</Text>
+                  <Pressable
+                    onPress={() => setIsCalendarOpen(true)}
+                    style={({ pressed }) => [
+                      styles.datePickerBtn,
+                      pressed && { opacity: 0.8 },
+                    ]}
+                  >
+                    <Text style={styles.datePickerText}>{formatDateDisplay(date)}</Text>
+                    {isToday ? (
+                      <View style={styles.todayPill}>
+                        <Text style={styles.todayPillText}>Today</Text>
+                      </View>
+                    ) : null}
+                    <View style={{ marginLeft: 'auto' }}>
+                      <AppIcon name="calendar" size={16} color="#15803D" />
+                    </View>
+                  </Pressable>
+                </View>
+
+                {/* Milestone / Stage Presets */}
+                <View style={{ gap: 4, marginTop: 4 }}>
+                  <Text style={styles.fieldSubNotice}>Payment Stage (Quick select):</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.stageScroll}
+                  >
+                    {STAGE_PRESETS.map((stage) => {
+                      const isSelected = description.includes(stage);
+                      return (
+                        <Pressable
+                          key={stage}
+                          onPress={() => setDescription(stage)}
+                          style={[
+                            styles.stageChip,
+                            isSelected && styles.stageChipActive,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.stageChipText,
+                              isSelected && styles.stageChipTextActive,
+                            ]}
+                          >
+                            {stage}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+
+                {/* Description Input */}
+                <View style={{ gap: 4, marginTop: 2 }}>
+                  <Text style={styles.fieldLabel}>Payment Note / Description</Text>
+                  <TextInput
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="e.g. 2nd milestone payment, slab completion cash"
+                    placeholderTextColor={Colors.textSubtle}
+                    style={styles.textInput}
+                  />
+                </View>
               </View>
 
-              {/* Received From (Payer) */}
-              <View style={{ gap: 4 }}>
-                <Text style={styles.fieldLabel}>Received From (Payer Name)</Text>
-                <TextInput
-                  value={party}
-                  onChangeText={setParty}
-                  placeholder="e.g. Client name, Sharma Ji, builder"
-                  placeholderTextColor={Colors.textSubtle}
-                  style={styles.textInput}
-                />
-              </View>
+              {/* 5. PAYER & TRANSACTION REFERENCE */}
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeadingRow}>
+                  <AppIcon name="receipt-outline" size={16} color="#475569" />
+                  <Text style={styles.sectionTitle}>Payer & Transaction Reference</Text>
+                </View>
 
-              {/* Reference / UTR Number */}
-              <View style={{ gap: 4, marginTop: 4 }}>
-                <Text style={styles.fieldLabel}>
-                  {mode === 'UPI'
-                    ? 'UPI UTR / Transaction ID (Optional)'
-                    : mode === 'BANK'
-                    ? 'Cheque / NEFT Reference (Optional)'
-                    : 'Receipt No. / Voucher Ref (Optional)'}
-                </Text>
-                <TextInput
-                  value={reference}
-                  onChangeText={setReference}
-                  placeholder={
-                    mode === 'UPI'
-                      ? 'e.g. UTR 428941098234'
+                {/* Received From (Payer) */}
+                <View style={{ gap: 4 }}>
+                  <Text style={styles.fieldLabel}>Received From (Payer Name)</Text>
+                  <TextInput
+                    value={party}
+                    onChangeText={setParty}
+                    placeholder="e.g. Client name, Sharma Ji, builder"
+                    placeholderTextColor={Colors.textSubtle}
+                    style={styles.textInput}
+                  />
+                </View>
+
+                {/* Reference / UTR Number */}
+                <View style={{ gap: 4, marginTop: 4 }}>
+                  <Text style={styles.fieldLabel}>
+                    {mode === 'UPI'
+                      ? 'UPI UTR / Transaction ID (Optional)'
                       : mode === 'BANK'
-                      ? 'e.g. Cheque #492810'
-                      : 'e.g. Cash Receipt #04'
-                  }
-                  placeholderTextColor={Colors.textSubtle}
-                  style={styles.textInput}
-                />
+                        ? 'Cheque / NEFT Reference (Optional)'
+                        : 'Receipt No. / Voucher Ref (Optional)'}
+                  </Text>
+                  <TextInput
+                    value={reference}
+                    onChangeText={setReference}
+                    placeholder={
+                      mode === 'UPI'
+                        ? 'e.g. UTR 428941098234'
+                        : mode === 'BANK'
+                          ? 'e.g. Cheque #492810'
+                          : 'e.g. Cash Receipt #04'
+                    }
+                    placeholderTextColor={Colors.textSubtle}
+                    style={styles.textInput}
+                  />
+                </View>
               </View>
-            </View>
-          </ScrollView>
+            </ScrollView>
 
-          {/* Bottom Action Footer */}
-          <View style={styles.footerBar}>
-            <Pressable
-              onPress={() => !busy && onClose()}
-              disabled={busy}
-              style={styles.cancelBtn}
-            >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </Pressable>
+            {/* Bottom Action Footer */}
+            <View style={styles.footerBar}>
+              <Pressable
+                onPress={() => !busy && onClose()}
+                disabled={busy}
+                style={styles.cancelBtn}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </Pressable>
 
-            <Pressable
-              onPress={handleSave}
-              disabled={busy}
-              style={({ pressed }) => [
-                styles.saveBtn,
-                busy && { opacity: 0.6 },
-                pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-              ]}
-            >
-              {busy ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <AppIcon name="checkmark" size={18} color="#FFFFFF" />
+              <Pressable
+                onPress={handleSave}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.saveBtn,
+                  busy && { opacity: 0.6 },
+                  pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                ]}
+              >
+                {busy ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
                   <Text style={styles.saveBtnText}>Save Payment</Text>
-                </>
-              )}
-            </Pressable>
-          </View>
-        </KeyboardAvoidingView>
+                )}
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
 
-        {/* Calendar Picker Modal */}
-        {isCalendarOpen && (
-          <CalendarPickerModal
-            visible={isCalendarOpen}
-            title="Select Payment Date"
-            selectedDate={date}
-            onSelect={(newDate) => {
-              if (newDate) setDate(newDate);
-            }}
-            onClose={() => setIsCalendarOpen(false)}
-          />
-        )}
+          {/* Calendar Picker Modal */}
+          {isCalendarOpen && (
+            <CalendarPickerModal
+              visible={isCalendarOpen}
+              title="Select Payment Date"
+              selectedDate={date}
+              onSelect={(newDate) => {
+                if (newDate) setDate(newDate);
+              }}
+              onClose={() => setIsCalendarOpen(false)}
+            />
+          )}
         </SafeAreaView>
       </View>
     </Modal>
@@ -1164,5 +1154,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 16,
     fontStyle: 'italic',
+  },
+  nativeHiddenPicker: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
 });

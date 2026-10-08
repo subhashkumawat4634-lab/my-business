@@ -170,8 +170,8 @@ export function ExpenseBillModal({
   return (
     <Modal
       visible
-      animationType="slide"
-      presentationStyle="pageSheet"
+      animationType={isDesktop ? 'fade' : 'slide'}
+      presentationStyle={isDesktop ? 'overFullScreen' : 'fullScreen'}
       transparent={isDesktop}
       onRequestClose={onClose}
     >
@@ -612,14 +612,11 @@ export function ExpenseBillModal({
                 {busy ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <>
-                    <AppIcon name="checkmark" size={16} color="#FFFFFF" />
-                    <Text style={styles.footerSubmitText}>
-                      {amount.trim() && Number(amount) > 0
-                        ? `Save Expense (${money(Number(amount) * 100)})`
-                        : 'Save Expense Bill'}
-                    </Text>
-                  </>
+                  <Text style={styles.footerSubmitText}>
+                    {amount.trim() && Number(amount) > 0
+                      ? `Save Expense (${money(Number(amount) * 100)})`
+                      : 'Save Expense Bill'}
+                  </Text>
                 )}
               </Pressable>
             </View>

@@ -294,7 +294,6 @@ export function ClockPickerModal({
                 pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
               ]}
             >
-              <AppIcon name="checkmark-circle" size={18} color="#FFFFFF" />
               <Text style={styles.primaryButtonText}>
                 {totalMinutes > 0 ? `Apply ${formattedDuration}` : 'Done'}
               </Text>
