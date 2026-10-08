@@ -54,7 +54,7 @@ const AVATAR_PALETTES = [
   { bg: '#EFF6FF', text: '#1D4ED8' },
   { bg: '#ECFDF5', text: '#047857' },
   { bg: '#F5F3FF', text: '#6D28D9' },
-  { bg: '#FFFBEB', text: '#B45309' },
+  { bg: '#E0E7FF', text: '#3730A3' },
   { bg: '#FFF1F2', text: '#BE123C' },
   { bg: '#F0FDF4', text: '#15803D' },
 ];
@@ -365,7 +365,7 @@ export function LabourPaymentModal({
 
           {/* Body Form */}
           <KeyboardAvoidingView
-            style={{ flex: 1 }}
+            style={{ flex: 1, width: '100%' }}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             <ScrollView
@@ -433,7 +433,7 @@ export function LabourPaymentModal({
                       onPress={() => handleQuickAmount(workerSummaryData.balance / 100)}
                       style={[styles.quickChip, styles.quickChipFullDue]}
                     >
-                      <AppIcon name="flash" size={12} color="#B45309" />
+                      <AppIcon name="flash" size={12} color="#15803D" />
                       <Text style={styles.quickChipTextFullDue}>
                         Full Due ({money(workerSummaryData.balance)})
                       </Text>
@@ -617,7 +617,7 @@ export function LabourPaymentModal({
                             styles.balanceStatusValue,
                             {
                               color: isPendingWage
-                                ? '#D97706'
+                                ? '#EA580C'
                                 : isAdvanceTaken
                                 ? '#2563EB'
                                 : '#16A34A',
@@ -821,6 +821,7 @@ export function LabourPaymentModal({
                               styles.modePillText,
                               isSelected && { color: activeColor, fontWeight: '800' },
                             ]}
+                            numberOfLines={1}
                           >
                             {m.label}
                           </Text>
@@ -951,6 +952,9 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
   },
   modalOverlayDesktop: {
     backgroundColor: 'rgba(15, 23, 42, 0.65)',
@@ -962,6 +966,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
     width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'center',
   },
   modalCardDesktop: {
     maxWidth: 580,
@@ -985,6 +991,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
+    width: '100%',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -1025,6 +1032,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
+    width: '100%',
   },
   segmentTrack: {
     flexDirection: 'row',
@@ -1032,6 +1040,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 3,
     gap: 4,
+    width: '100%',
   },
   segmentButton: {
     flex: 1,
@@ -1073,10 +1082,13 @@ const styles = StyleSheet.create({
   },
   formScroll: {
     flex: 1,
+    width: '100%',
   },
   formScrollContent: {
-    padding: 14,
-    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    width: '100%',
   },
   errorBanner: {
     flexDirection: 'row',
@@ -1101,6 +1113,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     padding: 14,
     gap: 10,
+    width: '100%',
+    overflow: 'hidden',
   },
   heroAmountTop: {
     flexDirection: 'row',
@@ -1175,13 +1189,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
   },
   quickChipTextFullDue: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#B45309',
+    color: '#047857',
   },
   sectionCard: {
     backgroundColor: '#FFFFFF',
@@ -1190,6 +1204,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     padding: 12,
     gap: 8,
+    width: '100%',
+    overflow: 'hidden',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -1220,6 +1236,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     paddingHorizontal: 10,
     paddingVertical: 8,
+    width: '100%',
   },
   selectorTriggerActive: {
     borderColor: '#3B82F6',
@@ -1310,7 +1327,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   dueBadgeMini: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: '#FEF2F2',
     paddingHorizontal: 5,
     paddingVertical: 1.5,
     borderRadius: 4,
@@ -1318,7 +1335,7 @@ const styles = StyleSheet.create({
   dueBadgeMiniText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#B45309',
+    color: '#DC2626',
   },
   advBadgeMini: {
     backgroundColor: '#EFF6FF',
@@ -1339,6 +1356,8 @@ const styles = StyleSheet.create({
     padding: 10,
     gap: 6,
     marginTop: 2,
+    width: '100%',
+    overflow: 'hidden',
   },
   balanceSummaryTop: {
     flexDirection: 'row',
@@ -1360,7 +1379,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#D97706',
+    backgroundColor: '#EA580C',
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 6,
@@ -1372,6 +1391,7 @@ const styles = StyleSheet.create({
   },
   balanceSummaryBottom: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 6,
     borderTopWidth: 1,
@@ -1409,21 +1429,23 @@ const styles = StyleSheet.create({
   },
   modePillRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     marginTop: 4,
+    width: '100%',
   },
   modePill: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 4,
     backgroundColor: '#F8FAFC',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    paddingVertical: 9,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   modePillActive: {
     backgroundColor: '#FFFFFF',
@@ -1435,7 +1457,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   modePillText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#64748B',
   },
@@ -1450,6 +1472,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
     marginTop: 4,
+    width: '100%',
   },
   datePickerText: {
     fontSize: 12,
@@ -1502,16 +1525,18 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     fontSize: 12,
     color: '#0F172A',
+    width: '100%',
   },
   footerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
+    width: '100%',
   },
   footerCancelBtn: {
     paddingHorizontal: 14,

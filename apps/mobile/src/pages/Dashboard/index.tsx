@@ -105,21 +105,17 @@ export function DashboardPage({
         <View style={styles.container}>
           {/* Greeting & Date Header */}
           <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.greetingTitle}>{t('contractorOverview', 'Contractor Overview')}</Text>
-              <Text style={styles.greetingSub}>
-                {new Date().toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })} • {data.organization.name}
-              </Text>
-            </View>
-            <View style={styles.liveTag}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveTagText}>{t('activeLedger', 'Active Ledger')}</Text>
-            </View>
+            <Text style={styles.greetingTitle}>
+              {t('contractorOverview', 'Contractor Overview')}
+            </Text>
+            <Text style={styles.greetingSub}>
+              {new Date().toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })} • {data.organization.name}
+            </Text>
           </View>
 
           {/* Premium Hero Financial Summary Card */}
@@ -237,7 +233,7 @@ export function DashboardPage({
               </Pressable>
             </View>
 
-            {/* Row 2: Actions */}
+            {/* Row 2: Payments & Bills */}
             <View style={styles.hubGridRow}>
               <Pressable
                 onPress={() => onOpenEntry('RECEIPT')}
@@ -259,6 +255,47 @@ export function DashboardPage({
               </Pressable>
 
               <Pressable
+                onPress={() => onOpenEntry('EXPENSE')}
+                style={({ pressed }) => [
+                  styles.hubActionItem,
+                  pressed && { opacity: 0.75, transform: [{ scale: 0.95 }] },
+                ]}
+                accessibilityLabel="Other Expense"
+              >
+                <View style={styles.quickIconCircle}>
+                  <AppIcon name="receipt-outline" size={26} color="#1E293B" />
+                  <View style={styles.quickCheckmarkBadge}>
+                    <AppIcon name="checkmark" size={9} color="#EF4444" />
+                  </View>
+                </View>
+                <Text style={styles.quickActionLabel} numberOfLines={1}>
+                  {t('otherExpense', 'Other Expense')}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => onOpenEntry('EXTRA')}
+                style={({ pressed }) => [
+                  styles.hubActionItem,
+                  pressed && { opacity: 0.75, transform: [{ scale: 0.95 }] },
+                ]}
+                accessibilityLabel="Extra Work"
+              >
+                <View style={styles.quickIconCircle}>
+                  <AppIcon name="add-circle-outline" size={26} color="#1E293B" />
+                  <View style={styles.quickCheckmarkBadge}>
+                    <AppIcon name="checkmark" size={9} color="#EF4444" />
+                  </View>
+                </View>
+                <Text style={styles.quickActionLabel} numberOfLines={1}>
+                  {t('extraWork', 'Extra Work')}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Row 3: Management & Reports */}
+            <View style={styles.hubGridRow}>
+              <Pressable
                 onPress={() => onNavigateTab('sites')}
                 style={({ pressed }) => [
                   styles.hubActionItem,
@@ -278,6 +315,25 @@ export function DashboardPage({
               </Pressable>
 
               <Pressable
+                onPress={() => onNavigateTab('workers')}
+                style={({ pressed }) => [
+                  styles.hubActionItem,
+                  pressed && { opacity: 0.75, transform: [{ scale: 0.95 }] },
+                ]}
+                accessibilityLabel="Labour / Workers"
+              >
+                <View style={styles.quickIconCircle}>
+                  <AppIcon name="people-outline" size={26} color="#1E293B" />
+                  <View style={styles.quickCheckmarkBadge}>
+                    <AppIcon name="checkmark" size={9} color="#EF4444" />
+                  </View>
+                </View>
+                <Text style={styles.quickActionLabel} numberOfLines={1}>
+                  {t('navLabour', 'Labour / Workers')}
+                </Text>
+              </Pressable>
+
+              <Pressable
                 onPress={() => onNavigateTab('reports')}
                 style={({ pressed }) => [
                   styles.hubActionItem,
@@ -293,66 +349,6 @@ export function DashboardPage({
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('plReports', 'P&L Reports')}
-                </Text>
-              </Pressable>
-            </View>
-
-            {/* Row 3: Financial Shortcuts */}
-            <View style={styles.hubGridRow}>
-              <Pressable
-                onPress={() => onNavigateTab('ledger')}
-                style={({ pressed }) => [
-                  styles.hubActionItem,
-                  pressed && { opacity: 0.75, transform: [{ scale: 0.95 }] },
-                ]}
-                accessibilityLabel="Pending Wages"
-              >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="people-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
-                </View>
-                <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  {t('pendingWages', 'Pending Wages')}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => onNavigateTab('ledger')}
-                style={({ pressed }) => [
-                  styles.hubActionItem,
-                  pressed && { opacity: 0.75, transform: [{ scale: 0.95 }] },
-                ]}
-                accessibilityLabel="Cash Flow"
-              >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="trending-up-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
-                </View>
-                <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  {t('cashFlow', 'Cash Flow')}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => onNavigateTab('reports')}
-                style={({ pressed }) => [
-                  styles.hubActionItem,
-                  pressed && { opacity: 0.75, transform: [{ scale: 0.95 }] },
-                ]}
-                accessibilityLabel="Est. Margin"
-              >
-                <View style={styles.quickIconCircle}>
-                  <AppIcon name="pie-chart-outline" size={26} color="#1E293B" />
-                  <View style={styles.quickCheckmarkBadge}>
-                    <AppIcon name="checkmark" size={9} color="#EF4444" />
-                  </View>
-                </View>
-                <Text style={styles.quickActionLabel} numberOfLines={1}>
-                  {t('estMargin', 'Est. Margin')}
                 </Text>
               </Pressable>
             </View>
@@ -610,56 +606,32 @@ const styles = StyleSheet.create({
 
   /* Greeting Header */
   headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 3,
     paddingHorizontal: 2,
   },
   greetingTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '900',
     color: '#0F172A',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   greetingSub: {
     fontSize: 12,
     fontWeight: '600',
     color: '#64748B',
-    marginTop: 2,
-  },
-  liveTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#DCFCE7',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#16A34A',
-  },
-  liveTagText: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#16A34A',
+    lineHeight: 17,
   },
 
   /* Hero Card - Soft Lavender / Ice Blue Minimalist Theme */
   heroCard: {
     backgroundColor: '#F0F6FF',
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 16,
+    padding: 14,
     shadowColor: '#1E40AF',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.07,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
     position: 'relative',
     overflow: 'hidden',
     borderWidth: 1.5,
@@ -670,75 +642,75 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 3.5,
+    height: 3,
     backgroundColor: '#2563EB',
   },
   heroTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   heroLeftWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   heroIconBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 9,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#DBEAFE',
     shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   heroTitleCol: {
-    gap: 1.5,
+    gap: 1,
   },
   heroLabel: {
-    fontSize: 10.5,
+    fontSize: 9.5,
     fontWeight: '800',
     color: '#1E40AF',
-    letterSpacing: 0.75,
+    letterSpacing: 0.6,
   },
   heroSubLabel: {
-    fontSize: 11.5,
+    fontSize: 10.5,
     color: '#64748B',
     fontWeight: '500',
   },
   heroAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: '#1E40AF',
-    borderRadius: 10,
-    paddingHorizontal: 13,
-    paddingVertical: 7.5,
+    borderRadius: 8,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
     shadowColor: '#1E40AF',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   heroAddBtnText: {
-    fontSize: 11.5,
+    fontSize: 11,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
   heroMainAmount: {
-    fontSize: 34,
+    fontSize: 26,
     fontWeight: '900',
     color: '#0F2851',
-    letterSpacing: -0.8,
-    marginVertical: 10,
+    letterSpacing: -0.6,
+    marginVertical: 6,
   },
   heroStatsBar: {
     flexDirection: 'row',
@@ -747,9 +719,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#DBEAFE',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     marginTop: 4,
   },
   heroStatItem: {
@@ -758,21 +730,21 @@ const styles = StyleSheet.create({
   },
   heroStatDivider: {
     width: 1,
-    height: 22,
+    height: 18,
     backgroundColor: '#E2E8F0',
   },
   heroStatLabel: {
-    fontSize: 9.5,
+    fontSize: 8.5,
     color: '#64748B',
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   heroStatValue: {
-    fontSize: 13.5,
+    fontSize: 12.5,
     color: '#0F2851',
     fontWeight: '900',
-    marginTop: 2,
+    marginTop: 1,
   },
 
   /* Unified Quick Actions & Financial Hub Card */

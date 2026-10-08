@@ -699,32 +699,62 @@ export function SitesPage({
       >
         <View style={styles.container}>
 
-          {/* Quick Stats Overview Banner */}
-          <View style={styles.statsBanner}>
-            <View style={styles.statBannerItem}>
-              <Text style={styles.statBannerLabel}>{t('totalSites', 'Total Sites')}</Text>
-              <Text style={styles.statBannerValue}>{totalSitesCount}</Text>
+          {/* Quick Stats Overview 2x2 KPI Grid */}
+          <View style={styles.statsSummaryGrid}>
+            <View style={[styles.statKpiCard, styles.statKpiTotal]}>
+              <View style={styles.statKpiTop}>
+                <View style={[styles.statIconBadge, { backgroundColor: '#EFF6FF' }]}>
+                  <AppIcon name="business" size={14} color="#2563EB" />
+                </View>
+                <Text style={styles.statKpiLabel}>{t('totalSites', 'Total Sites')}</Text>
+              </View>
+              <Text style={styles.statKpiValue}>{totalSitesCount}</Text>
+              <Text style={styles.statKpiFoot}>{t('allCreatedSites', 'All sites')}</Text>
             </View>
-            <View style={styles.statBannerDivider} />
-            <View style={styles.statBannerItem}>
-              <Text style={styles.statBannerLabel}>{t('activeSitesCount', 'Active Sites')}</Text>
-              <Text style={[styles.statBannerValue, { color: '#16A34A' }]}>
-                {ongoingSitesCount}
-              </Text>
+
+            <View style={[styles.statKpiCard, styles.statKpiActive]}>
+              <View style={styles.statKpiTop}>
+                <View style={[styles.statIconBadge, { backgroundColor: '#DCFCE7' }]}>
+                  <AppIcon name="flash" size={14} color="#16A34A" />
+                </View>
+                <Text style={[styles.statKpiLabel, { color: '#166534' }]}>{t('activeSitesCount', 'Active Sites')}</Text>
+              </View>
+              <Text style={[styles.statKpiValue, { color: '#15803D' }]}>{ongoingSitesCount}</Text>
+              <Text style={styles.statKpiFoot}>{t('ongoingWork', 'Ongoing work')}</Text>
             </View>
-            <View style={styles.statBannerDivider} />
-            <View style={styles.statBannerItem}>
-              <Text style={styles.statBannerLabel}>{t('totalValue', 'Total Value')}</Text>
-              <Text style={styles.statBannerValue}>
+
+            <View style={[styles.statKpiCard, styles.statKpiContract]}>
+              <View style={styles.statKpiTop}>
+                <View style={[styles.statIconBadge, { backgroundColor: '#F1F5F9' }]}>
+                  <AppIcon name="receipt" size={14} color="#0F2851" />
+                </View>
+                <Text style={styles.statKpiLabel}>{t('totalValue', 'Total Value')}</Text>
+              </View>
+              <Text style={[styles.statKpiValue, { color: '#0F2851' }]} numberOfLines={1}>
                 {money(totalContractVal)}
               </Text>
+              <Text style={styles.statKpiFoot}>{t('contractAmount', 'Contract amount')}</Text>
             </View>
-            <View style={styles.statBannerDivider} />
-            <View style={styles.statBannerItem}>
-              <Text style={styles.statBannerLabel}>{t('pendingDue', 'Pending Due')}</Text>
-              <Text style={[styles.statBannerValue, { color: totalPendingVal > 0 ? '#D97706' : '#16A34A' }]}>
+
+            <View style={[styles.statKpiCard, styles.statKpiPending]}>
+              <View style={styles.statKpiTop}>
+                <View style={[styles.statIconBadge, { backgroundColor: totalPendingVal > 0 ? '#FEF3C7' : '#DCFCE7' }]}>
+                  <AppIcon name="wallet" size={14} color={totalPendingVal > 0 ? '#D97706' : '#16A34A'} />
+                </View>
+                <Text style={[styles.statKpiLabel, { color: totalPendingVal > 0 ? '#92400E' : '#166534' }]}>
+                  {t('pendingDue', 'Pending Due')}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.statKpiValue,
+                  { color: totalPendingVal > 0 ? '#B45309' : '#15803D' },
+                ]}
+                numberOfLines={1}
+              >
                 {money(totalPendingVal)}
               </Text>
+              <Text style={styles.statKpiFoot}>{totalPendingVal > 0 ? t('toBeCollected', 'To collect') : t('allCleared', 'All clear')}</Text>
             </View>
           </View>
 
@@ -1003,44 +1033,72 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
-  statsBanner: {
+  statsSummaryGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 16,
+  },
+  statKpiCard: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 14,
-    shadowColor: Colors.shadowColor,
+    borderColor: '#E2E8F0',
+    padding: 12,
+    gap: 3,
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,
   },
-  statBannerItem: {
-    flex: 1,
-    alignItems: 'center',
+  statKpiTotal: {
+    backgroundColor: '#FFFFFF',
   },
-  statBannerLabel: {
+  statKpiActive: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  statKpiContract: {
+    backgroundColor: '#FFFFFF',
+  },
+  statKpiPending: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
+  statKpiTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statIconBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statKpiLabel: {
     fontSize: 10,
-    fontWeight: '700',
-    color: Colors.textMuted,
+    fontWeight: '800',
+    color: '#64748B',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+    flex: 1,
   },
-  statBannerValue: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: Colors.textPrimary,
+  statKpiValue: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.2,
     marginTop: 2,
   },
-  statBannerDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: Colors.border,
+  statKpiFoot: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#94A3B8',
   },
   chipsRow: {
     flexDirection: 'row',

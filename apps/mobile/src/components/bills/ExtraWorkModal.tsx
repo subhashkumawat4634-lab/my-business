@@ -205,9 +205,9 @@ export function ExtraWorkModal({
               <View style={styles.headerIconBadge}>
                 <AppIcon name="add-circle" size={20} color="#7C3AED" />
               </View>
-              <View>
-                <Text style={styles.headerTitle}>Add Extra Work (Extra Kaam)</Text>
-                <Text style={styles.headerSubtitle}>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <Text style={styles.headerTitle} numberOfLines={1}>Add Extra Work</Text>
+                <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">
                   Record client-approved additional work & billable scope
                 </Text>
               </View>
@@ -440,9 +440,9 @@ export function ExtraWorkModal({
             {/* 3. AGREED EXTRA AMOUNT CARD */}
             <View style={styles.amountCard}>
               <View style={styles.amountTopRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <AppIcon name="cash" size={17} color="#15803D" />
-                  <Text style={styles.amountHeading}>Agreed Extra Amount (₹) *</Text>
+                <View style={styles.amountTitleCol}>
+                  <AppIcon name="cash" size={16} color="#15803D" />
+                  <Text style={styles.amountHeading} numberOfLines={1}>Agreed Extra Amount *</Text>
                 </View>
                 <View style={styles.billableBadge}>
                   <Text style={styles.billableBadgeText}>Billable to Client</Text>
@@ -1076,9 +1076,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 6,
+  },
+  amountTitleCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flex: 1,
   },
   amountHeading: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
     color: '#15803D',
     textTransform: 'uppercase',
@@ -1086,14 +1093,15 @@ const styles = StyleSheet.create({
   },
   billableBadge: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: '#86EFAC',
+    flexShrink: 0,
   },
   billableBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
     color: '#15803D',
   },

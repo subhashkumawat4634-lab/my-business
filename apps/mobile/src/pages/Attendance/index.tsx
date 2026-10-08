@@ -129,6 +129,11 @@ export function AttendancePage({
     return d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   }, [monthYear]);
 
+  const shortMonthName = useMemo(() => {
+    const d = new Date(monthYear.year, monthYear.month - 1, 1);
+    return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  }, [monthYear]);
+
   // Month records filter prefix (e.g. "2026-10")
   const monthPrefix = `${monthYear.year}-${String(monthYear.month).padStart(2, '0')}`;
 
@@ -326,7 +331,7 @@ export function AttendancePage({
       {/* Top Navigation Bar */}
       <TopNavBar
         title={t('attendanceTitle', 'Haziri Register')}
-        subtitle={viewTab === 'DAILY' ? t('dailyMarkingSub', 'Daily Attendance Marking') : `${monthName} ${t('monthlyRegisterSub', 'Monthly Attendance Register')}`}
+        subtitle={viewTab === 'DAILY' ? t('dailyMarkingSub', 'Daily Attendance Marking') : t('monthlyRegisterSub', 'Monthly Attendance Register')}
         userInitials={data.user.name}
         organizationName={data.organization.name}
         onOpenProfile={onOpenProfile}
@@ -420,8 +425,8 @@ export function AttendancePage({
                     ]}
                     accessibilityLabel="Open Calendar to select Month"
                   >
-                    <AppIcon name="calendar" size={14} color="#2563EB" />
-                    <Text style={styles.monthNameText} numberOfLines={1}>{monthName}</Text>
+                    <AppIcon name="calendar" size={13} color="#2563EB" />
+                    <Text style={styles.monthNameText} numberOfLines={1}>{shortMonthName}</Text>
                   </Pressable>
 
                   <Pressable
@@ -558,28 +563,9 @@ export function AttendancePage({
               {currentMonthlyWorker ? (
                 <View style={styles.calendarMatrixCard}>
                   <View style={styles.calendarCardHeader}>
-                    <View>
-                      <Text style={styles.calendarCardTitle}>
-                        {currentMonthlyWorker.name} — {monthName}
-                      </Text>
-                      <Text style={styles.calendarCardSub}>
-                        Daily Rate: {money(currentMonthlyWorker.daily_rate)}/day • Overtime: {money(currentMonthlyWorker.overtime_rate)}/hr
-                      </Text>
-                    </View>
-                    <View style={styles.calendarLegendRow}>
-                      <View style={styles.legendItem}>
-                        <View style={[styles.legendDot, { backgroundColor: '#16A34A' }]} />
-                        <Text style={styles.legendText}>P (1)</Text>
-                      </View>
-                      <View style={styles.legendItem}>
-                        <View style={[styles.legendDot, { backgroundColor: '#D97706' }]} />
-                        <Text style={styles.legendText}>HD (0.5)</Text>
-                      </View>
-                      <View style={styles.legendItem}>
-                        <View style={[styles.legendDot, { backgroundColor: '#DC2626' }]} />
-                        <Text style={styles.legendText}>A (0)</Text>
-                      </View>
-                    </View>
+                    <Text style={styles.calendarCardTitle}>
+                      {currentMonthlyWorker.name} — {monthName}
+                    </Text>
                   </View>
 
                   {/* Day-by-Day Grid */}
@@ -637,13 +623,17 @@ export function AttendancePage({
 
                           {otMins > 0 ? (
                             <View style={styles.dayOtBadge}>
-                              <Text style={styles.dayOtBadgeText}>+{(otMins / 60).toFixed(1)}h</Text>
+                              <Text style={styles.dayOtBadgeText} numberOfLines={1}>+{(otMins / 60).toFixed(1)}h</Text>
                             </View>
                           ) : site ? (
-                            <Text style={styles.daySiteText} numberOfLines={1}>
-                              {site.name}
-                            </Text>
-                          ) : null}
+                            <View style={styles.daySiteBadge}>
+                              <Text style={styles.daySiteText} numberOfLines={1} ellipsizeMode="tail">
+                                {site.name}
+                              </Text>
+                            </View>
+                          ) : (
+                            <View style={styles.dayEmptyPlaceholder} />
+                          )}
                         </Pressable>
                       );
                     })}
@@ -677,9 +667,7 @@ export function AttendancePage({
                             </View>
                             <View style={{ flex: 1 }}>
                               <Text style={styles.workerNameTitle}>{w.name}</Text>
-                              <Text style={styles.workerSkillSub}>
-                                {w.skill || 'Worker'} • {money(w.daily_rate)}/day
-                              </Text>
+                              <Text style={styles.workerSkillSub}>{w.skill || 'Worker'}</Text>
                             </View>
                             <View style={styles.workerMonthEarned}>
                               <Text style={styles.workerMonthEarnedAmount}>{money(earned)}</Text>
@@ -1808,7 +1796,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
   },
   filterBoxEqual: {
     flex: 1,
@@ -1820,12 +1808,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   monthNavArrowBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 7,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -1835,15 +1823,16 @@ const styles = StyleSheet.create({
   monthCenterInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
   },
   monthNameText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '800',
     color: '#0F2851',
+    textAlign: 'center',
   },
   labourDropdownTrigger: {
     paddingHorizontal: 8,
@@ -2039,20 +2028,22 @@ const styles = StyleSheet.create({
   monthDaysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
     justifyContent: 'flex-start',
   },
   dayCell: {
-    width: '13%',
-    minWidth: 42,
-    aspectRatio: 0.85,
+    width: '13.1%',
+    minWidth: 44,
+    minHeight: 68,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 3,
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#F8FAFC',
+    overflow: 'hidden',
   },
   dayCellP: {
     backgroundColor: '#F0FDF4',
@@ -2091,17 +2082,17 @@ const styles = StyleSheet.create({
     marginVertical: 1,
   },
   badgeP: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '900',
     color: '#15803D',
   },
   badgeHD: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '900',
     color: '#B45309',
   },
   badgeA: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '900',
     color: '#B91C1C',
   },
@@ -2114,17 +2105,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     borderRadius: 4,
     paddingHorizontal: 2,
-    paddingVertical: 1,
+    paddingVertical: 1.5,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dayOtBadgeText: {
     fontSize: 8,
     fontWeight: '800',
     color: '#1E40AF',
+    textAlign: 'center',
+  },
+  daySiteBadge: {
+    width: '100%',
+    backgroundColor: 'rgba(15, 23, 42, 0.04)',
+    borderRadius: 4,
+    paddingHorizontal: 2,
+    paddingVertical: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   daySiteText: {
     fontSize: 7.5,
-    color: '#64748B',
-    fontWeight: '600',
+    color: '#475569',
+    fontWeight: '700',
+    textAlign: 'center',
+    width: '100%',
+  },
+  dayEmptyPlaceholder: {
+    height: 12,
   },
 
   /* All Workers Register List */

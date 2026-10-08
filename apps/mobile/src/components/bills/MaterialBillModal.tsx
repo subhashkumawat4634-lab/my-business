@@ -810,10 +810,7 @@ export function MaterialBillModal({
               {busy ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <>
-                  <AppIcon name="checkmark" size={18} color="#FFFFFF" />
-                  <Text style={styles.saveBtnText}>Save Material Bill</Text>
-                </>
+                <Text style={styles.saveBtnText}>Save</Text>
               )}
             </Pressable>
           </View>

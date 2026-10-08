@@ -259,7 +259,7 @@ export function WorkerDetailModal({
                   activeTab === 'ATTENDANCE' && styles.tabItemTextActive,
                 ]}
               >
-                Haziri ({workerAttendance.length})
+                Haziri
               </Text>
             </Pressable>
 
@@ -275,7 +275,7 @@ export function WorkerDetailModal({
               <Text
                 style={[styles.tabItemText, activeTab === 'PAYMENTS' && styles.tabItemTextActive]}
               >
-                Payments ({workerPayments.length})
+                Payments
               </Text>
             </Pressable>
           </View>

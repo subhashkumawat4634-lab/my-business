@@ -168,8 +168,8 @@ export function WorkerDetailPage({
 
   const TABS = [
     { key: 'OVERVIEW' as PageTab, icon: 'bar-chart', label: t('overview', 'Overview') },
-    { key: 'ATTENDANCE' as PageTab, icon: 'calendar', label: t('tabHaziriCount', 'Haziri ({count})').replace('{count}', String(workerAttendance.length)) },
-    { key: 'PAYMENTS' as PageTab, icon: 'wallet', label: t('tabPaymentsCount', 'Payments ({count})').replace('{count}', String(workerPayments.length)) },
+    { key: 'ATTENDANCE' as PageTab, icon: 'calendar', label: t('navAttendance', 'Haziri') },
+    { key: 'PAYMENTS' as PageTab, icon: 'wallet', label: t('payments', 'Payments') },
   ];
 
   const balanceColor = isPending ? '#D97706' : isAdvance ? '#2563EB' : '#16A34A';
