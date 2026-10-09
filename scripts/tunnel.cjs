@@ -1,21 +1,29 @@
-const { spawn } = require('child_process');
+const localtunnel = require('localtunnel');
 
-function startTunnel() {
+async function startTunnel() {
   console.log('[Tunnel] Connecting localtunnel to port 4000 (subdomain: thekabook-live-api)...');
-  const child = spawn('npx', ['-y', 'localtunnel', '--port', '4000', '--subdomain', 'thekabook-live-api'], {
-    shell: true,
-    stdio: 'inherit',
-  });
+  try {
+    const tunnel = await localtunnel({
+      port: 4000,
+      subdomain: 'thekabook-live-api',
+    });
 
-  child.on('exit', (code) => {
-    console.log(`[Tunnel] Tunnel closed (code: ${code}). Auto-reconnecting in 3s...`);
-    setTimeout(startTunnel, 3000);
-  });
+    console.log(`[Tunnel] Live URL ready: ${tunnel.url}`);
 
-  child.on('error', (err) => {
-    console.error('[Tunnel] Spawn error:', err.message);
+    tunnel.on('close', () => {
+      console.log('[Tunnel] Tunnel closed. Reconnecting in 3s...');
+      setTimeout(startTunnel, 3000);
+    });
+
+    tunnel.on('error', (err) => {
+      console.error('[Tunnel] Error:', err.message);
+      try { tunnel.close(); } catch {}
+      setTimeout(startTunnel, 3000);
+    });
+  } catch (err) {
+    console.error('[Tunnel] Failed to start:', err.message);
     setTimeout(startTunnel, 3000);
-  });
+  }
 }
 
 startTunnel();
