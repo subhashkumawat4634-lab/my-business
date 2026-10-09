@@ -6,6 +6,7 @@ import { randomUUID, randomBytes, scrypt as _scrypt, timingSafeEqual, createHash
 import { promisify } from 'node:util';
 import { z } from 'zod';
 import { wages } from '../../../shared/finance.js';
+import { generateWorkerReportHtml } from './workerReportHtml.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 const scrypt = promisify(_scrypt);
@@ -125,6 +126,56 @@ export function createApp(db, { testing = false } = {}) {
     requireThat(user && await verify(b.password,user.password_hash), 'Email or password is incorrect',401);
     res.json(await session(db,user));
   });
+
+  // Public Report Viewer for WhatsApp Worker Monthly Slips
+  app.get('/report/worker/:workerId', async (req, res, next) => {
+    try {
+      const workerId = req.params.workerId;
+      const worker = await one(db, 'SELECT * FROM workers WHERE id=$1', [workerId]);
+      if (!worker) {
+        return res.status(404).send('<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:50px;"><h2>Worker Report Not Found</h2><p>The requested worker attendance slip could not be found or may have been deleted.</p></body></html>');
+      }
+      const org = await one(db, 'SELECT id, name FROM organizations WHERE id=$1', [worker.org_id]);
+      const sites = (await db.query('SELECT id, name FROM sites WHERE org_id=$1', [worker.org_id])).rows;
+      
+      const now = new Date();
+      const year = parseInt(req.query.y, 10) || now.getFullYear();
+      const month = parseInt(req.query.m, 10) || (now.getMonth() + 1);
+      const lang = req.query.lang === 'en' ? 'en' : 'hi';
+
+      const countDays = new Date(year, month, 0).getDate();
+      const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+      const startDate = `${monthPrefix}-01`;
+      const endDate = `${monthPrefix}-${String(countDays).padStart(2, '0')}`;
+
+      const attendance = (await db.query(
+        'SELECT * FROM attendance WHERE org_id=$1 AND worker_id=$2 AND date >= $3 AND date <= $4 ORDER BY date ASC',
+        [worker.org_id, worker.id, startDate, endDate]
+      )).rows;
+
+      const entries = (await db.query(
+        'SELECT * FROM entries WHERE org_id=$1 AND worker_id=$2 AND date >= $3 AND date <= $4 AND voided_at IS NULL ORDER BY date ASC',
+        [worker.org_id, worker.id, startDate, endDate]
+      )).rows;
+
+      const html = generateWorkerReportHtml({
+        worker,
+        org,
+        sites,
+        attendance,
+        entries,
+        year,
+        month,
+        lang,
+      });
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    } catch (err) {
+      next(err);
+    }
+  });
+
   app.use(async (req,res,next) => {
     const token = req.headers.authorization?.replace(/^Bearer /,'') || (typeof req.query.token === 'string' ? req.query.token : undefined);
     requireThat(token && /^[a-f0-9]{64}$/.test(token),'Please sign in',401);

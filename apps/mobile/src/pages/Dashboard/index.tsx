@@ -183,8 +183,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Daily Attendance"
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' }]}>
-                  <AppIcon name="calendar-outline" size={24} color="#4F46E5" />
+                <View style={[styles.quickIconCircle, { backgroundColor: '#E0E7FF', borderColor: '#A5B4FC', shadowColor: '#4F46E5' }]}>
+                  <AppIcon name="calendar-outline" size={25} color="#4338CA" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('dailyAttendance', 'Daily Attendance')}
@@ -199,8 +199,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Material Bill"
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
-                  <AppIcon name="cube-outline" size={24} color="#D97706" />
+                <View style={[styles.quickIconCircle, { backgroundColor: '#FEF08A', borderColor: '#FACC15', shadowColor: '#D97706' }]}>
+                  <AppIcon name="cube-outline" size={25} color="#B45309" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('materialBill', 'Material Bill')}
@@ -215,8 +215,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Labour Wage"
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
-                  <AppIcon name="cash-outline" size={24} color="#059669" />
+                <View style={[styles.quickIconCircle, { backgroundColor: '#A7F3D0', borderColor: '#34D399', shadowColor: '#059669' }]}>
+                  <AppIcon name="cash-outline" size={25} color="#047857" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('labourWage', 'Labour Wage')}
@@ -234,8 +234,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Receive Payment"
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
-                  <AppIcon name="card-outline" size={24} color="#16A34A" />
+                <View style={[styles.quickIconCircle, { backgroundColor: '#BBF7D0', borderColor: '#4ADE80', shadowColor: '#16A34A' }]}>
+                  <AppIcon name="card-outline" size={25} color="#15803D" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('receivePayment', 'Receive Payment')}
@@ -250,8 +250,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Other Expense"
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: '#FFF1F2', borderColor: '#FECDD3' }]}>
-                  <AppIcon name="receipt-outline" size={24} color="#E11D48" />
+                <View style={[styles.quickIconCircle, { backgroundColor: '#FECDD3', borderColor: '#FB7185', shadowColor: '#E11D48' }]}>
+                  <AppIcon name="receipt-outline" size={25} color="#BE123C" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('otherExpense', 'Other Expense')}
@@ -266,8 +266,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Extra Work"
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE' }]}>
-                  <AppIcon name="add-circle-outline" size={24} color="#7C3AED" />
+                <View style={[styles.quickIconCircle, { backgroundColor: '#DDD6FE', borderColor: '#A78BFA', shadowColor: '#7C3AED' }]}>
+                  <AppIcon name="add-circle-outline" size={25} color="#6D28D9" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('extraWork', 'Extra Work')}
@@ -285,8 +285,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Work Sites"
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }]}>
-                  <AppIcon name="business-outline" size={24} color="#0284C7" />
+                <View style={[styles.quickIconCircle, { backgroundColor: '#BAE6FD', borderColor: '#38BDF8', shadowColor: '#0284C7' }]}>
+                  <AppIcon name="business-outline" size={25} color="#0369A1" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('workSites', 'Work Sites')}
@@ -301,8 +301,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="Labour / Workers"
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: '#FDF4FF', borderColor: '#F5D0FE' }]}>
-                  <AppIcon name="people-outline" size={24} color="#C026D3" />
+                <View style={[styles.quickIconCircle, { backgroundColor: '#F5D0FE', borderColor: '#E879F9', shadowColor: '#C026D3' }]}>
+                  <AppIcon name="people-outline" size={25} color="#A21CAF" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('navLabour', 'Labour / Workers')}
@@ -317,8 +317,8 @@ export function DashboardPage({
                 ]}
                 accessibilityLabel="P&L Reports"
               >
-                <View style={[styles.quickIconCircle, { backgroundColor: '#F0FDFA', borderColor: '#99F6E4' }]}>
-                  <AppIcon name="bar-chart-outline" size={24} color="#0D9488" />
+                <View style={[styles.quickIconCircle, { backgroundColor: '#99F6E4', borderColor: '#2DD4BF', shadowColor: '#0D9488' }]}>
+                  <AppIcon name="bar-chart-outline" size={25} color="#0F766E" />
                 </View>
                 <Text style={styles.quickActionLabel} numberOfLines={1}>
                   {t('plReports', 'P&L Reports')}
@@ -750,14 +750,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   quickIconCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: '#F1F5F9',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderWidth: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 3,
   },
   quickActionLabel: {
     fontSize: 11.5,

@@ -17,6 +17,8 @@ import { Snapshot, Row } from '../../types';
 import { money } from '../../finance';
 import { entryLabels } from '../../forms';
 import { useLanguage } from '../../i18n';
+import { BillImageViewerModal } from '../../components/bills/BillImageViewerModal';
+import { getDocFromIndexedDB, fetchDocFromServer } from '../../storage/docStorage';
 
 interface HisabPageProps {
   data: Snapshot;
@@ -39,6 +41,44 @@ export function HisabPage({
   const [search, setSearch] = useState('');
   const [kindFilter, setKindFilter] = useState('ALL');
   const [siteFilter, setSiteFilter] = useState('ALL');
+
+  // Document photo viewer state
+  const [viewingDoc, setViewingDoc] = useState<{
+    url: string;
+    title: string;
+    date: string;
+    amount: number | string;
+    party: string;
+  } | null>(null);
+
+  const handleOpenDoc = async (docId: string, entry: Row) => {
+    try {
+      const local = await getDocFromIndexedDB(docId);
+      if (local && local.dataUrl) {
+        setViewingDoc({
+          url: local.dataUrl,
+          title: entry.description || 'Bill Photo',
+          date: String(entry.date).slice(0, 10),
+          amount: entry.amount,
+          party: entry.party || '',
+        });
+        return;
+      }
+      const remote = await fetchDocFromServer(docId);
+      if (remote && remote.blobUrl) {
+        setViewingDoc({
+          url: remote.blobUrl,
+          title: entry.description || 'Bill Photo',
+          date: String(entry.date).slice(0, 10),
+          amount: entry.amount,
+          party: entry.party || '',
+        });
+      }
+    } catch (err) {
+      console.warn('Could not open doc:', err);
+    }
+  };
+
   const query = search.trim().toLowerCase();
 
   const activeEntries = useMemo(
@@ -236,14 +276,14 @@ export function HisabPage({
               ]}
               accessibilityLabel="Record labour payment"
             >
-              <View style={[styles.actionTileIcon, { backgroundColor: '#F3E8FF' }]}>
-                <AppIcon name="wallet" size={20} color="#7E22CE" />
+              <View style={[styles.actionTileIcon, { backgroundColor: '#E0E7FF' }]}>
+                <AppIcon name="wallet" size={20} color="#4F46E5" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.actionTileTitle, { color: '#581C87' }]}>{t('labourPay', 'Labour Pay')}</Text>
+                <Text style={[styles.actionTileTitle, { color: '#3730A3' }]}>{t('labourPay', 'Labour Pay')}</Text>
                 <Text style={styles.actionTileSub}>{t('wagesAndAdvance', 'Wages & Advance')}</Text>
               </View>
-              <AppIcon name="add" size={16} color="#7E22CE" />
+              <AppIcon name="add" size={16} color="#4F46E5" />
             </Pressable>
 
             {/* Other Expense Bill */}
@@ -410,32 +450,32 @@ export function HisabPage({
               const iconName = isReceipt
                 ? 'arrow-down-circle'
                 : isMaterial
-                ? 'cube'
-                : isWage
-                ? 'people'
-                : isExpense
-                ? 'receipt'
-                : 'cash';
+                  ? 'cube'
+                  : isWage
+                    ? 'people'
+                    : isExpense
+                      ? 'receipt'
+                      : 'cash';
 
               const iconBg = isReceipt
                 ? '#DCFCE7'
                 : isMaterial
-                ? '#FEF3C7'
-                : isWage
-                ? '#F3E8FF'
-                : isExpense
-                ? '#FEE2E2'
-                : '#EFF6FF';
+                  ? '#FEF3C7'
+                  : isWage
+                    ? '#F3E8FF'
+                    : isExpense
+                      ? '#FEE2E2'
+                      : '#EFF6FF';
 
               const iconColor = isReceipt
                 ? '#16A34A'
                 : isMaterial
-                ? '#D97706'
-                : isWage
-                ? '#7E22CE'
-                : isExpense
-                ? '#DC2626'
-                : '#2563EB';
+                  ? '#D97706'
+                  : isWage
+                    ? '#7E22CE'
+                    : isExpense
+                      ? '#DC2626'
+                      : '#2563EB';
 
               return (
                 <Card
@@ -509,12 +549,37 @@ export function HisabPage({
                   </View>
 
                   {/* Reference or Bill Breakdown if available */}
-                  {e.reference ? (
-                    <View style={styles.refRow}>
-                      <AppIcon name="document-text-outline" size={12} color="#64748B" />
-                      <Text style={styles.refText}>{t('ref', 'Ref')}: {e.reference}</Text>
-                    </View>
-                  ) : null}
+                  {e.reference ? (() => {
+                    const docMatch = String(e.reference).match(/\[doc:([^\]]+)\]/);
+                    const cleanRef = String(e.reference).replace(/\[doc:[^\]]+\]/g, '').trim();
+                    const docId = docMatch ? docMatch[1] : null;
+
+                    return (
+                      <View style={styles.refContainer}>
+                        {cleanRef ? (
+                          <View style={styles.refRow}>
+                            <AppIcon name="document-text-outline" size={12} color="#64748B" />
+                            <Text style={styles.refText}>{t('ref', 'Ref')}: {cleanRef}</Text>
+                          </View>
+                        ) : null}
+
+                        {docId ? (
+                          <Pressable
+                            onPress={() => handleOpenDoc(docId, e)}
+                            style={({ pressed }) => [
+                              styles.viewDocBadge,
+                              pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+                            ]}
+                          >
+                            <AppIcon name="image" size={12} color="#2563EB" />
+                            <Text style={styles.viewDocBadgeText}>
+                              {lang === 'hi' ? '📸 पर्ची फोटो देखें' : '📸 View Bill Photo'}
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    );
+                  })() : null}
 
                   {/* Bottom Footer with Bill Payment Info & Actions */}
                   {!e.voided_at ? (
@@ -583,6 +648,19 @@ export function HisabPage({
           </View>
         </View>
       </ScrollView>
+
+      {/* Bill & Parchi Full Image Viewer Modal */}
+      {viewingDoc && (
+        <BillImageViewerModal
+          visible={!!viewingDoc}
+          imageUrl={viewingDoc.url}
+          title={viewingDoc.title}
+          date={viewingDoc.date}
+          amount={viewingDoc.amount}
+          party={viewingDoc.party}
+          onClose={() => setViewingDoc(null)}
+        />
+      )}
     </View>
   );
 }
@@ -591,6 +669,29 @@ const styles = StyleSheet.create({
   pageWrapper: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  refContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginVertical: 4,
+  },
+  viewDocBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  viewDocBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#1D4ED8',
   },
   root: {
     flex: 1,
@@ -670,7 +771,7 @@ const styles = StyleSheet.create({
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
   actionTile: {
     flex: 1,
@@ -678,29 +779,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     gap: 10,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   actionTileReceipt: {
     backgroundColor: '#F0FDF4',
-    borderColor: '#86EFAC',
+    borderColor: '#BBF7D0',
   },
   actionTileMaterial: {
     backgroundColor: '#FFFBEB',
     borderColor: '#FDE68A',
   },
   actionTileLabour: {
-    backgroundColor: '#FAF5FF',
-    borderColor: '#E9D5FF',
+    backgroundColor: '#EEF2FF',
+    borderColor: '#C7D2FE',
   },
   actionTileExpense: {
     backgroundColor: '#FEF2F2',
     borderColor: '#FECACA',
   },
   actionTileIcon: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -710,7 +816,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   actionTileSub: {
-    fontSize: 10,
+    fontSize: 10.5,
     color: '#64748B',
     marginTop: 1,
   },

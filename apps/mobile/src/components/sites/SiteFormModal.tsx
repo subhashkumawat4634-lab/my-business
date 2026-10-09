@@ -1407,46 +1407,6 @@ export function SiteFormModal({
                     />
                   </View>
                 </Pressable>
-
-                {/* Quick Date Shortcuts */}
-                <View style={styles.mobileShortcutsRow}>
-                  <Pressable
-                    onPress={() => addMonthsToEndDate(1)}
-                    style={styles.shortcutChip}
-                  >
-                    <Text style={styles.shortcutChipText}>+1M</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => addMonthsToEndDate(3)}
-                    style={styles.shortcutChip}
-                  >
-                    <Text style={styles.shortcutChipText}>+3M</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => addMonthsToEndDate(6)}
-                    style={styles.shortcutChip}
-                  >
-                    <Text style={styles.shortcutChipText}>+6M</Text>
-                  </Pressable>
-                  {endDate ? (
-                    <Pressable
-                      onPress={() => setEndDate('')}
-                      style={[
-                        styles.shortcutChip,
-                        { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.shortcutChipText,
-                          { color: Colors.danger },
-                        ]}
-                      >
-                        Clear
-                      </Text>
-                    </Pressable>
-                  ) : null}
-                </View>
               </View>
 
               {/* Notes */}
@@ -1591,10 +1551,10 @@ export function SiteFormModal({
                 <View
                   style={[
                     styles.sectionBadge,
-                    { backgroundColor: '#EDE9FE' },
+                    { backgroundColor: '#EFF6FF' },
                   ]}
                 >
-                  <Text style={[styles.sectionBadgeNum, { color: '#7C3AED' }]}>
+                  <Text style={[styles.sectionBadgeNum, { color: '#2563EB' }]}>
                     5
                   </Text>
                 </View>
@@ -1613,12 +1573,12 @@ export function SiteFormModal({
                 onPress={triggerWebFilePicker}
                 style={({ pressed }) => [
                   styles.mobileUploadBtn,
-                  pressed && { opacity: 0.8 },
+                  pressed && { opacity: 0.75, backgroundColor: '#DBEAFE' },
                 ]}
               >
-                <AppIcon name="cloud-upload" size={16} color="#FFFFFF" />
+                <AppIcon name="cloud-upload-outline" size={16} color="#1D4ED8" />
                 <Text style={styles.mobileUploadBtnText}>
-                  + Upload Agreement / Document
+                  Upload Document
                 </Text>
               </Pressable>
 
@@ -1687,7 +1647,7 @@ export function SiteFormModal({
               ) : (
                 <View style={styles.mobileDocEmpty}>
                   <Text style={styles.mobileDocEmptyText}>
-                    No agreements or blueprints attached yet.
+                    No documents attached yet.
                   </Text>
                 </View>
               )}
@@ -2078,17 +2038,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    borderRadius: 10,
+    borderRadius: 8,
     paddingHorizontal: 10,
     height: 44,
   },
   textInput: {
     flex: 1,
     fontSize: 13,
-    color: Colors.textPrimary,
+    color: '#0F172A',
     paddingVertical: 6,
   },
   multilineInput: {
@@ -2100,12 +2060,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#F1F5F9',
   },
   countryCodeText: {
     fontSize: 12,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#334155',
   },
   // GST Section styles
   gstCard: {
@@ -2113,7 +2073,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 10,
+    padding: 12,
     gap: 10,
   },
   gstToggleRow: {
@@ -2124,11 +2084,11 @@ const styles = StyleSheet.create({
   gstToggleTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#1E293B',
   },
   gstToggleSub: {
     fontSize: 10,
-    color: Colors.textMuted,
+    color: '#64748B',
     marginTop: 1,
   },
   gstInputsBlock: {
@@ -2156,14 +2116,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    borderRadius: 10,
+    borderRadius: 8,
     paddingHorizontal: 10,
     height: 44,
   },
   stateSelectText: {
     fontSize: 13,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: '#0F172A',
   },
   // Scope Select Bar Styles
   scopeSelectBarBtn: {
@@ -2172,23 +2132,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    borderRadius: 10,
+    borderRadius: 8,
     paddingHorizontal: 12,
-    height: 48,
+    height: 46,
     gap: 10,
   },
   scopeIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 6,
     backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   scopeSelectTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: '#0F172A',
     flex: 1,
   },
   // Pricing Pills
@@ -2206,22 +2166,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pricingPillBtnActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
   },
   pricingPillText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: Colors.textSecondary,
+    color: '#475569',
   },
   pricingPillTextActive: {
     color: '#FFFFFF',
     fontWeight: '800',
   },
   highlightBox: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     borderRadius: 10,
-    padding: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 12,
     gap: 8,
   },
   currencyInputRow: {
@@ -2230,14 +2192,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: '#2563EB',
     paddingHorizontal: 12,
-    height: 48,
+    height: 46,
   },
   currencyPrefixText: {
     fontSize: 18,
     fontWeight: '800',
-    color: Colors.primary,
+    color: '#2563EB',
     marginRight: 6,
   },
   currencyPrefixTextSmall: {
@@ -2586,12 +2548,14 @@ const styles = StyleSheet.create({
     gap: 8,
     height: 44,
     borderRadius: 10,
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
   },
   mobileUploadBtnText: {
     fontSize: 13,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontWeight: '700',
+    color: '#1D4ED8',
   },
   mobileDocCard: {
     flexDirection: 'row',
@@ -2641,17 +2605,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 6,
-    backgroundColor: '#F5F3FF',
+    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: '#BFDBFE',
   },
   docDownloadBtnText: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#7C3AED',
+    fontWeight: '700',
+    color: '#1D4ED8',
   },
   mobileDocDeleteBtn: {
     padding: 6,
@@ -2683,20 +2647,22 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 10,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: Colors.textSecondary,
+    color: '#475569',
   },
   saveBtn: {
     flex: 2,
     height: 48,
     borderRadius: 10,
-    backgroundColor: Colors.primary,
+    backgroundColor: '#2563EB',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2704,7 +2670,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontSize: 14.5,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   // Modal Backdrop & Sheets

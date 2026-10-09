@@ -53,9 +53,6 @@ const COMMON_SKILLS: SkillOption[] = [
   { id: 'other', name: 'Other Trade', category: 'Custom Work', icon: 'create-outline', defaultDailyRate: 700 },
 ];
 
-const DAILY_PRESETS = [500, 600, 700, 800, 900, 1000, 1200];
-const OT_PRESETS = [50, 75, 100, 125, 150];
-
 export function WorkerFormModal({
   spec,
   data,
@@ -619,44 +616,6 @@ export function WorkerFormModal({
                 </Pressable>
               </View>
             </View>
-
-            {/* Quick Rate Presets */}
-            <View style={styles.presetsContainer}>
-              <Text style={styles.presetsLabel}>Presets:</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.presetsScroll}
-              >
-                {DAILY_PRESETS.map((preset) => {
-                  const isCurrent = dailyRate === String(preset);
-                  return (
-                    <Pressable
-                      key={preset}
-                      onPress={() => {
-                        setDailyRate(String(preset));
-                        if (!overtimeRate || overtimeRate === '0') {
-                          setOvertimeRate(String(Math.round(preset / 8)));
-                        }
-                      }}
-                      style={[
-                        styles.presetPill,
-                        isCurrent && styles.presetPillActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.presetPillText,
-                          isCurrent && styles.presetPillTextActive,
-                        ]}
-                      >
-                        ₹{preset}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
           </View>
 
           {/* Overtime Rate */}
@@ -706,39 +665,6 @@ export function WorkerFormModal({
                   <AppIcon name="add" size={14} color={Colors.textPrimary} />
                 </Pressable>
               </View>
-            </View>
-
-            {/* Overtime Presets Row */}
-            <View style={styles.presetsContainer}>
-              <Text style={styles.presetsLabel}>Presets:</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.presetsScroll}
-              >
-                {OT_PRESETS.map((preset) => {
-                  const isCurrent = overtimeRate === String(preset);
-                  return (
-                    <Pressable
-                      key={preset}
-                      onPress={() => setOvertimeRate(String(preset))}
-                      style={[
-                        styles.presetPill,
-                        isCurrent && styles.presetPillActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.presetPillText,
-                          isCurrent && styles.presetPillTextActive,
-                        ]}
-                      >
-                        ₹{preset}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
             </View>
           </View>
 
@@ -858,35 +784,6 @@ export function WorkerFormModal({
           </View>
         </View>
 
-        {/* Quick Action Buttons for Existing Worker */}
-        {isEdit && activeWorker && (
-          <View style={styles.quickActionsCard}>
-            <Text style={styles.quickActionsTitle}>Quick Operations</Text>
-            <View style={styles.quickActionsButtons}>
-              {onOpenAttendanceModal && (
-                <Pressable
-                  onPress={() => onOpenAttendanceModal(activeWorker.id)}
-                  style={styles.quickOpBtn}
-                >
-                  <AppIcon name="calendar-outline" size={15} color={Colors.primary} />
-                  <Text style={styles.quickOpBtnText}>Mark Attendance</Text>
-                </Pressable>
-              )}
-              {onOpenPaymentModal && (
-                <Pressable
-                  onPress={() => onOpenPaymentModal(activeWorker.id)}
-                  style={[styles.quickOpBtn, styles.quickOpBtnSecondary]}
-                >
-                  <AppIcon name="wallet-outline" size={15} color={Colors.warningText} />
-                  <Text style={[styles.quickOpBtnText, { color: Colors.warningText }]}>
-                    Record Payment
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          </View>
-        )}
-
         {/* Errors & Alerts */}
         {(validationError || error) ? (
           <View style={styles.errorBanner}>
@@ -967,11 +864,11 @@ export function WorkerFormModal({
 const styles = StyleSheet.create({
   pageRoot: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F8FAFC',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F8FAFC',
   },
   modalOverlayDesktop: {
     backgroundColor: 'rgba(15, 23, 42, 0.65)',
@@ -981,15 +878,15 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#FFFFFF',
   },
   modalCardDesktop: {
-    maxWidth: 540,
+    maxWidth: 560,
     width: '100%',
-    maxHeight: '90%',
-    borderRadius: 16,
+    maxHeight: '92%',
+    borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000000',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 24,
@@ -997,17 +894,17 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F8FAFC',
   },
   topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: Colors.surface,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
   },
   headerTitleRow: {
     flexDirection: 'row',
@@ -1016,10 +913,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerIconContainer: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: 10,
-    backgroundColor: Colors.primarySurface,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1031,157 +930,165 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0F172A',
     letterSpacing: -0.2,
   },
   headerSubtitle: {
     fontSize: 11,
-    color: Colors.textMuted,
+    color: '#64748B',
     marginTop: 1,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
   },
   statusDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 10.5,
+    fontWeight: '800',
   },
   closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: Colors.surfaceSubtle,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   scrollArea: {
     flex: 1,
   },
   scrollContent: {
-    padding: 12,
-    gap: 10,
+    padding: 16,
+    gap: 14,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
+    paddingBottom: 30,
   },
 
   /* Hero Card */
   workerHeroCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-    gap: 10,
-    shadowColor: Colors.shadowColor,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    gap: 12,
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 5,
+    shadowRadius: 6,
     elevation: 1,
   },
   heroTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   heroAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2563EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
   heroAvatarText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: '#FFFFFF',
   },
   heroWorkerName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0F172A',
   },
   heroWorkerSkill: {
     fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 1,
+    color: '#64748B',
+    marginTop: 2,
+    fontWeight: '500',
   },
   quickContactRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
   },
   contactIconBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: Colors.primarySurface,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   heroMetricsGrid: {
     flexDirection: 'row',
-    backgroundColor: Colors.surfaceSubtle,
-    borderRadius: 8,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
-    paddingVertical: 6,
-    paddingHorizontal: 6,
+    borderColor: '#E2E8F0',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   heroMetricItem: {
     flex: 1,
     alignItems: 'center',
   },
   heroMetricLabel: {
-    fontSize: 9,
-    fontWeight: '600',
-    color: Colors.textMuted,
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#64748B',
     textTransform: 'uppercase',
   },
   heroMetricVal: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
-    color: Colors.textPrimary,
-    marginTop: 1,
+    color: '#0F172A',
+    marginTop: 2,
   },
   heroMetricSub: {
-    fontSize: 9,
-    color: Colors.textSubtle,
+    fontSize: 9.5,
+    color: '#94A3B8',
+    marginTop: 1,
   },
   reassuranceBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.primarySurface,
+    backgroundColor: '#EFF6FF',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   reassuranceText: {
     flex: 1,
-    fontSize: 10,
+    fontSize: 10.5,
     lineHeight: 14,
-    color: Colors.primary,
+    color: '#1D4ED8',
   },
 
   /* Form Sections */
   sectionCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 12,
-    gap: 8,
-    shadowColor: Colors.shadowColor,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    gap: 12,
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 4,
@@ -1190,34 +1097,37 @@ const styles = StyleSheet.create({
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     marginBottom: 2,
   },
   sectionBadge: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: Colors.primary,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#2563EB',
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0F172A',
     letterSpacing: -0.2,
   },
   sectionSubtitle: {
-    fontSize: 10,
-    color: Colors.textMuted,
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
   },
   fieldGroup: {
-    gap: 4,
+    gap: 6,
   },
   fieldLabelRow: {
     flexDirection: 'row',
@@ -1227,54 +1137,55 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: '#334155',
   },
   reqStar: {
-    color: Colors.danger,
+    color: '#DC2626',
+    fontWeight: '800',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    backgroundColor: Colors.surface,
-    minHeight: 38,
-    paddingHorizontal: 10,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    minHeight: 44,
+    paddingHorizontal: 12,
   },
   inputIconBox: {
-    marginRight: 6,
+    marginRight: 8,
   },
   textInput: {
     flex: 1,
-    fontSize: 13,
-    color: Colors.textPrimary,
+    fontSize: 13.5,
+    color: '#0F172A',
     fontWeight: '600',
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   clearBtn: {
-    padding: 2,
+    padding: 4,
   },
   countryCodeBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingRight: 6,
+    gap: 4,
+    paddingRight: 8,
     borderRightWidth: 1,
-    borderColor: Colors.border,
-    marginRight: 8,
+    borderColor: '#E2E8F0',
+    marginRight: 10,
   },
   countryFlag: {
-    fontSize: 14,
+    fontSize: 15,
   },
   countryCodeText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '700',
-    color: Colors.textSecondary,
+    color: '#475569',
   },
   inputHelp: {
-    fontSize: 10,
-    color: Colors.textMuted,
+    fontSize: 10.5,
+    color: '#64748B',
     lineHeight: 14,
   },
 
@@ -1282,133 +1193,136 @@ const styles = StyleSheet.create({
   dropdownBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    minHeight: 38,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minHeight: 46,
   },
   dropdownIconCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.primarySurface,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dropdownValueText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: '#0F172A',
   },
   dropdownCategoryText: {
-    fontSize: 10,
-    color: Colors.textMuted,
+    fontSize: 10.5,
+    color: '#64748B',
+    marginTop: 1,
   },
   dropdownMenu: {
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    backgroundColor: Colors.surface,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
     marginTop: 4,
     overflow: 'hidden',
-    shadowColor: Colors.shadowColor,
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   dropdownScroll: {
-    maxHeight: 180,
+    maxHeight: 200,
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
     borderBottomWidth: 1,
-    borderColor: Colors.surfaceSubtle,
+    borderColor: '#F1F5F9',
   },
   dropdownItemActive: {
-    backgroundColor: Colors.accentLight,
+    backgroundColor: '#EFF6FF',
   },
   dropdownItemIconCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.surfaceSubtle,
+    width: 26,
+    height: 26,
+    borderRadius: 7,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dropdownItemIconCircleActive: {
-    backgroundColor: Colors.accent,
+    backgroundColor: '#2563EB',
   },
   dropdownItemTitle: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '600',
-    color: Colors.textPrimary,
+    color: '#1E293B',
   },
   dropdownItemTitleActive: {
-    color: Colors.primaryDark,
+    color: '#1D4ED8',
     fontWeight: '800',
   },
   dropdownItemSub: {
-    fontSize: 10,
-    color: Colors.textMuted,
+    fontSize: 10.5,
+    color: '#64748B',
   },
   optLabel: {
     fontSize: 11,
     fontWeight: '500',
-    color: Colors.textMuted,
+    color: '#64748B',
   },
 
   /* Wages Section */
   halfDayBadge: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
-    color: Colors.accentDark,
-    backgroundColor: Colors.accentLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    color: '#D97706',
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
   },
   rateInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   rateInputWrapper: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 10,
-    height: 38,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    height: 44,
   },
   rupeeSymbol: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.primary,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#2563EB',
     marginRight: 4,
   },
   rateInput: {
     flex: 1,
     fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    paddingVertical: 4,
+    fontWeight: '800',
+    color: '#0F172A',
+    paddingVertical: 6,
   },
   rateUnitText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    color: Colors.textMuted,
+    color: '#64748B',
   },
   stepperContainer: {
     flexDirection: 'row',
@@ -1416,12 +1330,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   stepperBtn: {
-    width: 34,
-    height: 38,
+    width: 36,
+    height: 44,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surfaceSubtle,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1432,70 +1346,72 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   presetsLabel: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '600',
-    color: Colors.textMuted,
+    color: '#64748B',
   },
   presetsScroll: {
-    gap: 4,
+    gap: 5,
   },
   presetPill: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: Colors.surfaceSubtle,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
   },
   presetPillActive: {
-    backgroundColor: Colors.primarySurface,
-    borderColor: Colors.primary,
+    backgroundColor: '#EFF6FF',
+    borderColor: '#93C5FD',
   },
   presetPillText: {
     fontSize: 11,
     fontWeight: '600',
-    color: Colors.textSecondary,
+    color: '#475569',
   },
   presetPillTextActive: {
-    color: Colors.primary,
+    color: '#1D4ED8',
     fontWeight: '800',
   },
   autoCalculateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    backgroundColor: Colors.accentLight,
-    borderRadius: 4,
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#C3DCFC',
+    borderColor: '#BFDBFE',
   },
   autoCalculateBtnText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
-    color: Colors.accentDark,
+    color: '#1D4ED8',
   },
 
   /* Simulator Card */
   simulatorCard: {
-    backgroundColor: Colors.surfaceSubtle,
-    borderRadius: 8,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 8,
+    borderColor: '#BBF7D0',
+    padding: 10,
     marginTop: 6,
     gap: 6,
   },
   simulatorHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   simulatorTitle: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.primary,
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#16A34A',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   simulatorGrid: {
     flexDirection: 'row',
@@ -1507,103 +1423,105 @@ const styles = StyleSheet.create({
   },
   simulatorDivider: {
     width: 1,
-    height: 18,
-    backgroundColor: Colors.border,
+    height: 20,
+    backgroundColor: '#DCFCE7',
   },
   simulatorLabel: {
-    fontSize: 9,
-    color: Colors.textMuted,
+    fontSize: 9.5,
+    color: '#64748B',
+    fontWeight: '600',
   },
   simulatorValue: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginTop: 1,
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 2,
   },
 
   /* Status Selection */
   statusOptionRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   statusSelectCard: {
     flex: 1,
-    padding: 8,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surfaceSubtle,
-    gap: 2,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    gap: 3,
   },
   statusSelectCardActive: {
-    borderColor: Colors.success,
-    backgroundColor: Colors.successLight,
+    borderColor: '#BBF7D0',
+    backgroundColor: '#F0FDF4',
   },
   statusSelectCardInactive: {
-    borderColor: Colors.warning,
-    backgroundColor: Colors.warningLight,
+    borderColor: '#FDE68A',
+    backgroundColor: '#FFFBEB',
   },
   statusSelectHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   statusSelectDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
   },
   statusSelectTitle: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: '#334155',
   },
   statusSelectDesc: {
-    fontSize: 9,
-    lineHeight: 12,
-    color: Colors.textMuted,
+    fontSize: 9.5,
+    lineHeight: 13,
+    color: '#64748B',
   },
 
   /* Quick Actions */
   quickActionsCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 10,
-    gap: 6,
+    borderColor: '#E2E8F0',
+    padding: 12,
+    gap: 8,
   },
   quickActionsTitle: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.textMuted,
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#64748B',
     textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   quickActionsButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   quickOpBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 7,
-    borderRadius: 8,
-    backgroundColor: Colors.primarySurface,
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: '#C3DCFC',
+    borderColor: '#BFDBFE',
   },
   quickOpBtnSecondary: {
-    backgroundColor: Colors.warningLight,
-    borderColor: '#FFE0B2',
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
   },
   quickOpBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    color: Colors.primary,
+    color: '#1D4ED8',
   },
 
   /* Errors */
@@ -1611,17 +1529,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.dangerLight,
-    padding: 8,
-    borderRadius: 8,
+    backgroundColor: '#FEF2F2',
+    padding: 10,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#F5C6CB',
+    borderColor: '#FECACA',
   },
   errorBannerText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '600',
-    color: Colors.danger,
+    color: '#DC2626',
     lineHeight: 15,
   },
 
@@ -1629,50 +1547,43 @@ const styles = StyleSheet.create({
   footerBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
+    gap: 12,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: Colors.surface,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
   },
   cancelBtn: {
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surfaceSubtle,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 34,
+    minHeight: 46,
   },
   cancelBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
   },
   saveBtn: {
+    flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 7,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: Colors.primary,
-    minHeight: 34,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#2563EB',
+    minHeight: 46,
   },
   saveBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: 0.1,
   },
 });

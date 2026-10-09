@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@sparticuz/chromium": "^153.0.0",
+    "localtunnel": "^2.0.2",
     "playwright": "^1.63.0"
   }
 }

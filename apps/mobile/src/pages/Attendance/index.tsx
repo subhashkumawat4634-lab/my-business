@@ -24,6 +24,7 @@ import { money } from '../../finance';
 import { today } from '../../forms';
 import { useLanguage } from '../../i18n';
 import { printWorkerMonthlySlipPdf, printMusterRollPdf } from '../../report';
+import { getPublicReportBaseUrl } from '../../api';
 
 interface AttendancePageProps {
   data: Snapshot;
@@ -129,13 +130,13 @@ export function AttendancePage({
 
   const monthName = useMemo(() => {
     const d = new Date(monthYear.year, monthYear.month - 1, 1);
-    return d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-  }, [monthYear]);
+    return d.toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { month: 'long', year: 'numeric' });
+  }, [monthYear, lang]);
 
   const shortMonthName = useMemo(() => {
     const d = new Date(monthYear.year, monthYear.month - 1, 1);
-    return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
-  }, [monthYear]);
+    return d.toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { month: 'short', year: 'numeric' });
+  }, [monthYear, lang]);
 
   // Month records filter prefix (e.g. "2026-10")
   const monthPrefix = `${monthYear.year}-${String(monthYear.month).padStart(2, '0')}`;
@@ -290,7 +291,8 @@ export function AttendancePage({
         worker,
         monthYear.year,
         monthYear.month,
-        selectedSiteId
+        selectedSiteId,
+        lang
       );
     } catch (err: any) {
       console.warn('Could not print worker slip:', err);
@@ -310,18 +312,40 @@ export function AttendancePage({
       const totalUnits = summary ? summary.totalUnits : workerMonthStats.totalUnits;
 
       const orgName = data.organization.name || data.user.name || 'ThekaBook';
-      const msg = `🏗️ *${orgName}* - Monthly Attendance Slip\n\n` +
-        `👤 *Worker:* ${worker.name} (${worker.skill || 'Labour'})\n` +
-        `📅 *Month:* ${monthName}\n` +
-        `💰 *Daily Rate:* ₹${worker.daily_rate || 0}/day\n\n` +
-        `📊 *Attendance Summary:*\n` +
-        `🟢 Present: ${present} Days\n` +
-        (half > 0 ? `🟡 Half Day: ${half} Days\n` : '') +
-        (absent > 0 ? `🔴 Absent/Leave: ${absent} Days\n` : '') +
-        (Number(otHours) > 0 ? `⏰ Overtime: +${otHours} Hours\n` : '') +
-        `📌 Total Work Units: ${totalUnits} Units\n\n` +
-        `💵 *Gross Month Wage Earned:* ₹${Number(earned).toLocaleString('en-IN')}\n\n` +
-        `_Generated via ThekaBook Digital Contractor Ledger_`;
+      const isHi = lang === 'hi';
+      const monthDisplay = new Date(monthYear.year, monthYear.month - 1, 1).toLocaleDateString(
+        isHi ? 'hi-IN' : 'en-IN',
+        { month: 'long', year: 'numeric' }
+      );
+      const reportUrl = `${getPublicReportBaseUrl()}/report/worker/${worker.id}?y=${monthYear.year}&m=${monthYear.month}&lang=${lang}`;
+
+      const msg = isHi
+        ? `🏗️ *${orgName}* - मासिक हाजिरी पर्ची\n\n` +
+          `👤 *मजदूर:* ${worker.name} (${worker.skill || 'मजदूर'})\n` +
+          `📅 *महीना:* ${monthDisplay}\n` +
+          `💰 *दैनिक दर:* ₹${worker.daily_rate || 0}/दिन\n\n` +
+          `📊 *उपस्थिति विवरण:*\n` +
+          `🟢 उपस्थित: ${present} दिन\n` +
+          (half > 0 ? `🟡 आधा दिन: ${half} दिन\n` : '') +
+          (absent > 0 ? `🔴 छुट्टी / अनुपस्थित: ${absent} दिन\n` : '') +
+          (Number(otHours) > 0 ? `⏰ ओवरटाइम: +${otHours} घंटे\n` : '') +
+          `📌 कुल कार्य दिन: ${totalUnits} दिन\n\n` +
+          `💵 *कुल अर्जित वेतन:* ₹${Number(earned).toLocaleString('en-IN')}\n\n` +
+          `📄 *पूरी रिपोर्ट देखें / डाउनलोड करें (PDF):*\n🔗 ${reportUrl}\n\n` +
+          `_ठेकाबुक डिजिटल लेजर द्वारा निर्मित_`
+        : `🏗️ *${orgName}* - Monthly Attendance Slip\n\n` +
+          `👤 *Worker:* ${worker.name} (${worker.skill || 'Labour'})\n` +
+          `📅 *Month:* ${monthDisplay}\n` +
+          `💰 *Daily Rate:* ₹${worker.daily_rate || 0}/day\n\n` +
+          `📊 *Attendance Summary:*\n` +
+          `🟢 Present: ${present} Days\n` +
+          (half > 0 ? `🟡 Half Day: ${half} Days\n` : '') +
+          (absent > 0 ? `🔴 Absent/Leave: ${absent} Days\n` : '') +
+          (Number(otHours) > 0 ? `⏰ Overtime: +${otHours} Hours\n` : '') +
+          `📌 Total Work Units: ${totalUnits} Units\n\n` +
+          `💵 *Gross Month Wage Earned:* ₹${Number(earned).toLocaleString('en-IN')}\n\n` +
+          `📄 *View & Download Full PDF Report:*\n🔗 ${reportUrl}\n\n` +
+          `_Generated via ThekaBook Digital Contractor Ledger_`;
 
       if (Platform.OS === 'web') {
         if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -333,7 +357,7 @@ export function AttendancePage({
       } else {
         await Share.share({
           message: msg,
-          title: `${worker.name} - ${monthName} Attendance`,
+          title: `${worker.name} - ${monthDisplay} ${isHi ? 'हाजिरी' : 'Attendance'}`,
         });
       }
     } catch (err: any) {
@@ -349,7 +373,8 @@ export function AttendancePage({
         monthYear.year,
         monthYear.month,
         selectedSiteId,
-        'ALL'
+        'ALL',
+        lang
       );
     } catch (err: any) {
       console.warn('Could not print muster roll:', err);
@@ -804,8 +829,10 @@ export function AttendancePage({
                 /* ALL WORKERS MONTHLY ATTENDANCE REGISTER LIST */
                 <View style={styles.allWorkersRegisterSection}>
                   <View style={styles.registerSectionHeader}>
-                    <Text style={styles.registerSectionTitle}>All Workers Register — {monthName}</Text>
-                    <Text style={styles.registerSectionSub}>Tap any worker to view their full month calendar</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.registerSectionTitle}>All Workers Register — {monthName}</Text>
+                      <Text style={styles.registerSectionSub}>Monthly attendance summary of all workers</Text>
+                    </View>
                   </View>
 
                   <View style={styles.workersSummaryList}>
@@ -836,7 +863,7 @@ export function AttendancePage({
                             </View>
                           </View>
 
-                          {/* Attendance Count Chips & Quick Export Actions */}
+                          {/* Attendance Count Chips */}
                           <View style={styles.workerChipsRow}>
                             <View style={[styles.chipBadge, { backgroundColor: '#DCFCE7' }]}>
                               <Text style={[styles.chipText, { color: '#166534' }]}>
@@ -864,10 +891,6 @@ export function AttendancePage({
                                 </Text>
                               </View>
                             ) : null}
-
-                            <View style={styles.viewCalBtn}>
-                              <Text style={styles.viewCalBtnText}>Calendar →</Text>
-                            </View>
                           </View>
                         </Pressable>
                       );
@@ -898,11 +921,6 @@ export function AttendancePage({
                           ? 'All Dates'
                           : formatDateDisplay(selectedDate)}
                       </Text>
-                      {dateMode === 'selected' && isToday ? (
-                        <View style={styles.todayTag}>
-                          <Text style={styles.todayTagText}>Today</Text>
-                        </View>
-                      ) : null}
                     </View>
                     <Text style={styles.currentDateSub}>
                       {dateMode === 'all'
@@ -2309,6 +2327,11 @@ const styles = StyleSheet.create({
   },
   registerSectionHeader: {
     paddingHorizontal: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 4,
   },
   registerSectionTitle: {
     fontSize: 15,
@@ -2320,6 +2343,36 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontWeight: '500',
     marginTop: 1,
+  },
+  downloadMusterRollHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#0F2851',
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 8,
+    shadowColor: '#0F2851',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  downloadMusterRollHeaderBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  quickWorkerPdfBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 7,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   workersSummaryList: {
     gap: 10,

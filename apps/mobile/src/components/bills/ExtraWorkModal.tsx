@@ -364,11 +364,6 @@ export function ExtraWorkModal({
                   ]}
                 >
                   <Text style={styles.datePickerText}>{formatDateDisplay(date)}</Text>
-                  {isToday ? (
-                    <View style={styles.todayPill}>
-                      <Text style={styles.todayPillText}>Today</Text>
-                    </View>
-                  ) : null}
                   <View style={{ marginLeft: 'auto' }}>
                     <AppIcon name="calendar" size={16} color="#7C3AED" />
                   </View>

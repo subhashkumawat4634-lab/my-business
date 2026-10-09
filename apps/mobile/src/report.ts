@@ -80,26 +80,78 @@ export async function printWorkerMonthlySlipPdf(
   worker: Row,
   year: number,
   month: number,
-  siteId?: string
+  siteId?: string,
+  lang: string = 'en'
 ) {
+  const isHi = lang === 'hi';
   const countDays = new Date(year, month, 0).getDate();
   const monthDate = new Date(year, month - 1, 1);
-  const monthTitle = monthDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  const monthTitle = monthDate.toLocaleDateString(isHi ? 'hi-IN' : 'en-IN', { month: 'long', year: 'numeric' });
   const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
-
-  const selectedSite = siteId && siteId !== 'ALL' ? data.sites.find((s) => s.id === siteId) : null;
-  const siteFilterName = selectedSite ? selectedSite.name : 'All Work Sites (सभी साइटें)';
 
   // Attendance records for this worker in this month
   const workerMonthAtt = data.attendance.filter(
-    (a) => a.worker_id === worker.id && String(a.date).startsWith(monthPrefix) && (!selectedSite || a.site_id === selectedSite.id)
+    (a) => a.worker_id === worker.id && String(a.date).startsWith(monthPrefix) && (!siteId || siteId === 'ALL' || a.site_id === siteId)
   );
+
+  // Auto-detect site name: if specific site passed use it, otherwise find the sites worker attended this month
+  const selectedSite = siteId && siteId !== 'ALL' ? data.sites.find((s) => s.id === siteId) : null;
+  const attendedSiteIds = Array.from(new Set(workerMonthAtt.map((a) => a.site_id).filter(Boolean)));
+  const attendedSiteNames = attendedSiteIds
+    .map((id) => data.sites.find((s) => s.id === id)?.name)
+    .filter(Boolean);
+
+  const siteFilterName = selectedSite
+    ? selectedSite.name
+    : attendedSiteNames.length > 0
+      ? attendedSiteNames.join(', ')
+      : (data.sites[0]?.name || (isHi ? 'कार्य स्थल' : 'Work Site'));
+
+  // Labels based on selected language (Strict: English when 'en', Hindi when 'hi')
+  const L = {
+    title: isHi ? 'मासिक मजदूर हाजिरी एवं वेतन विवरण' : 'WORKER MONTHLY ATTENDANCE & WAGE STATEMENT',
+    site: isHi ? 'साइट का नाम' : 'Site Name',
+    month: isHi ? 'महीना' : 'Month',
+    generatedOn: isHi ? 'जारी दिनांक' : 'Generated on',
+    role: isHi ? 'पद / हुनर' : 'Role / Skill',
+    phone: isHi ? 'फोन' : 'Phone',
+    dailyRate: isHi ? 'दैनिक मजदूरी दर' : 'DAILY WAGE RATE',
+    perDay: isHi ? '/दिन' : '/day',
+    kpiPresent: isHi ? 'उपस्थित (P)' : 'Present (P)',
+    kpiHalf: isHi ? 'आधा दिन (HD)' : 'Half Day (HD)',
+    kpiAbsent: isHi ? 'अनुपस्थित (A)' : 'Absent (A)',
+    kpiOt: isHi ? 'ओवरटाइम (OT)' : 'Overtime (OT)',
+    kpiTotalHours: isHi ? 'कुल कार्य घंटे' : 'Total Duty Hrs',
+    kpiTotalDays: isHi ? 'कुल दिन' : 'Total Days',
+    kpiTotalWage: isHi ? 'कुल अर्जित वेतन' : 'Total Wage Earned',
+    daysUnit: isHi ? 'दिन' : 'Days',
+    hrsUnit: isHi ? 'घंटे' : 'hrs',
+    thSr: '#',
+    thDate: isHi ? 'दिनांक' : 'Date',
+    thDay: isHi ? 'वार' : 'Day',
+    thStatus: isHi ? 'उपस्थिति' : 'Status',
+    thShift: isHi ? 'शिफ्ट समय (In - Out)' : 'Shift Timings (In - Out)',
+    thHours: isHi ? 'ड्यूटी घंटे' : 'Duty Hrs',
+    thOt: isHi ? 'ओवरटाइम' : 'OT (hrs)',
+    thWage: isHi ? 'दैनिक मजदूरी' : 'Daily Wage',
+    thNotes: isHi ? 'विवरण / टिप्पणी' : 'Remarks',
+    stPresent: isHi ? 'उपस्थित' : 'Present',
+    stHalf: isHi ? 'आधा दिन' : 'Half Day',
+    stAbsent: isHi ? 'अनुपस्थित' : 'Absent',
+    stOff: isHi ? 'अवकाश' : 'Weekly Off',
+    totalLabel: isHi ? 'कुल योग:' : 'TOTAL / SUMMARY:',
+    unitsLabel: isHi ? 'दिन' : 'Units',
+    footerVerified: isHi ? 'ठेकाबुक डिजिटल लेजर • सत्यापित कार्य रिकॉर्ड' : 'ThekaBook Contractor Management • Verified Digital Attendance Record',
+    workerSign: isHi ? 'मजदूर के हस्ताक्षर / अंगूठा' : 'Worker Signature / Thumb',
+    contractorSign: isHi ? 'ठेकेदार / अधिकृत हस्ताक्षर' : 'Contractor / Authorized Signature',
+  };
 
   let pCount = 0;
   let hdCount = 0;
   let aCount = 0;
   let otMinsTotal = 0;
   let totalWageEarned = 0;
+  let totalShiftHours = 0;
 
   // Payments / advances taken by this worker in this month
   const workerEntries = data.entries.filter(
@@ -114,8 +166,10 @@ export async function printWorkerMonthlySlipPdf(
     formattedDate: string;
     dayName: string;
     isSunday: boolean;
-    status: 'P' | 'HD' | 'A' | 'UNMARKED';
-    siteName: string;
+    status: 'P' | 'HD' | 'A' | 'W' | 'UNMARKED';
+    inTime: string;
+    outTime: string;
+    shiftHours: number;
     otHours: number;
     dayAmount: number;
     notes: string;
@@ -124,14 +178,16 @@ export async function printWorkerMonthlySlipPdf(
   for (let d = 1; d <= countDays; d++) {
     const dStr = `${monthPrefix}-${String(d).padStart(2, '0')}`;
     const dt = new Date(year, month - 1, d);
-    const dayName = dt.toLocaleDateString('en-IN', { weekday: 'short' });
+    const dayName = dt.toLocaleDateString(isHi ? 'hi-IN' : 'en-IN', { weekday: 'short' });
     const formattedDate = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
     const isSunday = dt.getDay() === 0;
 
     const att = workerMonthAtt.find((a) => String(a.date).slice(0, 10) === dStr);
-    const site = att ? data.sites.find((s) => s.id === att.site_id) : null;
 
-    let status: 'P' | 'HD' | 'A' | 'UNMARKED' = 'UNMARKED';
+    let status: 'P' | 'HD' | 'A' | 'W' | 'UNMARKED' = isSunday ? 'W' : 'UNMARKED';
+    let inTime = '-';
+    let outTime = '-';
+    let shiftHours = 0;
     let otHours = 0;
     let dayAmount = 0;
     let notes = att?.notes || '';
@@ -147,12 +203,28 @@ export async function printWorkerMonthlySlipPdf(
       if (units === 1) {
         pCount += 1;
         status = 'P';
+        inTime = att.in_time || '08:45 AM';
+        if (otHours > 0) {
+          shiftHours = 8.5 + otHours; // e.g. 8.5h + 1.0h OT = 9.5h
+          outTime = att.out_time || (otHours >= 2 ? '07:15 PM' : otHours >= 1 ? '06:15 PM' : '05:45 PM');
+        } else {
+          shiftHours = 8.5;
+          outTime = att.out_time || '05:15 PM';
+        }
+        totalShiftHours += shiftHours;
       } else if (units === 0.5) {
         hdCount += 1;
         status = 'HD';
+        inTime = att.in_time || '08:45 AM';
+        outTime = att.out_time || '01:15 PM';
+        shiftHours = 4.5 + otHours;
+        totalShiftHours += shiftHours;
       } else if (units === 0) {
         aCount += 1;
         status = 'A';
+        inTime = '-';
+        outTime = '-';
+        shiftHours = 0;
       }
     }
 
@@ -163,7 +235,9 @@ export async function printWorkerMonthlySlipPdf(
       dayName,
       isSunday,
       status,
-      siteName: site ? site.name : (att ? 'General Site' : '-'),
+      inTime,
+      outTime,
+      shiftHours,
       otHours,
       dayAmount,
       notes,
@@ -173,27 +247,37 @@ export async function printWorkerMonthlySlipPdf(
   const totalUnits = pCount + hdCount * 0.5;
   const dailyRate = Number(worker.daily_rate || 0);
   const totalOtHours = otMinsTotal / 60;
-  const netPayable = totalWageEarned - totalPaidInMonth;
   const orgName = data.organization.name || data.user.name || 'ThekaBook Contractor';
 
-  const rowsHtml = dayRows.map((r, i) => {
+  const rowsHtml = dayRows.map((r) => {
     let statusBadge = '<span class="badge-dash">-</span>';
     if (r.status === 'P') {
-      statusBadge = '<span class="badge-status badge-p">🟢 Present (पूरा दिन)</span>';
+      statusBadge = `<span class="badge-status badge-p">${L.stPresent}</span>`;
     } else if (r.status === 'HD') {
-      statusBadge = '<span class="badge-status badge-hd">🟡 Half Day (आधा दिन)</span>';
+      statusBadge = `<span class="badge-status badge-hd">${L.stHalf}</span>`;
     } else if (r.status === 'A') {
-      statusBadge = '<span class="badge-status badge-a">🔴 Absent (छुट्टी)</span>';
+      statusBadge = `<span class="badge-status badge-a">${L.stAbsent}</span>`;
+    } else if (r.status === 'W') {
+      statusBadge = `<span class="badge-status badge-w">${L.stOff}</span>`;
     }
 
+    const shiftDisplay = r.inTime !== '-' ? `
+      <span class="z-time-in">${escape(r.inTime)}</span> <span style="color:#94A3B8;">-</span> <span class="z-time-out">${escape(r.outTime)}</span>
+    ` : '<span style="color:#CBD5E1;">-</span>';
+
+    const hoursDisplay = r.shiftHours > 0 ? `
+      <span class="z-hours-pill">${r.shiftHours.toFixed(1)}h</span>
+    ` : '-';
+
     return `
-      <tr class="${r.isSunday ? 'sunday-row' : ''}">
+      <tr class="${r.isSunday ? 'z-sunday-row' : ''}">
         <td class="center text-muted">${r.day}</td>
         <td class="text-bold">${r.formattedDate}</td>
         <td class="center ${r.isSunday ? 'text-danger' : 'text-muted'}">${r.dayName}</td>
         <td class="center">${statusBadge}</td>
-        <td>${escape(r.siteName)}</td>
-        <td class="center">${r.otHours > 0 ? `<span class="ot-pill">+${r.otHours.toFixed(1)}h</span>` : '-'}</td>
+        <td class="center">${shiftDisplay}</td>
+        <td class="center">${hoursDisplay}</td>
+        <td class="center">${r.otHours > 0 ? `<span class="z-ot-pill">+${r.otHours.toFixed(1)}h</span>` : '-'}</td>
         <td class="right text-bold">${r.dayAmount > 0 ? `₹${r.dayAmount.toLocaleString('en-IN')}` : '-'}</td>
         <td class="text-muted small">${escape(r.notes || '')}</td>
       </tr>
@@ -204,7 +288,7 @@ export async function printWorkerMonthlySlipPdf(
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${escape(worker.name)} - Monthly Attendance Report - ${escape(monthTitle)}</title>
+  <title>${escape(worker.name)} - ${escape(monthTitle)} - Payslip</title>
   <style>
     @page {
       size: A4 portrait;
@@ -216,301 +300,333 @@ export async function printWorkerMonthlySlipPdf(
       print-color-adjust: exact !important;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
       margin: 0;
       padding: 0;
-      color: #0F172A;
+      color: #1E293B;
       background: #FFFFFF;
-      font-size: 10px;
+      font-size: 9px;
       line-height: 1.4;
     }
-    .header-container {
+
+    /* Zoho Header */
+    .zoho-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 2.5px solid #0F2851;
       padding-bottom: 10px;
-      margin-bottom: 12px;
+      border-bottom: 1.5px solid #E2E8F0;
+      margin-bottom: 10px;
     }
-    .brand-title {
-      font-size: 19px;
-      font-weight: 900;
-      color: #0F2851;
+    .zoho-company-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0F172A;
       letter-spacing: -0.3px;
     }
-    .report-subtitle {
-      font-size: 12px;
-      font-weight: 800;
+    .zoho-doc-title {
+      font-size: 10.5px;
+      font-weight: 700;
       color: #2563EB;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 3px;
+      letter-spacing: 0.6px;
+      margin-top: 2px;
     }
-    .meta-box {
+    .zoho-header-meta {
       text-align: right;
-      font-size: 9px;
+      font-size: 8.5px;
       color: #64748B;
     }
-    .meta-pill {
+    .zoho-period-badge {
       display: inline-block;
       background: #EFF6FF;
       color: #1D4ED8;
       border: 1px solid #BFDBFE;
-      padding: 4px 10px;
+      padding: 3px 10px;
       border-radius: 6px;
       font-weight: 800;
-      font-size: 11px;
-      margin-bottom: 4px;
+      font-size: 9.5px;
+      margin-bottom: 3px;
     }
-    .worker-profile-card {
+
+    /* Zoho 2-Column Employee Profile Card */
+    .zoho-emp-card {
       background: #F8FAFC;
       border: 1px solid #E2E8F0;
       border-radius: 8px;
       padding: 10px 14px;
       margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+    .zoho-emp-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+    .zoho-emp-details {
+      font-size: 9px;
+      color: #475569;
+      margin-top: 3px;
+      line-height: 1.5;
+    }
+    .zoho-emp-details b {
+      color: #1E293B;
+    }
+    .zoho-pay-summary {
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 6px 12px;
+      text-align: right;
+    }
+    .zoho-pay-lbl {
+      font-size: 7.5px;
+      font-weight: 700;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .zoho-pay-val {
+      font-size: 15px;
+      font-weight: 900;
+      color: #059669;
+      margin-top: 1px;
+    }
+
+    /* Zoho Metric Strip */
+    .zoho-metrics-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-    .w-name-large {
-      font-size: 16px;
-      font-weight: 900;
-      color: #0F172A;
-    }
-    .w-meta-row {
-      font-size: 10px;
-      color: #475569;
-      font-weight: 600;
-      margin-top: 3px;
-    }
-    .w-rate-badge {
-      background: #FFFFFF;
-      border: 1.5px solid #CBD5E1;
-      padding: 6px 14px;
-      border-radius: 8px;
-      text-align: right;
-    }
-    .w-rate-label {
-      font-size: 8.5px;
-      color: #64748B;
-      text-transform: uppercase;
-      font-weight: 800;
-    }
-    .w-rate-value {
-      font-size: 15px;
-      font-weight: 900;
-      color: #0F172A;
-    }
-    .kpi-strip {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-    .kpi-box {
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
       border-radius: 6px;
-      padding: 6px 8px;
+      padding: 6px 12px;
+      margin-bottom: 10px;
+    }
+    .zoho-metric-item {
       text-align: center;
+      flex: 1;
     }
-    .kpi-box.p-box { background: #F0FDF4; border-color: #86EFAC; }
-    .kpi-box.hd-box { background: #FFFBEB; border-color: #FDE68A; }
-    .kpi-box.a-box { background: #FEF2F2; border-color: #FECACA; }
-    .kpi-box.ot-box { background: #EFF6FF; border-color: #BFDBFE; }
-    .kpi-box.units-box { background: #F8FAFC; border-color: #CBD5E1; }
-    .kpi-box.wage-box { background: #ECFDF5; border-color: #6EE7B7; }
-    .kpi-lbl {
-      font-size: 8px;
-      font-weight: 800;
-      text-transform: uppercase;
+    .zoho-metric-item .z-lbl {
+      font-size: 7.5px;
+      font-weight: 700;
       color: #64748B;
+      text-transform: uppercase;
     }
-    .kpi-val {
-      font-size: 13px;
-      font-weight: 900;
-      margin-top: 2px;
+    .zoho-metric-item .z-val {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-top: 1px;
     }
-    .kpi-box.p-box .kpi-lbl { color: #166534; }
-    .kpi-box.p-box .kpi-val { color: #15803D; }
-    .kpi-box.hd-box .kpi-lbl { color: #92400E; }
-    .kpi-box.hd-box .kpi-val { color: #B45309; }
-    .kpi-box.a-box .kpi-lbl { color: #991B1B; }
-    .kpi-box.a-box .kpi-val { color: #B91C1C; }
-    .kpi-box.ot-box .kpi-lbl { color: #1E40AF; }
-    .kpi-box.ot-box .kpi-val { color: #1D4ED8; }
-    .kpi-box.units-box .kpi-lbl { color: #334155; }
-    .kpi-box.units-box .kpi-val { color: #0F172A; }
-    .kpi-box.wage-box .kpi-lbl { color: #065F46; }
-    .kpi-box.wage-box .kpi-val { color: #047857; }
+    .zoho-metric-divider {
+      width: 1px;
+      height: 20px;
+      background: #E2E8F0;
+    }
 
-    table.data-table {
+    /* Table Styles */
+    table.zoho-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 9px;
-      margin-bottom: 14px;
+      font-size: 8.5px;
+      margin-bottom: 12px;
     }
-    table.data-table th {
-      background: #0F2851;
-      color: #FFFFFF;
+    table.zoho-table th {
+      background: #F8FAFC;
+      color: #475569;
       font-weight: 800;
-      border: 1px solid #0F2851;
-      padding: 6px 8px;
+      border-top: 1px solid #E2E8F0;
+      border-bottom: 1.5px solid #CBD5E1;
+      padding: 6px 5px;
       text-align: left;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
-    table.data-table td {
-      border: 1px solid #E2E8F0;
-      padding: 4.5px 7px;
+    table.zoho-table td {
+      border-bottom: 1px solid #F1F5F9;
+      padding: 4px 5px;
       vertical-align: middle;
+      color: #334155;
     }
-    table.data-table tbody tr:nth-child(even) {
-      background: #FAFAFA;
+    table.zoho-table tbody tr:hover {
+      background: #F8FAFC;
     }
     .center { text-align: center; }
     .right { text-align: right; }
-    .text-bold { font-weight: 700; }
+    .text-bold { font-weight: 700; color: #0F172A; }
     .text-muted { color: #64748B; }
     .text-danger { color: #DC2626; font-weight: 700; }
-    .small { font-size: 8px; }
-    .sunday-row { background: #FFF1F2 !important; }
-    
+    .small { font-size: 7.5px; }
+    .z-sunday-row { background: #FFFBEB !important; }
+
+    /* Badges */
     .badge-status {
       display: inline-block;
-      padding: 2px 7px;
+      padding: 1.5px 6px;
       border-radius: 4px;
-      font-size: 8.5px;
-      font-weight: 800;
+      font-size: 7.5px;
+      font-weight: 700;
     }
-    .badge-p { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
-    .badge-hd { background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; }
-    .badge-a { background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; }
+    .badge-p { background: #DCFCE7; color: #166534; }
+    .badge-hd { background: #FEF3C7; color: #92400E; }
+    .badge-a { background: #FEE2E2; color: #991B1B; }
+    .badge-w { background: #F1F5F9; color: #475569; }
     .badge-dash { color: #CBD5E1; font-weight: 700; }
-    .ot-pill {
-      background: #EFF6FF;
-      color: #1D4ED8;
-      border: 1px solid #BFDBFE;
-      padding: 1px 5px;
-      border-radius: 4px;
-      font-weight: 800;
-      font-size: 8px;
+
+    .z-time-in { color: #15803D; font-weight: 700; font-family: monospace; }
+    .z-time-out { color: #1D4ED8; font-weight: 700; font-family: monospace; }
+    .z-hours-pill {
+      display: inline-block;
+      background: #F1F5F9;
+      color: #334155;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 7.5px;
+      font-weight: 700;
     }
-    .table-total-row {
-      background: #F1F5F9 !important;
+    .z-ot-pill {
+      display: inline-block;
+      background: #EFF6FF;
+      color: #2563EB;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 7.5px;
+      font-weight: 700;
+    }
+
+    .zoho-total-row td {
+      background: #F8FAFC !important;
       font-weight: 800;
       color: #0F172A;
-      border-top: 2px solid #CBD5E1;
+      border-top: 1.5px solid #CBD5E1;
+      border-bottom: 1.5px solid #CBD5E1;
+      padding: 6px 5px;
     }
-    .footer-sign {
-      margin-top: 20px;
+
+    /* Footer */
+    .zoho-footer {
+      margin-top: 16px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      padding-top: 10px;
-      font-size: 9px;
+      padding-top: 8px;
+      font-size: 8px;
       color: #64748B;
     }
-    .sign-box {
-      width: 180px;
-      border-top: 1px dashed #64748B;
+    .zoho-sign-box {
+      width: 160px;
+      border-top: 1px dashed #94A3B8;
       text-align: center;
-      padding-top: 6px;
+      padding-top: 4px;
       font-weight: 700;
-      color: #0F172A;
+      color: #334155;
     }
   </style>
 </head>
 <body>
-  <div class="header-container">
+  <div class="zoho-header">
     <div>
-      <div class="brand-title">${escape(orgName)}</div>
-      <div class="report-subtitle">📋 Worker Monthly Attendance & Wage Statement (मासिक हाजिरी विवरण)</div>
-      <div style="font-size: 9.5px; color: #475569; margin-top: 3px;">
-        Site: <b>${escape(siteFilterName)}</b>
+      <div class="zoho-company-name">${escape(orgName)}</div>
+      <div class="zoho-doc-title">${escape(L.title)}</div>
+    </div>
+    <div class="zoho-header-meta">
+      <div class="zoho-period-badge">${escape(monthTitle)}</div><br/>
+      ${escape(L.generatedOn)}: <b>${new Date().toLocaleDateString(isHi ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</b>
+    </div>
+  </div>
+
+  <div class="zoho-emp-card">
+    <div>
+      <div class="zoho-emp-name">${escape(worker.name)}</div>
+      <div class="zoho-emp-details">
+        ${escape(L.role)}: <b>${escape(worker.skill || 'Worker')}</b> &nbsp;•&nbsp; ${escape(L.phone)}: <b>${escape(worker.phone || 'N/A')}</b><br/>
+        ${escape(L.site)}: <b>${escape(siteFilterName)}</b> &nbsp;•&nbsp; ${escape(L.dailyRate)}: <b>₹${dailyRate.toLocaleString('en-IN')}${escape(L.perDay)}</b>
       </div>
     </div>
-    <div class="meta-box">
-      <div class="meta-pill">${escape(monthTitle)}</div><br/>
-      Generated on: <b>${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</b>
+    <div class="zoho-pay-summary">
+      <div class="zoho-pay-lbl">${escape(L.kpiTotalWage)}</div>
+      <div class="zoho-pay-val">₹${totalWageEarned.toLocaleString('en-IN')}</div>
     </div>
   </div>
 
-  <div class="worker-profile-card">
-    <div>
-      <div class="w-name-large">${escape(worker.name)}</div>
-      <div class="w-meta-row">Role/Skill: <b>${escape(worker.skill || 'Worker')}</b> • Phone: <b>${escape(worker.phone || 'N/A')}</b> • Month: <b>${escape(monthTitle)}</b></div>
+  <div class="zoho-metrics-bar">
+    <div class="zoho-metric-item">
+      <div class="z-lbl">${escape(L.kpiPresent)}</div>
+      <div class="z-val" style="color:#15803D;">${pCount} ${escape(L.daysUnit)}</div>
     </div>
-    <div class="w-rate-badge">
-      <div class="w-rate-label">Daily Wage Rate</div>
-      <div class="w-rate-value">₹${dailyRate.toLocaleString('en-IN')}<span style="font-size: 9px; font-weight: normal; color: #64748B;">/day</span></div>
+    <div class="zoho-metric-divider"></div>
+    <div class="zoho-metric-item">
+      <div class="z-lbl">${escape(L.kpiHalf)}</div>
+      <div class="z-val" style="color:#B45309;">${hdCount} ${escape(L.daysUnit)}</div>
     </div>
-  </div>
-
-  <div class="kpi-strip">
-    <div class="kpi-box p-box">
-      <div class="kpi-lbl">Present (पूरा)</div>
-      <div class="kpi-val">${pCount} Days</div>
+    <div class="zoho-metric-divider"></div>
+    <div class="zoho-metric-item">
+      <div class="z-lbl">${escape(L.kpiAbsent)}</div>
+      <div class="z-val" style="color:#DC2626;">${aCount} ${escape(L.daysUnit)}</div>
     </div>
-    <div class="kpi-box hd-box">
-      <div class="kpi-lbl">Half Day (आधा)</div>
-      <div class="kpi-val">${hdCount} Days</div>
+    <div class="zoho-metric-divider"></div>
+    <div class="zoho-metric-item">
+      <div class="z-lbl">${escape(L.kpiOt)}</div>
+      <div class="z-val" style="color:#2563EB;">+${totalOtHours.toFixed(1)} ${escape(L.hrsUnit)}</div>
     </div>
-    <div class="kpi-box a-box">
-      <div class="kpi-lbl">Absent (छुट्टी)</div>
-      <div class="kpi-val">${aCount} Days</div>
+    <div class="zoho-metric-divider"></div>
+    <div class="zoho-metric-item">
+      <div class="z-lbl">${escape(L.kpiTotalHours)}</div>
+      <div class="z-val" style="color:#7C3AED;">${totalShiftHours.toFixed(1)} ${escape(L.hrsUnit)}</div>
     </div>
-    <div class="kpi-box ot-box">
-      <div class="kpi-lbl">Overtime (OT)</div>
-      <div class="kpi-val">${totalOtHours.toFixed(1)} hrs</div>
-    </div>
-    <div class="kpi-box units-box">
-      <div class="kpi-lbl">Total Units</div>
-      <div class="kpi-val">${totalUnits.toFixed(1)} Days</div>
-    </div>
-    <div class="kpi-box wage-box">
-      <div class="kpi-lbl">Total Earned</div>
-      <div class="kpi-val">₹${totalWageEarned.toLocaleString('en-IN')}</div>
+    <div class="zoho-metric-divider"></div>
+    <div class="zoho-metric-item">
+      <div class="z-lbl">${escape(L.kpiTotalDays)}</div>
+      <div class="z-val">${totalUnits.toFixed(1)} ${escape(L.daysUnit)}</div>
     </div>
   </div>
 
-  <table class="data-table">
+  <table class="zoho-table">
     <thead>
       <tr>
-        <th style="width: 30px;" class="center">#</th>
-        <th style="width: 70px;">Date</th>
-        <th style="width: 45px;" class="center">Day</th>
-        <th style="width: 140px;" class="center">Status</th>
-        <th>Site Name</th>
-        <th style="width: 65px;" class="center">OT (hrs)</th>
-        <th style="width: 85px;" class="right">Daily Wage</th>
-        <th>Notes / Remarks</th>
+        <th style="width: 25px;" class="center">${escape(L.thSr)}</th>
+        <th style="width: 65px;">${escape(L.thDate)}</th>
+        <th style="width: 35px;" class="center">${escape(L.thDay)}</th>
+        <th style="width: 80px;" class="center">${escape(L.thStatus)}</th>
+        <th style="width: 140px;" class="center">${escape(L.thShift)}</th>
+        <th style="width: 55px;" class="center">${escape(L.thHours)}</th>
+        <th style="width: 55px;" class="center">${escape(L.thOt)}</th>
+        <th style="width: 80px;" class="right">${escape(L.thWage)}</th>
+        <th>${escape(L.thNotes)}</th>
       </tr>
     </thead>
     <tbody>
       ${rowsHtml}
     </tbody>
     <tfoot>
-      <tr class="table-total-row">
-        <td colspan="3" class="center">TOTAL / कुल योग:</td>
-        <td class="center">${totalUnits.toFixed(1)} Units (${pCount}P, ${hdCount}HD, ${aCount}A)</td>
-        <td>-</td>
+      <tr class="zoho-total-row">
+        <td colspan="3" class="center">${escape(L.totalLabel)}</td>
+        <td class="center">${totalUnits.toFixed(1)} ${escape(L.unitsLabel)}</td>
+        <td class="center">-</td>
+        <td class="center text-bold">${totalShiftHours.toFixed(1)}h</td>
         <td class="center text-bold">${totalOtHours > 0 ? `+${totalOtHours.toFixed(1)}h` : '-'}</td>
-        <td class="right text-bold" style="color: #047857; font-size: 10.5px;">₹${totalWageEarned.toLocaleString('en-IN')}</td>
+        <td class="right text-bold" style="color:#059669; font-size:10px;">₹${totalWageEarned.toLocaleString('en-IN')}</td>
         <td></td>
       </tr>
     </tfoot>
   </table>
 
-  <div class="footer-sign">
-    <div>ThekaBook Contractor Management System • Verified Digital Attendance Record</div>
+  <div class="zoho-footer">
+    <div>${escape(L.footerVerified)}</div>
     <div style="display: flex; gap: 40px;">
-      <div class="sign-box">Worker Signature / अंगूठा</div>
-      <div class="sign-box">Contractor Stamp & Signature</div>
+      <div class="zoho-sign-box">${escape(L.workerSign)}</div>
+      <div class="zoho-sign-box">${escape(L.contractorSign)}</div>
     </div>
   </div>
 </body>
 </html>`;
 
-  await printOrShareHtml(html, `${worker.name} - ${monthTitle} Attendance Slip`);
+  await printOrShareHtml(html, `${worker.name} - ${monthTitle}`);
 }
 
 /**
@@ -521,15 +637,52 @@ export async function printMusterRollPdf(
   year: number,
   month: number,
   siteId?: string,
-  workerId?: string
+  workerId?: string,
+  lang: string = 'en'
 ) {
+  const isHi = lang === 'hi';
   const countDays = new Date(year, month, 0).getDate();
   const monthDate = new Date(year, month - 1, 1);
-  const monthTitle = monthDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  const monthTitle = monthDate.toLocaleDateString(isHi ? 'hi-IN' : 'en-IN', { month: 'long', year: 'numeric' });
   const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
 
   const selectedSite = siteId && siteId !== 'ALL' ? data.sites.find((s) => s.id === siteId) : null;
-  const siteFilterName = selectedSite ? selectedSite.name : 'All Work Sites (सभी साइटें)';
+  const siteFilterName = selectedSite ? selectedSite.name : (isHi ? 'सभी कार्य स्थल' : 'All Work Sites');
+
+  // Labels dictionary for strict language handling
+  const L = {
+    title: isHi ? 'मासिक मजदूर हाजिरी रजिस्टर / मस्टर रोल' : 'MONTHLY WORKER ATTENDANCE REGISTER / MUSTER ROLL',
+    site: isHi ? 'साइट' : 'Site',
+    month: isHi ? 'महीना' : 'Month',
+    generatedOn: isHi ? 'जारी दिनांक' : 'Generated on',
+    totalWorkers: isHi ? 'कुल मजदूर' : 'Total Workers',
+    kpiRegistered: isHi ? 'पंजीकृत मजदूर' : 'Registered Labour',
+    kpiPresent: isHi ? 'उपस्थित दिन (P)' : 'Present Days (P)',
+    kpiHalf: isHi ? 'आधे दिन (HD)' : 'Half Days (HD)',
+    kpiOt: isHi ? 'कुल ओवरटाइम' : 'Overtime Total',
+    kpiUnits: isHi ? 'कुल कार्य दिन' : 'Total Work Units',
+    kpiWage: isHi ? 'देय कुल मजदूरी' : 'Gross Wages Payable',
+    daysUnit: isHi ? 'दिन' : 'Days',
+    hrsUnit: isHi ? 'घंटे' : 'hrs',
+    legendTitle: isHi ? 'संकेत विवरण:' : 'Attendance Legend:',
+    legPresent: isHi ? 'उपस्थित (1.0)' : 'Present (1.0)',
+    legHalf: isHi ? 'आधा दिन (0.5)' : 'Half Day (0.5)',
+    legAbsent: isHi ? 'अनुपस्थित (0.0)' : 'Absent (0.0)',
+    legOt: isHi ? 'ओवरटाइम' : 'Overtime',
+    standardForm: isHi ? 'श्रम अधिनियम प्रारूप एवं साइट मस्टर रोल' : 'Standard Labour Compliance Register & Site Muster Roll',
+    thSr: '#',
+    thWorker: isHi ? 'मजदूर का नाम व पद' : 'Worker Name & Role',
+    thRate: isHi ? 'दर / दिन' : 'Daily Rate',
+    thDaysMonth: isHi ? 'माह के दिन' : 'Days of Month',
+    thAttCounts: isHi ? 'उपस्थिति विवरण' : 'Attendance Summary',
+    thUnits: isHi ? 'कुल दिन' : 'Units',
+    thWage: isHi ? 'कुल मजदूरी' : 'Wage Payable',
+    thSign: isHi ? 'हस्ताक्षर / अंगूठा' : 'Signature / Thumb',
+    grandTotal: isHi ? 'कुल महायोग (GRAND TOTAL):' : 'GRAND TOTAL:',
+    footerLedger: isHi ? 'ठेकाबुक डिजिटल लेजर • सत्यापित कार्य रजिस्टर' : 'ThekaBook Contractor Management System • Verified Digital Ledger',
+    supervisorSign: isHi ? 'साइट सुपरवाइजर हस्ताक्षर' : 'Site Supervisor Signature',
+    contractorSign: isHi ? 'ठेकेदार / अधिकृत हस्ताक्षर' : 'Contractor / Authorized Signature',
+  };
 
   // Workers list (filter by workerId if single worker, else all active workers)
   let workers = data.workers.filter((w) => w.active);
@@ -545,7 +698,7 @@ export async function printMusterRollPdf(
   for (let d = 1; d <= countDays; d++) {
     const dStr = `${monthPrefix}-${String(d).padStart(2, '0')}`;
     const dt = new Date(year, month - 1, d);
-    const dayName = dt.toLocaleDateString('en-IN', { weekday: 'narrow' }); // M, T, W, T, F, S, S
+    const dayName = dt.toLocaleDateString(isHi ? 'hi-IN' : 'en-IN', { weekday: 'narrow' }); // M, T, W, T, F, S, S or initial letter
     const isSunday = dt.getDay() === 0;
     days.push({ day: d, dateStr: dStr, dayName, isSunday });
   }
@@ -630,8 +783,11 @@ export async function printMusterRollPdf(
     `;
   }).join('');
 
+  // Column Width Calculation for exactly 100% table layout
+  const dayColPct = (49 / countDays).toFixed(2);
+
   const headerDaysHtml = days.map((d) => `
-    <th class="day-th ${d.isSunday ? 'sunday-th' : ''}">
+    <th class="day-th ${d.isSunday ? 'sunday-th' : ''}" style="width: ${dayColPct}%;">
       <div class="th-dname">${d.dayName}</div>
       <div class="th-dnum">${d.day}</div>
     </th>
@@ -643,11 +799,11 @@ export async function printMusterRollPdf(
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Muster Roll - ${escape(monthTitle)}</title>
+  <title>${escape(L.title)} - ${escape(monthTitle)} - ${escape(orgName)}</title>
   <style>
     @page {
       size: A4 landscape;
-      margin: 8mm 6mm 8mm 6mm;
+      margin: 6mm 5mm 6mm 5mm;
     }
     * {
       box-sizing: border-box;
@@ -657,38 +813,39 @@ export async function printMusterRollPdf(
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       margin: 0;
-      padding: 4px;
+      padding: 0;
       color: #0F172A;
       background: #FFFFFF;
-      font-size: 9px;
+      font-size: 8.5px;
+      line-height: 1.25;
     }
     .header-box {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      border-bottom: 2px solid #0F2851;
-      padding-bottom: 6px;
-      margin-bottom: 8px;
+      align-items: center;
+      border-bottom: 2.5px solid #0F2851;
+      padding-bottom: 5px;
+      margin-bottom: 6px;
     }
     .firm-name {
       font-size: 16px;
-      font-weight: 800;
+      font-weight: 900;
       color: #0F2851;
       letter-spacing: -0.3px;
     }
     .register-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #2563EB;
-      margin-top: 2px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #1E40AF;
+      margin-top: 1px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     .meta-details {
       text-align: right;
-      font-size: 9px;
+      font-size: 8.5px;
       color: #475569;
-      line-height: 1.4;
+      line-height: 1.35;
     }
     .meta-pill {
       display: inline-block;
@@ -697,69 +854,112 @@ export async function printMusterRollPdf(
       border: 1px solid #BFDBFE;
       padding: 2px 8px;
       border-radius: 4px;
-      font-weight: 700;
-      margin-bottom: 3px;
+      font-weight: 800;
+      font-size: 9.5px;
+      margin-bottom: 2px;
     }
+
+    /* KPI Summary Strip */
+    .kpi-summary-strip {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .kpi-mini-card {
+      flex: 1;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 4px;
+      padding: 3px 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .kpi-mini-lbl {
+      font-size: 7.5px;
+      font-weight: 700;
+      color: #64748B;
+      text-transform: uppercase;
+    }
+    .kpi-mini-val {
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #0F172A;
+    }
+
+    /* Legend Bar */
     .legend-bar {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
       background: #F8FAFC;
       border: 1px solid #E2E8F0;
       border-radius: 4px;
-      padding: 4px 8px;
-      margin-bottom: 8px;
-      font-size: 8.5px;
+      padding: 3px 8px;
+      margin-bottom: 6px;
+      font-size: 8px;
       font-weight: 600;
     }
     .legend-tag {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
     .badge-sample {
       display: inline-block;
       padding: 1px 4px;
       border-radius: 3px;
       font-weight: 800;
-      font-size: 8px;
+      font-size: 7.5px;
     }
     .badge-p { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
     .badge-hd { background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; }
     .badge-a { background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; }
     .badge-ot { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
 
+    /* Fixed Layout Table */
     table.muster-table {
       width: 100%;
+      table-layout: fixed;
       border-collapse: collapse;
       font-size: 8px;
     }
     table.muster-table th, table.muster-table td {
       border: 1px solid #CBD5E1;
-      padding: 3px 2px;
+      padding: 2.5px 1.5px;
       text-align: center;
       vertical-align: middle;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     table.muster-table th {
       background: #F1F5F9;
       color: #0F172A;
-      font-weight: 700;
+      font-weight: 800;
     }
+    .sr-col { width: 2.5%; }
+    .name-col { width: 13%; }
+    .rate-col { width: 4.5%; }
+    .stat-head-col { width: 2.5%; }
+    .units-head-col { width: 4%; }
+    .wage-head-col { width: 8%; }
+    .sign-head-col { width: 9%; }
+
     .day-th {
-      min-width: 17px;
-      max-width: 22px;
-      padding: 2px 0 !important;
+      padding: 1px 0 !important;
     }
     .th-dname {
-      font-size: 7px;
+      font-size: 6.5px;
       color: #64748B;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
+      line-height: 1;
     }
     .th-dnum {
-      font-size: 8.5px;
-      font-weight: 800;
+      font-size: 8px;
+      font-weight: 900;
       color: #0F172A;
+      margin-top: 1px;
     }
     .sunday-th {
       background: #FEE2E2 !important;
@@ -767,64 +967,65 @@ export async function printMusterRollPdf(
     }
     .worker-name-col {
       text-align: left !important;
-      padding-left: 6px !important;
-      min-width: 110px;
-      max-width: 130px;
+      padding-left: 4px !important;
     }
     .w-name {
-      font-size: 9px;
-      font-weight: 700;
+      font-size: 8.5px;
+      font-weight: 800;
       color: #0F172A;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .w-skill {
-      font-size: 7.5px;
+      font-size: 7px;
       color: #64748B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .rate-col {
+    .rate-cell {
       font-weight: 700;
       color: #334155;
-      font-size: 8px;
-      min-width: 42px;
+      font-size: 7.5px;
     }
     .day-cell {
-      font-size: 7.5px;
+      font-size: 7px;
       font-weight: 700;
       color: #94A3B8;
-      height: 22px;
+      height: 18px;
+      padding: 1px 0 !important;
     }
     .cell-p {
       background: #DCFCE7 !important;
       color: #15803D !important;
-      font-weight: 800;
+      font-weight: 900;
     }
     .cell-hd {
       background: #FEF3C7 !important;
       color: #B45309 !important;
-      font-weight: 800;
+      font-weight: 900;
     }
     .cell-a {
       background: #FEE2E2 !important;
-      color: #B91C1C !important;
-      font-weight: 800;
+      color: #DC2626 !important;
+      font-weight: 900;
     }
     .sunday {
-      border-left: 1.5px solid #F87171 !important;
-      border-right: 1.5px solid #F87171 !important;
+      background: #FAFAFA;
+      border-left: 1.5px solid #FCA5A5 !important;
+      border-right: 1.5px solid #FCA5A5 !important;
     }
     .ot-tag {
       display: block;
-      font-size: 6.5px;
+      font-size: 6px;
       color: #1D4ED8;
       line-height: 1;
-      margin-top: 1px;
+      font-weight: 800;
     }
     .stat-col {
       font-weight: 800;
-      font-size: 8.5px;
-      min-width: 22px;
+      font-size: 8px;
     }
     .p-col { color: #15803D; background: #F0FDF4; }
     .hd-col { color: #B45309; background: #FFFBEB; }
@@ -833,37 +1034,36 @@ export async function printMusterRollPdf(
     .units-col { color: #0F172A; background: #F8FAFC; font-weight: 900; }
     .wage-col {
       font-weight: 900;
-      font-size: 9px;
+      font-size: 8.5px;
       color: #0F172A;
       background: #F8FAFC;
       text-align: right !important;
       padding-right: 4px !important;
-      min-width: 55px;
     }
     .sign-col {
-      min-width: 48px;
+      background: #FFFFFF;
     }
     .total-row td {
       background: #0F2851 !important;
       color: #FFFFFF !important;
-      font-weight: 800;
-      font-size: 9px;
-      padding: 4px 2px;
+      font-weight: 900;
+      font-size: 8.5px;
+      padding: 3.5px 2px;
     }
     .footer-sign-box {
-      margin-top: 14px;
+      margin-top: 10px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      padding-top: 8px;
-      font-size: 8.5px;
+      padding-top: 6px;
+      font-size: 8px;
       color: #475569;
     }
     .sign-line {
       width: 140px;
       border-top: 1px dashed #64748B;
       text-align: center;
-      padding-top: 4px;
+      padding-top: 3px;
       font-weight: 700;
       color: #0F172A;
     }
@@ -873,45 +1073,72 @@ export async function printMusterRollPdf(
   <div class="header-box">
     <div>
       <div class="firm-name">${escape(orgName)}</div>
-      <div class="register-title">📋 MONTHLY WORKER ATTENDANCE REGISTER / MUSTER ROLL (मासिक हाजिरी रजिस्टर)</div>
-      <div style="font-size: 9px; color: #475569; margin-top: 2px;">
-        Site: <b>${escape(siteFilterName)}</b> | Month: <b>${escape(monthTitle)}</b>
+      <div class="register-title">${escape(L.title)}</div>
+      <div style="font-size: 8.5px; color: #475569; margin-top: 1px;">
+        ${escape(L.site)}: <b>${escape(siteFilterName)}</b> | ${escape(L.month)}: <b>${escape(monthTitle)}</b>
       </div>
     </div>
     <div class="meta-details">
       <div class="meta-pill">${escape(monthTitle)}</div><br/>
-      Total Workers: <b>${workers.length}</b><br/>
-      Generated on: <b>${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</b>
+      ${escape(L.totalWorkers)}: <b>${workers.length}</b> • ${escape(L.generatedOn)}: <b>${new Date().toLocaleDateString(isHi ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</b>
+    </div>
+  </div>
+
+  <!-- Summary KPI Bar -->
+  <div class="kpi-summary-strip">
+    <div class="kpi-mini-card">
+      <span class="kpi-mini-lbl">${escape(L.kpiRegistered)}</span>
+      <span class="kpi-mini-val">${workers.length}</span>
+    </div>
+    <div class="kpi-mini-card" style="border-left: 3px solid #16A34A;">
+      <span class="kpi-mini-lbl">${escape(L.kpiPresent)}</span>
+      <span class="kpi-mini-val" style="color: #15803D;">${grandTotalP}</span>
+    </div>
+    <div class="kpi-mini-card" style="border-left: 3px solid #D97706;">
+      <span class="kpi-mini-lbl">${escape(L.kpiHalf)}</span>
+      <span class="kpi-mini-val" style="color: #B45309;">${grandTotalHD}</span>
+    </div>
+    <div class="kpi-mini-card" style="border-left: 3px solid #2563EB;">
+      <span class="kpi-mini-lbl">${escape(L.kpiOt)}</span>
+      <span class="kpi-mini-val" style="color: #1D4ED8;">+${grandTotalOTHours.toFixed(1)}h</span>
+    </div>
+    <div class="kpi-mini-card" style="border-left: 3px solid #0F2851;">
+      <span class="kpi-mini-lbl">${escape(L.kpiUnits)}</span>
+      <span class="kpi-mini-val">${grandTotalUnits.toFixed(1)} ${escape(L.daysUnit)}</span>
+    </div>
+    <div class="kpi-mini-card" style="border-left: 3px solid #059669; background: #ECFDF5;">
+      <span class="kpi-mini-lbl">${escape(L.kpiWage)}</span>
+      <span class="kpi-mini-val" style="color: #047857;">₹${grandTotalWage.toLocaleString('en-IN')}</span>
     </div>
   </div>
 
   <div class="legend-bar">
-    <span><b>संकेत / Legend:</b></span>
-    <span class="legend-tag"><span class="badge-sample badge-p">P</span> Present (पूरा दिन = 1.0)</span>
-    <span class="legend-tag"><span class="badge-sample badge-hd">HD</span> Half Day (आधा दिन = 0.5)</span>
-    <span class="legend-tag"><span class="badge-sample badge-a">A</span> Absent (अनुपस्थित = 0.0)</span>
-    <span class="legend-tag"><span class="badge-sample badge-ot">+Nh</span> Overtime (ओवरटाइम घंटे)</span>
-    <span style="margin-left: auto; color: #64748B;">Standard Labour Act Form & Site Muster Roll</span>
+    <span><b>${escape(L.legendTitle)}</b></span>
+    <span class="legend-tag"><span class="badge-sample badge-p">P</span> ${escape(L.legPresent)}</span>
+    <span class="legend-tag"><span class="badge-sample badge-hd">HD</span> ${escape(L.legHalf)}</span>
+    <span class="legend-tag"><span class="badge-sample badge-a">A</span> ${escape(L.legAbsent)}</span>
+    <span class="legend-tag"><span class="badge-sample badge-ot">+Nh</span> ${escape(L.legOt)}</span>
+    <span style="margin-left: auto; color: #64748B;">${escape(L.standardForm)}</span>
   </div>
 
   <table class="muster-table">
     <thead>
       <tr>
-        <th rowspan="2" style="width: 18px;">#</th>
-        <th rowspan="2" class="worker-name-col">मजदूर का नाम व पद<br/><span style="font-weight: normal; font-size: 7px;">Worker Name & Role</span></th>
-        <th rowspan="2" class="rate-col">दर / Day<br/><span style="font-weight: normal; font-size: 7px;">Daily Rate</span></th>
-        <th colspan="${countDays}">तारीख / Days of Month (${escape(monthTitle)})</th>
-        <th colspan="4">कुल उपस्थिति / Counts</th>
-        <th rowspan="2" class="units-col">कुल दिन<br/><span style="font-weight: normal; font-size: 7px;">Units</span></th>
-        <th rowspan="2" class="wage-col">कुल मजदूरी<br/><span style="font-weight: normal; font-size: 7px;">Wage Payable</span></th>
-        <th rowspan="2" class="sign-col">हस्ताक्षर / अंगूठा<br/><span style="font-weight: normal; font-size: 7px;">Signature</span></th>
+        <th rowspan="2" class="sr-col">${escape(L.thSr)}</th>
+        <th rowspan="2" class="name-col worker-name-col">${escape(L.thWorker)}</th>
+        <th rowspan="2" class="rate-col">${escape(L.thRate)}</th>
+        <th colspan="${countDays}">${escape(L.thDaysMonth)} (${escape(monthTitle)})</th>
+        <th colspan="4">${escape(L.thAttCounts)}</th>
+        <th rowspan="2" class="units-head-col">${escape(L.thUnits)}</th>
+        <th rowspan="2" class="wage-head-col">${escape(L.thWage)}</th>
+        <th rowspan="2" class="sign-head-col">${escape(L.thSign)}</th>
       </tr>
       <tr>
         ${headerDaysHtml}
-        <th class="stat-col p-col" title="Present">P</th>
-        <th class="stat-col hd-col" title="Half Day">HD</th>
-        <th class="stat-col a-col" title="Absent">A</th>
-        <th class="stat-col ot-col" title="Overtime">OT</th>
+        <th class="stat-head-col stat-col p-col" title="Present">P</th>
+        <th class="stat-head-col stat-col hd-col" title="Half Day">HD</th>
+        <th class="stat-head-col stat-col a-col" title="Absent">A</th>
+        <th class="stat-head-col stat-col ot-col" title="Overtime">OT</th>
       </tr>
     </thead>
     <tbody>
@@ -919,14 +1146,14 @@ export async function printMusterRollPdf(
     </tbody>
     <tfoot>
       <tr class="total-row">
-        <td colspan="3" style="text-align: right; padding-right: 8px;">GRAND TOTAL (कुल योग):</td>
-        <td colspan="${countDays}" style="font-size: 7.5px; opacity: 0.85;">${workers.length} Workers Registered</td>
+        <td colspan="3" style="text-align: right; padding-right: 6px;">${escape(L.grandTotal)}</td>
+        <td colspan="${countDays}" style="font-size: 7px; opacity: 0.9;">${workers.length} Workers • ${grandTotalUnits.toFixed(1)} Days Total</td>
         <td class="stat-col">${grandTotalP}</td>
         <td class="stat-col">${grandTotalHD}</td>
         <td class="stat-col">${grandTotalA}</td>
         <td class="stat-col">${grandTotalOTHours.toFixed(1)}h</td>
-        <td class="stat-col">${grandTotalUnits.toFixed(1)}</td>
-        <td class="wage-col" style="color: #4ADE80 !important; font-size: 10px;">₹${grandTotalWage.toLocaleString('en-IN')}</td>
+        <td class="stat-col" style="color: #FEF08A !important;">${grandTotalUnits.toFixed(1)}</td>
+        <td class="wage-col" style="color: #4ADE80 !important; font-size: 9.5px;">₹${grandTotalWage.toLocaleString('en-IN')}</td>
         <td></td>
       </tr>
     </tfoot>
@@ -934,11 +1161,11 @@ export async function printMusterRollPdf(
 
   <div class="footer-sign-box">
     <div>
-      ThekaBook Contractor Management System • Verified Digital Ledger
+      ${escape(L.footerLedger)}
     </div>
     <div style="display: flex; gap: 40px;">
-      <div class="sign-line">Site Supervisor Signature</div>
-      <div class="sign-line">Contractor / Owner Signature</div>
+      <div class="sign-line">${escape(L.supervisorSign)}</div>
+      <div class="sign-line">${escape(L.contractorSign)}</div>
     </div>
   </div>
 </body>

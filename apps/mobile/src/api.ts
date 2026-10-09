@@ -44,18 +44,33 @@ export function getApiBaseUrl(): string {
       if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
         return `http://${match[1]}:4000`;
       }
-    } catch {}
+    } catch { }
   }
 
   // 6. Default LAN IP fallback
   return 'http://192.168.1.9:4000';
 }
 
+export function getPublicReportBaseUrl(): string {
+  // 1. Prefer public tunnel / cloud URL if present in expo config
+  const configApiUrl = (Constants.expoConfig?.extra as any)?.apiUrl;
+  if (configApiUrl && !configApiUrl.includes('localhost') && !/^https?:\/\/(192\.168\.|10\.|172\.)/.test(configApiUrl)) {
+    return configApiUrl.replace(/\/$/, '');
+  }
+  // 2. Explicit public env variable
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  if (envUrl && !envUrl.includes('localhost') && !/^https?:\/\/(192\.168\.|10\.|172\.)/.test(envUrl)) {
+    return envUrl.replace(/\/$/, '');
+  }
+  // 3. Fallback to standard base URL
+  return getApiBaseUrl();
+}
+
 export const getToken = async () => Platform.OS === 'web' ? sessionStorage.getItem(TOKEN_KEY) : SecureStore.getItemAsync(TOKEN_KEY);
 
-export async function saveToken(token:string|null) {
-  if(Platform.OS === 'web') { token ? sessionStorage.setItem(TOKEN_KEY,token) : sessionStorage.removeItem(TOKEN_KEY); return; }
-  if(token) await SecureStore.setItemAsync(TOKEN_KEY,token); else await SecureStore.deleteItemAsync(TOKEN_KEY);
+export async function saveToken(token: string | null) {
+  if (Platform.OS === 'web') { token ? sessionStorage.setItem(TOKEN_KEY, token) : sessionStorage.removeItem(TOKEN_KEY); return; }
+  if (token) await SecureStore.setItemAsync(TOKEN_KEY, token); else await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 
 const REMEMBERED_EMAIL_KEY = 'thekabook_remembered_email';
@@ -82,59 +97,73 @@ export async function saveRememberedEmail(email: string | null): Promise<void> {
     }
     if (email) await SecureStore.setItemAsync(REMEMBERED_EMAIL_KEY, email);
     else await SecureStore.deleteItemAsync(REMEMBERED_EMAIL_KEY);
-  } catch {}
+  } catch { }
 }
 
-export async function request(path:string, token:string|null, body?:unknown) {
+export async function request(path: string, token: string | null, body?: unknown) {
   const baseUrl = getApiBaseUrl();
-  let res: Response | null = null;
-  let primaryError: any = null;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Bypass-Tunnel-Reminder': 'true',
+    ...(token ? { Authorization: 'Bearer ' + token } : {}),
+  };
 
-  try {
-    res = await fetch(baseUrl + path, {
-      method: body === undefined ? 'GET' : 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(15000)
-    });
-  } catch (err: any) {
-    primaryError = err;
-    // Build list of alternative URLs to try if network fetch fails
-    const fallbacks: string[] = [];
-    if (!baseUrl.includes('192.168.1.9')) {
-      fallbacks.push(`http://192.168.1.9:4000${path}`);
-    }
-    if (baseUrl.includes('localhost')) {
-      fallbacks.push(`http://127.0.0.1:4000${path}`);
-    } else if (baseUrl.includes('127.0.0.1')) {
-      fallbacks.push(`http://localhost:4000${path}`);
-    } else {
-      fallbacks.push(`http://localhost:4000${path}`, `http://127.0.0.1:4000${path}`);
-    }
-    fallbacks.push(`http://10.0.2.2:4000${path}`);
+  const urlsToTry = [
+    baseUrl + path,
+    ...(baseUrl.includes('loca.lt') ? [`http://192.168.1.9:4000${path}`] : []),
+  ];
 
-    for (const altUrl of fallbacks) {
+  let lastError: any = null;
+
+  // Auto-retry up to 3 times to handle tunnel warm-up seamlessly
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    for (const url of urlsToTry) {
       try {
-        const altRes = await fetch(altUrl, {
+        const res = await fetch(url, {
           method: body === undefined ? 'GET' : 'POST',
-          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+          headers,
           body: body === undefined ? undefined : JSON.stringify(body),
-          signal: AbortSignal.timeout(5000)
+          signal: AbortSignal.timeout(8000),
         });
-        res = altRes;
-        primaryError = null;
-        break;
-      } catch {}
+
+        const rawText = await res.text();
+        let json: any = null;
+        if (rawText && rawText.trim().length > 0) {
+          try {
+            json = JSON.parse(rawText);
+          } catch {
+            // Tunnel returned HTML reminder/handshake during initial handshake
+            if (attempt < 3) {
+              await new Promise((r) => setTimeout(r, 350));
+              continue;
+            }
+            throw new Error(`Server returned non-JSON response (${res.status})`);
+          }
+        } else {
+          json = {};
+        }
+
+        if (!res.ok) {
+          const error: any = new Error(json.error || `Request failed with status ${res.status}`);
+          error.status = res.status;
+          throw error;
+        }
+
+        return json;
+      } catch (err: any) {
+        lastError = err;
+        // Don't retry user credential/validation errors (e.g. wrong password 401)
+        if (err.status && err.status < 500) {
+          throw err;
+        }
+      }
+    }
+    if (attempt < 3) {
+      await new Promise((r) => setTimeout(r, 350 * attempt));
     }
   }
 
-  if (!res) {
-    throw new Error(`API unreachable at ${baseUrl} (${primaryError?.message || 'Network request failed'}). Check server status or network connection.`);
-  }
-
-  const json = await res.json();
-  if(!res.ok) { const error:any = new Error(json.error || 'Request failed'); error.status = res.status; throw error; }
-  return json;
+  throw new Error(lastError?.message || `API unreachable at ${baseUrl}. Check server status.`);
 }
 
 export const commandKey = () => Crypto.randomUUID();

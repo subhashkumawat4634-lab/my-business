@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -16,6 +16,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppIcon } from '../icons/AppIcon';
 import { FormSpec, Snapshot } from '../../types';
 import { CalendarPickerModal } from '../common/CalendarPickerModal';
+import { BillAttachmentPicker } from './BillAttachmentPicker';
+import {
+  saveDocToIndexedDB,
+  uploadDocToServer,
+  getDocFromIndexedDB,
+  fetchDocFromServer,
+} from '../../storage/docStorage';
+import { useLanguage } from '../../i18n';
 import { today } from '../../forms';
 import { money } from '../../finance';
 
@@ -51,6 +59,7 @@ export function ExpenseBillModal({
   onSave,
 }: ExpenseBillModalProps) {
   const { width } = useWindowDimensions();
+  const { lang } = useLanguage();
   const isDesktop = width > 768;
 
   const [siteId, setSiteId] = useState<string>(
@@ -61,6 +70,30 @@ export function ExpenseBillModal({
   const [description, setDescription] = useState<string>(spec.initial.description || '');
   const [party, setParty] = useState<string>(spec.initial.party || '');
   const [reference, setReference] = useState<string>(spec.initial.reference || '');
+
+  // Photo / Bill Attachment state
+  const initialDocMatch = (spec.initial.reference || '').match(/\[doc:([^\]]+)\]/);
+  const [billPhotoUrl, setBillPhotoUrl] = useState<string>('');
+  const [billPhotoName, setBillPhotoName] = useState<string>('');
+
+  useEffect(() => {
+    if (initialDocMatch && initialDocMatch[1]) {
+      const docId = initialDocMatch[1];
+      getDocFromIndexedDB(docId).then((doc) => {
+        if (doc && doc.dataUrl) {
+          setBillPhotoUrl(doc.dataUrl);
+          setBillPhotoName(doc.name || 'bill_photo.jpg');
+        } else {
+          fetchDocFromServer(docId).then((res) => {
+            if (res && res.blobUrl) {
+              setBillPhotoUrl(res.blobUrl);
+              setBillPhotoName(res.filename || 'bill_photo.jpg');
+            }
+          });
+        }
+      });
+    }
+  }, []);
 
   // Payment Mode: 'PAID' (Immediate) vs 'CREDIT' (Udhar)
   const initialMode = spec.initial.mode || 'CASH';
@@ -134,6 +167,14 @@ export function ExpenseBillModal({
 
     const finalMode = paymentType === 'CREDIT' ? 'RECORD' : paidMode;
 
+    let cleanRef = reference.replace(/\[doc:[^\]]+\]/g, '').trim();
+    if (billPhotoUrl) {
+      const docId = initialDocMatch?.[1] || `doc-${Date.now()}`;
+      saveDocToIndexedDB(docId, billPhotoName || 'bill_photo.jpg', billPhotoUrl, 'image/jpeg');
+      uploadDocToServer(docId, billPhotoName || 'bill_photo.jpg', billPhotoUrl, 'image/jpeg').catch(() => {});
+      cleanRef = cleanRef ? `${cleanRef} [doc:${docId}]` : `[doc:${docId}]`;
+    }
+
     onSave({
       site_id: siteId,
       amount: amount.trim(),
@@ -141,7 +182,7 @@ export function ExpenseBillModal({
       description: description.trim(),
       party: party.trim(),
       mode: finalMode,
-      reference: reference.trim(),
+      reference: cleanRef,
       due_date: paymentType === 'CREDIT' ? dueDate : '',
       quantity: '',
       unit: '',
@@ -432,11 +473,6 @@ export function ExpenseBillModal({
                 >
                   <AppIcon name="calendar-outline" size={15} color="#64748B" />
                   <Text style={styles.datePickerText}>{formatDateDisplay(date)}</Text>
-                  {isToday ? (
-                    <View style={styles.todayTag}>
-                      <Text style={styles.todayTagText}>Today</Text>
-                    </View>
-                  ) : null}
                   <AppIcon name="chevron-down" size={14} color="#94A3B8" />
                 </Pressable>
               </View>
@@ -590,6 +626,21 @@ export function ExpenseBillModal({
                   ]}
                 />
               </View>
+
+              {/* 7. BILL / KACCHI PARCHI PHOTO ATTACHMENT */}
+              <BillAttachmentPicker
+                photoUrl={billPhotoUrl}
+                photoName={billPhotoName}
+                onPhotoSelected={(url, name) => {
+                  setBillPhotoUrl(url);
+                  setBillPhotoName(name);
+                }}
+                onPhotoRemoved={() => {
+                  setBillPhotoUrl('');
+                  setBillPhotoName('');
+                }}
+                lang={lang}
+              />
 
               <View style={{ height: 16 }} />
             </ScrollView>
@@ -779,7 +830,7 @@ const styles = StyleSheet.create({
   amountInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#CBD5E1',
@@ -809,7 +860,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   quickChip: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     borderRadius: 7,
     paddingHorizontal: 9,
     paddingVertical: 4.5,
@@ -837,9 +888,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 7,
@@ -861,10 +912,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
@@ -958,7 +1009,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#CBD5E1',
@@ -1017,10 +1068,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     paddingVertical: 8,
   },
   paymentTypeBtnPaid: {
@@ -1055,20 +1106,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     paddingVertical: 7,
     paddingHorizontal: 4,
   },
   modePillActive: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#86EFAC',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    backgroundColor: '#F8FAFC',
+    borderColor: '#2563EB',
+    borderWidth: 1.5,
   },
   modePillText: {
     fontSize: 11,
@@ -1093,7 +1141,7 @@ const styles = StyleSheet.create({
     color: '#B45309',
   },
   inputBox: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#CBD5E1',
@@ -1116,7 +1164,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 9,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
   },

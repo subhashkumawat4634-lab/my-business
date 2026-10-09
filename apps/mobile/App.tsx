@@ -275,10 +275,10 @@ function MainApp() {
         (newSite
           ? '/sites/new'
           : siteId
-          ? `/sites/${siteId}`
-          : newTab === 'home'
-          ? '/'
-          : `/${newTab}`);
+            ? `/sites/${siteId}`
+            : newTab === 'home'
+              ? '/'
+              : `/${newTab}`);
       if (window.location.pathname !== targetUrl) {
         window.history.pushState(null, '', targetUrl);
       }
@@ -490,7 +490,7 @@ function MainApp() {
   };
 
   if (!ready) {
-    return <AppLoader message="Starting ThekaBook..." />;
+    return <AppLoader message="ThekaBook" />;
   }
 
   if (!token) {
@@ -519,7 +519,7 @@ function MainApp() {
         </SafeAreaView>
       );
     }
-    return <AppLoader message="Syncing records..." />;
+    return <AppLoader message="ThekaBook" />;
   }
 
   return (
@@ -535,8 +535,8 @@ function MainApp() {
               toast.toLowerCase().includes('error') || toast.toLowerCase().includes('fail')
                 ? styles.toastError
                 : toast.toLowerCase().includes('please') || toast.toLowerCase().includes('कृपया') || toast.toLowerCase().includes('add')
-                ? styles.toastWarning
-                : styles.toastSuccess,
+                  ? styles.toastWarning
+                  : styles.toastSuccess,
             ]}
           >
             <Ionicons
@@ -544,16 +544,16 @@ function MainApp() {
                 toast.toLowerCase().includes('error') || toast.toLowerCase().includes('fail')
                   ? 'alert-circle'
                   : toast.toLowerCase().includes('please') || toast.toLowerCase().includes('कृपया') || toast.toLowerCase().includes('add')
-                  ? 'information-circle'
-                  : 'checkmark-circle'
+                    ? 'information-circle'
+                    : 'checkmark-circle'
               }
               size={18}
               color={
                 toast.toLowerCase().includes('error') || toast.toLowerCase().includes('fail')
                   ? '#DC2626'
                   : toast.toLowerCase().includes('please') || toast.toLowerCase().includes('कृपया') || toast.toLowerCase().includes('add')
-                  ? '#D97706'
-                  : '#059669'
+                    ? '#D97706'
+                    : '#059669'
               }
             />
             <Text
@@ -562,8 +562,8 @@ function MainApp() {
                 toast.toLowerCase().includes('error') || toast.toLowerCase().includes('fail')
                   ? styles.toastTextError
                   : toast.toLowerCase().includes('please') || toast.toLowerCase().includes('कृपया') || toast.toLowerCase().includes('add')
-                  ? styles.toastTextWarning
-                  : styles.toastTextSuccess,
+                    ? styles.toastTextWarning
+                    : styles.toastTextSuccess,
               ]}
             >
               {toast}
@@ -615,60 +615,60 @@ function MainApp() {
               />
             )}
 
-        {tab === 'attendance' && (
-          <AttendancePage
-            data={data}
-            onOpenAttendanceModal={openAttendanceModal}
-            onOpenProfile={() => handleNavigate('profile')}
-            refreshing={refreshing}
-            onRefresh={() => refresh()}
-          />
-        )}
+            {tab === 'attendance' && (
+              <AttendancePage
+                data={data}
+                onOpenAttendanceModal={openAttendanceModal}
+                onOpenProfile={() => handleNavigate('profile')}
+                refreshing={refreshing}
+                onRefresh={() => refresh()}
+              />
+            )}
 
-        {tab === 'team' && (
-          <LabourPage
-            data={data}
-            onOpenWorkerModal={(w) => openForm(workerForm(w))}
-            onOpenPaymentModal={(wId) =>
-              openEntryModal('WAGE_PAYMENT', undefined, wId)
-            }
-            onOpenProfile={() => handleNavigate('profile')}
-            refreshing={refreshing}
-            onRefresh={() => refresh()}
-          />
-        )}
+            {tab === 'team' && (
+              <LabourPage
+                data={data}
+                onOpenWorkerModal={(w) => openForm(workerForm(w))}
+                onOpenPaymentModal={(wId) =>
+                  openEntryModal('WAGE_PAYMENT', undefined, wId)
+                }
+                onOpenProfile={() => handleNavigate('profile')}
+                refreshing={refreshing}
+                onRefresh={() => refresh()}
+              />
+            )}
 
-        {tab === 'ledger' && (
-          <HisabPage
-            data={data}
-            onOpenEntry={openEntryModal}
-            onOpenVoidModal={(entry) => openForm(voidForm(entry))}
-            onOpenProfile={() => handleNavigate('profile')}
-            refreshing={refreshing}
-            onRefresh={() => refresh()}
-          />
-        )}
+            {tab === 'ledger' && (
+              <HisabPage
+                data={data}
+                onOpenEntry={openEntryModal}
+                onOpenVoidModal={(entry) => openForm(voidForm(entry))}
+                onOpenProfile={() => handleNavigate('profile')}
+                refreshing={refreshing}
+                onRefresh={() => refresh()}
+              />
+            )}
 
-        {tab === 'reports' && (
-          <ReportsPage
-            data={data}
-            onGenerateReport={handleShareReport}
-            onOpenProfile={() => handleNavigate('profile')}
-            refreshing={refreshing}
-            onRefresh={() => refresh()}
-          />
-        )}
+            {tab === 'reports' && (
+              <ReportsPage
+                data={data}
+                onGenerateReport={handleShareReport}
+                onOpenProfile={() => handleNavigate('profile')}
+                refreshing={refreshing}
+                onRefresh={() => refresh()}
+              />
+            )}
 
-        {tab === 'profile' && (
-          <ProfilePage
-            data={data}
-            onBack={() => navigate('home', '/', null, false)}
-            onUpdateProfile={handleUpdateProfile}
-            onLogout={handleLogout}
-            onRefresh={() => refresh()}
-            refreshing={refreshing}
-          />
-        )}
+            {tab === 'profile' && (
+              <ProfilePage
+                data={data}
+                onBack={() => navigate('home', '/', null, false)}
+                onUpdateProfile={handleUpdateProfile}
+                onLogout={handleLogout}
+                onRefresh={() => refresh()}
+                refreshing={refreshing}
+              />
+            )}
           </>
         )}
       </View>

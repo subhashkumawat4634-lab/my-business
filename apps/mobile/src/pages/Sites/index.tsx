@@ -22,6 +22,8 @@ import { money, siteSummary } from '../../finance';
 import { parseSiteNotesAndDocs } from '../../components/sites/SiteFormModal';
 import { downloadSiteDocument, viewSiteDocument } from '../../report';
 import { useLanguage } from '../../i18n';
+import { BillImageViewerModal } from '../../components/bills/BillImageViewerModal';
+import { getDocFromIndexedDB, fetchDocFromServer } from '../../storage/docStorage';
 
 interface SitesPageProps {
   data: Snapshot;
@@ -90,6 +92,43 @@ export function SitesPage({
   const [termsExpanded, setTermsExpanded] = useState(false);
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
+
+  // Bill & Parchi photo viewer state
+  const [viewingDoc, setViewingDoc] = useState<{
+    url: string;
+    title: string;
+    date: string;
+    amount: number | string;
+    party: string;
+  } | null>(null);
+
+  const handleOpenDoc = async (docId: string, entry: Row) => {
+    try {
+      const local = await getDocFromIndexedDB(docId);
+      if (local && local.dataUrl) {
+        setViewingDoc({
+          url: local.dataUrl,
+          title: entry.description || 'Bill Photo',
+          date: String(entry.date).slice(0, 10),
+          amount: entry.amount,
+          party: entry.party || '',
+        });
+        return;
+      }
+      const remote = await fetchDocFromServer(docId);
+      if (remote && remote.blobUrl) {
+        setViewingDoc({
+          url: remote.blobUrl,
+          title: entry.description || 'Bill Photo',
+          date: String(entry.date).slice(0, 10),
+          amount: entry.amount,
+          party: entry.party || '',
+        });
+      }
+    } catch (err) {
+      console.warn('Could not open doc:', err);
+    }
+  };
 
   const site = selectedSiteId
     ? data.sites.find((s) => s.id === selectedSiteId)
@@ -445,7 +484,7 @@ export function SitesPage({
                 </View>
               ) : (
                 <Text style={styles.noDocText}>
-                  No contracts or agreements attached yet. Tap "View" to see or upload documents.
+                  {lang === 'hi' ? 'अभी कोई दस्तावेज संलग्न नहीं है।' : 'No documents attached yet.'}
                 </Text>
               )}
             </Card>
@@ -601,6 +640,45 @@ export function SitesPage({
                           {String(e.date).slice(0, 10)} • {e.kind}
                           {e.party ? ` • ${e.party}` : ''}
                         </Text>
+                        {e.reference ? (() => {
+                          const docMatch = String(e.reference).match(/\[doc:([^\]]+)\]/);
+                          const cleanRef = String(e.reference).replace(/\[doc:[^\]]+\]/g, '').trim();
+                          const docId = docMatch ? docMatch[1] : null;
+
+                          return (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                              {cleanRef ? (
+                                <Text style={[styles.entryMeta, { color: '#64748B' }]}>
+                                  Ref: {cleanRef}
+                                </Text>
+                              ) : null}
+                              {docId ? (
+                                <Pressable
+                                  onPress={() => handleOpenDoc(docId, e)}
+                                  style={({ pressed }) => [
+                                    {
+                                      flexDirection: 'row',
+                                      alignItems: 'center',
+                                      gap: 3,
+                                      backgroundColor: '#EFF6FF',
+                                      paddingHorizontal: 7,
+                                      paddingVertical: 2,
+                                      borderRadius: 5,
+                                      borderWidth: 1,
+                                      borderColor: '#BFDBFE',
+                                    },
+                                    pressed && { opacity: 0.8 },
+                                  ]}
+                                >
+                                  <AppIcon name="image" size={11} color="#2563EB" />
+                                  <Text style={{ fontSize: 10, fontWeight: '700', color: '#1D4ED8' }}>
+                                    {lang === 'hi' ? '📸 पर्ची फोटो' : '📸 Bill Photo'}
+                                  </Text>
+                                </Pressable>
+                              ) : null}
+                            </View>
+                          );
+                        })() : null}
                       </View>
                     </View>
                     <Text
@@ -622,6 +700,19 @@ export function SitesPage({
             </View>
           </View>
         </ScrollView>
+
+        {/* Bill & Parchi Full Image Viewer Modal */}
+        {viewingDoc && (
+          <BillImageViewerModal
+            visible={!!viewingDoc}
+            imageUrl={viewingDoc.url}
+            title={viewingDoc.title}
+            date={viewingDoc.date}
+            amount={viewingDoc.amount}
+            party={viewingDoc.party}
+            onClose={() => setViewingDoc(null)}
+          />
+        )}
       </View>
     );
   }

@@ -527,11 +527,6 @@ export function ReceivePaymentModal({
                     ]}
                   >
                     <Text style={styles.datePickerText}>{formatDateDisplay(date)}</Text>
-                    {isToday ? (
-                      <View style={styles.todayPill}>
-                        <Text style={styles.todayPillText}>Today</Text>
-                      </View>
-                    ) : null}
                     <View style={{ marginLeft: 'auto' }}>
                       <AppIcon name="calendar" size={16} color="#15803D" />
                     </View>
@@ -809,7 +804,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   textInput: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#CBD5E1',
@@ -822,7 +817,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -833,7 +828,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 8,
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -851,9 +846,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 10,
-    padding: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     marginTop: 4,
@@ -876,7 +871,7 @@ const styles = StyleSheet.create({
   financialDivider: {
     width: 1,
     height: 24,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#E2E8F0',
   },
   amountCard: {
     backgroundColor: '#F0FDF4',
@@ -892,11 +887,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   amountHeading: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
-    color: '#15803D',
+    color: '#16A34A',
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   remainingPill: {
     backgroundColor: '#FFFFFF',
@@ -904,12 +899,12 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#86EFAC',
+    borderColor: '#BBF7D0',
   },
   remainingPillText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#15803D',
+    color: '#16A34A',
   },
   amountInputRow: {
     flexDirection: 'row',
@@ -919,12 +914,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     borderWidth: 1.5,
-    borderColor: '#86EFAC',
+    borderColor: '#BBF7D0',
   },
   currencySymbol: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#15803D',
+    color: '#16A34A',
   },
   amountLargeInput: {
     flex: 1,
@@ -945,12 +940,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#86EFAC',
+    borderColor: '#BBF7D0',
   },
   quickAmountChipText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#15803D',
+    color: '#16A34A',
   },
   modeCardsRow: {
     flexDirection: 'row',
@@ -961,12 +956,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     gap: 6,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#CBD5E1',
   },
   modeCardActive: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#F0FDF4',
     borderColor: '#16A34A',
   },
   modeTop: {
@@ -978,7 +973,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#F1F5F9',
   },
   modeBadgeText: {
     fontSize: 9,
@@ -991,14 +986,14 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   modeTitleActive: {
-    color: '#15803D',
+    color: '#16A34A',
     fontWeight: '800',
   },
   datePickerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -1011,17 +1006,17 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   todayPill: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#F0FDF4',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#86EFAC',
+    borderColor: '#BBF7D0',
   },
   todayPillText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#15803D',
+    color: '#16A34A',
   },
 
   stageScroll: {
@@ -1032,12 +1027,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#CBD5E1',
   },
   stageChipActive: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#F0FDF4',
     borderColor: '#16A34A',
   },
   stageChipText: {
@@ -1046,7 +1041,7 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   stageChipTextActive: {
-    color: '#15803D',
+    color: '#16A34A',
     fontWeight: '800',
   },
   footerBar: {
@@ -1063,7 +1058,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -177,13 +177,6 @@ export function LabourPage({
       });
   }, [data.workers, search, workerSummariesMap]);
 
-  const handleCall = (phone: string) => {
-    const cleaned = phone.replace(/[^0-9+]/g, '');
-    if (cleaned) {
-      Linking.openURL(`tel:${cleaned}`).catch(() => {});
-    }
-  };
-
   // If a worker is selected, render full detail page instead of list
   if (selectedWorker) {
     return (
@@ -351,24 +344,8 @@ export function LabourPage({
                     </View>
                   </View>
 
-                  {/* Right Side: Quick Call (if phone) + View Icon Button */}
+                  {/* Right Side: View Icon Button */}
                   <View style={styles.workerRowRight}>
-                    {w.phone ? (
-                      <Pressable
-                        onPress={(e) => {
-                          e.stopPropagation?.();
-                          handleCall(w.phone);
-                        }}
-                        style={({ pressed }) => [
-                          styles.iconBtnCall,
-                          pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] },
-                        ]}
-                        accessibilityLabel={`Call ${w.name}`}
-                      >
-                        <AppIcon name="call" size={13} color="#15803D" />
-                      </Pressable>
-                    ) : null}
-
                     <Pressable
                       onPress={(e) => {
                         e.stopPropagation?.();

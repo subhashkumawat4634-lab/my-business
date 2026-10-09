@@ -39,31 +39,31 @@ const STATUS_OPTIONS: Array<{
   bgColor: string;
   borderColor: string;
 }> = [
-    {
-      units: '1',
-      label: 'Present',
-      icon: 'checkmark-circle',
-      color: '#15803D',
-      bgColor: '#DCFCE7',
-      borderColor: '#86EFAC',
-    },
-    {
-      units: '0.5',
-      label: 'Half Day',
-      icon: 'time',
-      color: '#B45309',
-      bgColor: '#FEF3C7',
-      borderColor: '#FDE68A',
-    },
-    {
-      units: '0',
-      label: 'Absent',
-      icon: 'close-circle',
-      color: '#B91C1C',
-      bgColor: '#FEE2E2',
-      borderColor: '#FECACA',
-    },
-  ];
+  {
+    units: '1',
+    label: 'Present',
+    icon: 'checkmark-circle',
+    color: '#16A34A',
+    bgColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  {
+    units: '0.5',
+    label: 'Half Day',
+    icon: 'time',
+    color: '#D97706',
+    bgColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
+  {
+    units: '0',
+    label: 'Absent',
+    icon: 'close-circle',
+    color: '#DC2626',
+    bgColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+];
 
 export function AttendanceModal({
   spec,
@@ -317,11 +317,6 @@ export function AttendanceModal({
                     accessibilityLabel="Pick date"
                   >
                     <Text style={styles.datePickerText}>{formattedDate}</Text>
-                    {isToday ? (
-                      <View style={styles.todayPill}>
-                        <Text style={styles.todayPillText}>Today</Text>
-                      </View>
-                    ) : null}
                     <View style={{ marginLeft: 'auto' }}>
                       <AppIcon
                         name="calendar"
@@ -863,7 +858,7 @@ export function AttendanceModal({
                 <View style={styles.sectionHeadingRow}>
                   <AppIcon name="create-outline" size={16} color={Colors.textSecondary} />
                   <Text style={styles.sectionTitle}>
-                    {isCorrection ? 'Correction Reason *' : 'Notes / Remarks (Optional)'}
+                    {isCorrection ? 'Correction Reason *' : 'Remarks (Optional)'}
                   </Text>
                 </View>
 
@@ -1082,7 +1077,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -1095,17 +1090,17 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   todayPill: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#F0FDF4',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#86EFAC',
+    borderColor: '#BBF7D0',
   },
   todayPillText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#15803D',
+    color: '#16A34A',
   },
 
 
@@ -1146,7 +1141,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -1158,7 +1153,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1166,14 +1161,14 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#EEF2FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dropdownAvatarInitials: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#7C3AED',
+    color: '#4F46E5',
   },
   dropdownContentCol: {
     flex: 1,
@@ -1329,7 +1324,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderWidth: 1.5,
     borderColor: '#CBD5E1',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     minHeight: 48,
   },
   otPickerTriggerBtnActive: {
@@ -1340,7 +1335,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 8,
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1409,7 +1404,7 @@ const styles = StyleSheet.create({
   otEarnedHighlight: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#15803D',
+    color: '#16A34A',
   },
 
   /* Wage Preview Card */
@@ -1427,11 +1422,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   wagePreviewHeading: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
-    color: '#15803D',
+    color: '#16A34A',
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   wagePreviewWorkerName: {
     fontSize: 12,
@@ -1472,13 +1467,13 @@ const styles = StyleSheet.create({
   wageTotalAmount: {
     fontSize: 15,
     fontWeight: '900',
-    color: '#15803D',
+    color: '#16A34A',
     marginTop: 1,
   },
 
   /* Notes */
   notesInput: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#CBD5E1',
@@ -1505,9 +1500,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   cancelBtnText: {
     fontSize: 13,
@@ -1522,7 +1519,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: Colors.primary,
+    backgroundColor: '#2563EB',
   },
   saveBtnText: {
     fontSize: 14,

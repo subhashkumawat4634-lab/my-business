@@ -139,7 +139,7 @@ export function ProfilePage({
             firmName: data.organization.name || parsed.firmName || prev.firmName,
           }));
         }
-      } catch {}
+      } catch { }
     }
     loadSavedProfile();
   }, [data.user.name, data.organization.name]);

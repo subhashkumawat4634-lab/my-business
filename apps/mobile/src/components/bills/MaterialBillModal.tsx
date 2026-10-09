@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -18,6 +18,14 @@ import { Colors } from '../../theme/colors';
 import { AppIcon } from '../icons/AppIcon';
 import { FormSpec, Row, Snapshot } from '../../types';
 import { CalendarPickerModal } from '../common/CalendarPickerModal';
+import { BillAttachmentPicker } from './BillAttachmentPicker';
+import {
+  saveDocToIndexedDB,
+  uploadDocToServer,
+  getDocFromIndexedDB,
+  fetchDocFromServer,
+} from '../../storage/docStorage';
+import { useLanguage } from '../../i18n';
 import { today } from '../../forms';
 import { money } from '../../finance';
 
@@ -53,6 +61,7 @@ export function MaterialBillModal({
   onSave,
 }: MaterialBillModalProps) {
   const { width } = useWindowDimensions();
+  const { lang } = useLanguage();
   const isDesktop = width > 768;
 
   // Form State
@@ -66,6 +75,30 @@ export function MaterialBillModal({
   const [quantity, setQuantity] = useState<string>(spec.initial.quantity || '');
   const [unit, setUnit] = useState<string>(spec.initial.unit || 'bags');
   const [reference, setReference] = useState<string>(spec.initial.reference || '');
+
+  // Photo / Bill Attachment state
+  const initialDocMatch = (spec.initial.reference || '').match(/\[doc:([^\]]+)\]/);
+  const [billPhotoUrl, setBillPhotoUrl] = useState<string>('');
+  const [billPhotoName, setBillPhotoName] = useState<string>('');
+
+  useEffect(() => {
+    if (initialDocMatch && initialDocMatch[1]) {
+      const docId = initialDocMatch[1];
+      getDocFromIndexedDB(docId).then((doc) => {
+        if (doc && doc.dataUrl) {
+          setBillPhotoUrl(doc.dataUrl);
+          setBillPhotoName(doc.name || 'bill_photo.jpg');
+        } else {
+          fetchDocFromServer(docId).then((res) => {
+            if (res && res.blobUrl) {
+              setBillPhotoUrl(res.blobUrl);
+              setBillPhotoName(res.filename || 'bill_photo.jpg');
+            }
+          });
+        }
+      });
+    }
+  }, []);
 
   // Payment Mode: 'RECORD' (Credit / Pay Later) or 'CASH' | 'UPI' | 'BANK' (Paid Immediately)
   const initialMode = spec.initial.mode || 'RECORD';
@@ -184,6 +217,14 @@ export function MaterialBillModal({
 
     const mode = paymentType === 'CREDIT' ? 'RECORD' : paidMode;
 
+    let cleanRef = reference.replace(/\[doc:[^\]]+\]/g, '').trim();
+    if (billPhotoUrl) {
+      const docId = initialDocMatch?.[1] || `doc-${Date.now()}`;
+      saveDocToIndexedDB(docId, billPhotoName || 'bill_photo.jpg', billPhotoUrl, 'image/jpeg');
+      uploadDocToServer(docId, billPhotoName || 'bill_photo.jpg', billPhotoUrl, 'image/jpeg').catch(() => {});
+      cleanRef = cleanRef ? `${cleanRef} [doc:${docId}]` : `[doc:${docId}]`;
+    }
+
     onSave({
       site_id: siteId,
       amount: amount.trim(),
@@ -191,7 +232,7 @@ export function MaterialBillModal({
       description: description.trim(),
       party: party.trim(),
       mode,
-      reference: reference.trim(),
+      reference: cleanRef,
       due_date: paymentType === 'CREDIT' ? dueDate : '',
       quantity: quantity.trim(),
       unit: unit.trim(),
@@ -393,11 +434,6 @@ export function MaterialBillModal({
                     ]}
                   >
                     <Text style={styles.datePickerText}>{formatDateDisplay(date)}</Text>
-                    {isToday ? (
-                      <View style={styles.todayPill}>
-                        <Text style={styles.todayPillText}>Today</Text>
-                      </View>
-                    ) : null}
                     <View style={{ marginLeft: 'auto' }}>
                       <AppIcon name="calendar" size={16} color="#2563EB" />
                     </View>
@@ -779,6 +815,38 @@ export function MaterialBillModal({
                   </View>
                 )}
               </View>
+
+              {/* 5. REFERENCE / BILL NO */}
+              <View style={styles.sectionCard}>
+                <Text style={styles.fieldLabel}>{lang === 'hi' ? 'बिल / चालान नंबर (वैकल्पिक)' : 'BILL / INVOICE / CHALLAN NO. (OPTIONAL)'}</Text>
+                <TextInput
+                  value={reference}
+                  onChangeText={setReference}
+                  placeholder={lang === 'hi' ? 'उदा. चालान #402, बिल #88' : 'e.g. Challan #402, Invoice #88'}
+                  placeholderTextColor="#94A3B8"
+                  style={[
+                    styles.textInput,
+                    Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : undefined,
+                  ]}
+                />
+              </View>
+
+              {/* 6. BILL / KACCHI PARCHI PHOTO ATTACHMENT */}
+              <BillAttachmentPicker
+                photoUrl={billPhotoUrl}
+                photoName={billPhotoName}
+                onPhotoSelected={(url, name) => {
+                  setBillPhotoUrl(url);
+                  setBillPhotoName(name);
+                }}
+                onPhotoRemoved={() => {
+                  setBillPhotoUrl('');
+                  setBillPhotoName('');
+                }}
+                lang={lang}
+              />
+
+              <View style={{ height: 16 }} />
             </ScrollView>
 
             {/* Bottom Action Footer */}
@@ -967,7 +1035,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   textInput: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#CBD5E1',
@@ -980,7 +1048,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -991,7 +1059,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 8,
-    backgroundColor: '#E0F2FE',
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1009,7 +1077,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -1022,17 +1090,17 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   todayPill: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#F0FDF4',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#86EFAC',
+    borderColor: '#BBF7D0',
   },
   todayPillText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#15803D',
+    color: '#16A34A',
   },
   quickDateRow: {
     flexDirection: 'row',
@@ -1043,7 +1111,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#CBD5E1',
   },
@@ -1088,12 +1156,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#CBD5E1',
   },
   categoryChipActive: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFFBEB',
     borderColor: '#D97706',
   },
   categoryChipText: {
@@ -1119,12 +1187,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#CBD5E1',
   },
   unitPillActive: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFFBEB',
     borderColor: '#D97706',
   },
   unitPillText: {
@@ -1150,11 +1218,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   amountHeading: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
-    color: '#15803D',
+    color: '#16A34A',
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   unitRateBadge: {
     backgroundColor: '#FFFFFF',
@@ -1162,12 +1230,12 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#86EFAC',
+    borderColor: '#BBF7D0',
   },
   unitRateBadgeText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#15803D',
+    color: '#16A34A',
   },
   amountInputRow: {
     flexDirection: 'row',
@@ -1177,12 +1245,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     borderWidth: 1.5,
-    borderColor: '#86EFAC',
+    borderColor: '#BBF7D0',
   },
   currencySymbol: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#15803D',
+    color: '#16A34A',
   },
   amountLargeInput: {
     flex: 1,
@@ -1203,7 +1271,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 6,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#CBD5E1',
   },
@@ -1232,19 +1300,19 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   paymentOptionCredit: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
   },
   paymentOptionCreditActive: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFFBEB',
     borderColor: '#D97706',
   },
   paymentOptionPaid: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
   },
   paymentOptionPaidActive: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#F0FDF4',
     borderColor: '#16A34A',
   },
   paymentOptionTop: {
@@ -1313,7 +1381,7 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
   },
   paidModePillActive: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#F0FDF4',
     borderColor: '#16A34A',
   },
   paidModePillText: {
@@ -1322,7 +1390,7 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   paidModePillTextActive: {
-    color: '#15803D',
+    color: '#16A34A',
     fontWeight: '800',
   },
   footerBar: {
@@ -1339,7 +1407,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1356,7 +1426,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#D97706',
+    backgroundColor: '#2563EB',
   },
   saveBtnText: {
     fontSize: 14,
