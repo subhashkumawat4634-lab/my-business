@@ -1603,7 +1603,7 @@ export function SiteFormModal({
                             <AppIcon
                               name={isAgreement ? 'document-text' : 'image'}
                               size={18}
-                              color={isAgreement ? '#16A34A' : '#7C3AED'}
+                              color={isAgreement ? '#16A34A' : '#2563EB'}
                             />
                           </View>
                           <View style={{ flex: 1 }}>
@@ -1624,7 +1624,7 @@ export function SiteFormModal({
                             <AppIcon
                               name="eye-outline"
                               size={14}
-                              color="#7C3AED"
+                              color="#2563EB"
                             />
                             <Text style={styles.docDownloadBtnText}>View</Text>
                           </Pressable>
@@ -2248,14 +2248,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#E0E7FF',
+    backgroundColor: '#EFF6FF',
     padding: 8,
     borderRadius: 8,
     marginTop: 4,
   },
   calcFormulaText: {
     fontSize: 11,
-    color: '#3730A3',
+    color: '#1D4ED8',
     fontWeight: '600',
   },
   calcTotalText: {
@@ -2775,7 +2775,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
   },
   docCatChipActive: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#2563EB',
   },
   docCatChipText: {
     fontSize: 10,
@@ -2806,7 +2806,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 6,
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#2563EB',
   },
   sheetSaveText: {
     fontSize: 12,

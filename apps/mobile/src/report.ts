@@ -823,14 +823,14 @@ export async function printMusterRollPdf(
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2.5px solid #0F2851;
+      border-bottom: 2.5px solid #2563EB;
       padding-bottom: 5px;
       margin-bottom: 6px;
     }
     .firm-name {
       font-size: 16px;
       font-weight: 900;
-      color: #0F2851;
+      color: #2563EB;
       letter-spacing: -0.3px;
     }
     .register-title {
@@ -1044,7 +1044,7 @@ export async function printMusterRollPdf(
       background: #FFFFFF;
     }
     .total-row td {
-      background: #0F2851 !important;
+      background: #2563EB !important;
       color: #FFFFFF !important;
       font-weight: 900;
       font-size: 8.5px;
@@ -1102,7 +1102,7 @@ export async function printMusterRollPdf(
       <span class="kpi-mini-lbl">${escape(L.kpiOt)}</span>
       <span class="kpi-mini-val" style="color: #1D4ED8;">+${grandTotalOTHours.toFixed(1)}h</span>
     </div>
-    <div class="kpi-mini-card" style="border-left: 3px solid #0F2851;">
+    <div class="kpi-mini-card" style="border-left: 3px solid #2563EB;">
       <span class="kpi-mini-lbl">${escape(L.kpiUnits)}</span>
       <span class="kpi-mini-val">${grandTotalUnits.toFixed(1)} ${escape(L.daysUnit)}</span>
     </div>
@@ -1250,8 +1250,8 @@ export async function viewSiteDocument(
   <title>${escape(doc.name)}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 28px; color: #0F172A; background: #FFFFFF; }
-    .header-bar { border-bottom: 2px solid #0F2851; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-    .brand-title { font-size: 20px; font-weight: 800; color: #0F2851; margin: 0; }
+    .header-bar { border-bottom: 2px solid #2563EB; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .brand-title { font-size: 20px; font-weight: 800; color: #2563EB; margin: 0; }
     .cat-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: 11px; text-transform: uppercase; background: #EFF6FF; color: ${categoryColor}; border: 1.5px solid ${categoryColor}; }
     .doc-headline { margin-top: 10px; margin-bottom: 16px; }
     .doc-name { font-size: 18px; font-weight: 800; color: #0F172A; }
@@ -1553,7 +1553,7 @@ function buildWorkerIdCardHtml(
       border: 1px solid #CBD5E1;
     }
     .card-header-band {
-      background: #0F2851;
+      background: #2563EB;
       color: #FFFFFF;
       padding: 9px 12px;
       text-align: center;
@@ -1593,7 +1593,7 @@ function buildWorkerIdCardHtml(
       height: 80px;
       border-radius: 40px;
       background: #F8FAFC;
-      border: 2.5px solid #0F2851;
+      border: 2.5px solid #2563EB;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1612,7 +1612,7 @@ function buildWorkerIdCardHtml(
     .avatar-initials {
       font-size: 28px;
       font-weight: 800;
-      color: #0F2851;
+      color: #2563EB;
     }
     .verified-mark {
       position: absolute;
@@ -1699,7 +1699,7 @@ function buildWorkerIdCardHtml(
     .seal-text {
       font-size: 7.5px;
       font-weight: 900;
-      color: #0F2851;
+      color: #2563EB;
       letter-spacing: 0.5px;
     }
     .seal-sub {
@@ -1770,7 +1770,7 @@ function buildWorkerIdCardHtml(
       <table class="info-table">
         <tr>
           <td class="col-key">${isHi ? 'आईडी नंबर' : 'ID NUMBER'}</td>
-          <td class="col-val" style="font-family:monospace; color:#0F2851;">${escape(workerCode)}</td>
+          <td class="col-val" style="font-family:monospace; color:#2563EB;">${escape(workerCode)}</td>
         </tr>
         <tr>
           <td class="col-key">${isHi ? 'मोबाइल' : 'PHONE'}</td>
@@ -1786,7 +1786,7 @@ function buildWorkerIdCardHtml(
         </tr>
         <tr>
           <td class="col-key">${isHi ? 'वैधता' : 'VALID UPTO'}</td>
-          <td class="col-val" style="color:#0F2851;">${escape(expiryStr)}</td>
+          <td class="col-val" style="color:#2563EB;">${escape(expiryStr)}</td>
         </tr>
       </table>
 

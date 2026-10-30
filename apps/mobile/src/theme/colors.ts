@@ -1,15 +1,15 @@
 // BHIM UPI & Modern Indian Fintech Design Tokens
 export const Colors = {
-  // Brand / Primary: Trustworthy Indian Fintech Royal Navy Blue
-  primary: '#0F2851',
-  primaryDark: '#0A1B36',
-  primaryLight: '#1D457F',
-  primarySurface: '#EEF4FF',
+  // Brand / Primary: Trustworthy Indian Fintech Royal Blue
+  primary: '#2563EB',
+  primaryDark: '#1D4ED8',
+  primaryLight: '#3B82F6',
+  primarySurface: '#EFF6FF',
 
   // Accent: Vibrant UPI Blue
-  accent: '#1A73E8',
-  accentDark: '#1557B0',
-  accentLight: '#E8F0FE',
+  accent: '#2563EB',
+  accentDark: '#1D4ED8',
+  accentLight: '#EFF6FF',
 
   // Success / Earning / Inward (Emerald Green)
   success: '#0D8A58',
@@ -40,5 +40,5 @@ export const Colors = {
   textInverse: '#FFFFFF',
 
   // Shadows
-  shadowColor: '#0F2851',
+  shadowColor: '#0F172A',
 };

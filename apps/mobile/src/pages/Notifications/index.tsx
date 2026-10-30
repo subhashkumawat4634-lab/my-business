@@ -178,7 +178,7 @@ export function NotificationsPage({
       case 'wage':
         return { name: 'cash-outline' as const, color: '#D97706', bg: '#FEF3C7' };
       case 'haziri':
-        return { name: 'calendar-outline' as const, color: '#4F46E5', bg: '#EEF2FF' };
+        return { name: 'calendar-outline' as const, color: '#2563EB', bg: '#EFF6FF' };
       case 'site':
         return { name: 'business-outline' as const, color: '#2563EB', bg: '#EFF6FF' };
       default:

@@ -402,7 +402,7 @@ export function AttendanceModal({
               {!isWorkerLocked && (
                 <View style={[styles.sectionCard, { zIndex: 25 }]}>
                   <View style={styles.sectionHeadingRow}>
-                    <AppIcon name="people-outline" size={16} color="#4F46E5" />
+                    <AppIcon name="people-outline" size={16} color="#2563EB" />
                     <Text style={styles.sectionTitle}>
                       Worker ({filteredWorkers.length}) *
                     </Text>
@@ -998,10 +998,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#4F46E5',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -1033,17 +1033,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#EFF6FF',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#C7D2FE',
+    borderColor: '#BFDBFE',
   },
   workerLockedBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#4F46E5',
+    color: '#2563EB',
   },
   workerLockedMetaRow: {
     flexDirection: 'row',
@@ -1366,9 +1366,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: '#C7D2FE',
+    borderColor: '#BFDBFE',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1385,14 +1385,14 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dropdownAvatarInitials: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#4F46E5',
+    color: '#2563EB',
   },
   dropdownContentCol: {
     flex: 1,

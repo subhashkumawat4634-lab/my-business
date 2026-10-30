@@ -96,7 +96,7 @@ export function AttendancePage({
       id: 'bulk',
       title: 'Bulk Attendance',
       icon: 'people',
-      iconColor: '#4338CA',
+      iconColor: '#2563EB',
       onPress: () => setSubpage('BULK'),
     },
     {

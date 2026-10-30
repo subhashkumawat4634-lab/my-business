@@ -34,7 +34,7 @@ const AVATAR_PALETTES = [
   { bg: '#92400E', text: '#FFFFFF' },
   { bg: '#9F1239', text: '#FFFFFF' },
   { bg: '#166534', text: '#FFFFFF' },
-  { bg: '#0F2851', text: '#FFFFFF' },
+  { bg: '#2563EB', text: '#FFFFFF' },
 ];
 
 function getAvatarStyle(name: string = '') {
@@ -188,7 +188,7 @@ export function WorkerDetailPage({
             style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.75 }]}
             accessibilityLabel="Edit worker"
           >
-            <AppIcon name="create-outline" size={15} color="#0F2851" />
+            <AppIcon name="create-outline" size={15} color="#2563EB" />
             <Text style={styles.editBtnText}>{t('edit', 'Edit')}</Text>
           </Pressable>
         </View>
@@ -251,8 +251,8 @@ export function WorkerDetailPage({
                 pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
               ]}
             >
-              <AppIcon name="wallet" size={14} color={isPending ? '#FFF' : '#0F2851'} />
-              <Text style={[styles.payBtnText, { color: isPending ? '#FFF' : '#0F2851' }]}>
+              <AppIcon name="wallet" size={14} color={isPending ? '#FFF' : '#2563EB'} />
+              <Text style={[styles.payBtnText, { color: isPending ? '#FFF' : '#2563EB' }]}>
                 {isPending ? t('payNow', 'Pay Now') : t('advance', 'Advance')}
               </Text>
             </Pressable>
@@ -273,7 +273,7 @@ export function WorkerDetailPage({
                   isActive && styles.tabItemActive,
                 ]}
               >
-                <AppIcon name={tab.icon as any} size={14} color={isActive ? '#0F2851' : '#94A3B8'} />
+                <AppIcon name={tab.icon as any} size={14} color={isActive ? '#2563EB' : '#94A3B8'} />
                 <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{tab.label}</Text>
               </Pressable>
             );
@@ -311,12 +311,12 @@ export function WorkerDetailPage({
 
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <View style={styles.cardHeaderIcon}><AppIcon name="cash" size={14} color="#0F2851" /></View>
+                <View style={styles.cardHeaderIcon}><AppIcon name="cash" size={14} color="#2563EB" /></View>
                 <Text style={styles.cardTitle}>{t('financialSummary', 'Financial Summary')}</Text>
               </View>
               <View style={styles.finGrid}>
                 {[
-                  { label: t('totalEarned', 'Total Earned'), value: money(summary.earned), color: '#0F2851' },
+                  { label: t('totalEarned', 'Total Earned'), value: money(summary.earned), color: '#2563EB' },
                   { label: t('totalPaid', 'Total Paid'), value: money(summary.paid), color: '#16A34A' },
                   { label: isPending ? t('balanceDue', 'Balance Due') : isAdvance ? t('advance', 'Advance') : t('balance', 'Balance'), value: isPending ? money(summary.balance) : isAdvance ? money(-summary.balance) : '₹0', color: balanceColor },
                 ].map((item, i, arr) => (
@@ -333,7 +333,7 @@ export function WorkerDetailPage({
 
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <View style={styles.cardHeaderIcon}><AppIcon name="business" size={14} color="#0F2851" /></View>
+                <View style={styles.cardHeaderIcon}><AppIcon name="business" size={14} color="#2563EB" /></View>
                 <Text style={styles.cardTitle}>{t('siteContributions', 'Site Contributions')}</Text>
                 <View style={styles.countBadge}><Text style={styles.countBadgeText}>{sitesBreakdown.length}</Text></View>
               </View>
@@ -362,7 +362,7 @@ export function WorkerDetailPage({
         {activeTab === 'ATTENDANCE' ? (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <View style={styles.cardHeaderIcon}><AppIcon name="calendar" size={14} color="#0F2851" /></View>
+              <View style={styles.cardHeaderIcon}><AppIcon name="calendar" size={14} color="#2563EB" /></View>
               <Text style={styles.cardTitle}>{t('haziriLog', 'Haziri Log')}</Text>
               <View style={styles.countBadge}><Text style={styles.countBadgeText}>{workerAttendance.length}</Text></View>
             </View>
@@ -416,7 +416,7 @@ export function WorkerDetailPage({
         {activeTab === 'PAYMENTS' ? (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <View style={styles.cardHeaderIcon}><AppIcon name="wallet" size={14} color="#0F2851" /></View>
+              <View style={styles.cardHeaderIcon}><AppIcon name="wallet" size={14} color="#2563EB" /></View>
               <Text style={styles.cardTitle}>{t('paymentLedger', 'Payment Ledger')}</Text>
               <View style={styles.countBadge}><Text style={styles.countBadgeText}>{workerPayments.length}</Text></View>
             </View>
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#CBD5E1' },
-  editBtnText: { fontSize: 13, fontWeight: '700', color: '#0F2851' },
+  editBtnText: { fontSize: 13, fontWeight: '700', color: '#2563EB' },
   heroWrapper: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', width: '100%' },
   heroCard: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14, gap: 12 },
   heroCardDesktop: { maxWidth: 860, alignSelf: 'center', width: '100%' },
@@ -514,9 +514,9 @@ const styles = StyleSheet.create({
   tabBarWrapper: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', width: '100%', alignItems: 'center', justifyContent: 'center' },
   tabBar: { flexDirection: 'row', maxWidth: 640, width: '100%', paddingHorizontal: 12 },
   tabItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderBottomWidth: 2.5, borderBottomColor: 'transparent' },
-  tabItemActive: { borderBottomColor: '#0F2851' },
+  tabItemActive: { borderBottomColor: '#2563EB' },
   tabLabel: { fontSize: 13, fontWeight: '600', color: '#94A3B8' },
-  tabLabelActive: { color: '#0F2851', fontWeight: '800' },
+  tabLabelActive: { color: '#2563EB', fontWeight: '800' },
   body: { flex: 1 },
   bodyContent: { padding: 14, gap: 12 },
   bodyContentDesktop: { maxWidth: 860, alignSelf: 'center', width: '100%' },
@@ -565,12 +565,12 @@ const styles = StyleSheet.create({
   noteText: { fontSize: 11, color: '#94A3B8', fontStyle: 'italic' },
   payMeta: { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
   logAmount: { alignItems: 'flex-end', gap: 2 },
-  logAmountVal: { fontSize: 14, fontWeight: '900', color: '#0F2851' },
+  logAmountVal: { fontSize: 14, fontWeight: '900', color: '#2563EB' },
   logAmountLabel: { fontSize: 10, fontWeight: '600', color: '#94A3B8' },
   payAmountVal: { fontSize: 14, fontWeight: '900', color: '#16A34A' },
   emptyState: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 20, gap: 8 },
   emptyTitle: { fontSize: 15, fontWeight: '800', color: '#334155' },
   emptyDesc: { fontSize: 13, color: '#94A3B8', textAlign: 'center', lineHeight: 18 },
-  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, backgroundColor: '#0F2851', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 9 },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, backgroundColor: '#2563EB', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 9 },
   emptyBtnText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
 });

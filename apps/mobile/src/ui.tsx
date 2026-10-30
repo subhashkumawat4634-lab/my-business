@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormSpec } from './types';
 import { useLanguage } from './i18n';
-export const C = {ink:'#0F172A', muted:'#64748B', teal:'#0F2851', pale:'#EEF4FF', bg:'#F4F6F9', line:'#E2E8F0', orange:'#E65100', red:'#D93025', white:'#FFFFFF'};
+export const C = {ink:'#0F172A', muted:'#64748B', teal:'#2563EB', pale:'#EFF6FF', bg:'#F4F6F9', line:'#E2E8F0', orange:'#E65100', red:'#D93025', white:'#FFFFFF'};
 export const Icon = ({name,size=21,color=C.ink}:{name:any;size?:number;color?:string}) => <Ionicons name={name} size={size} color={color}/>;
 export function Button({title,onPress,secondary=false,disabled=false,icon}:{title:string;onPress:()=>void;secondary?:boolean;disabled?:boolean;icon?:string}) {
   return <Pressable accessibilityRole="button" accessibilityLabel={title} disabled={disabled} onPress={onPress} style={[s.button,secondary&&s.secondary,disabled&&{opacity:0.5}]}>{icon&&<Icon name={icon} size={18} color={secondary?C.teal:C.white}/>}<Text style={[s.buttonText,secondary&&{color:C.teal}]}>{title}</Text></Pressable>;

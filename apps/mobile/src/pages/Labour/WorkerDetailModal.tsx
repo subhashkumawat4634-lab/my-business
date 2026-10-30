@@ -235,7 +235,7 @@ export function WorkerDetailModal({
               <AppIcon
                 name="bar-chart-outline"
                 size={14}
-                color={activeTab === 'OVERVIEW' ? '#0F2851' : '#64748B'}
+                color={activeTab === 'OVERVIEW' ? '#2563EB' : '#64748B'}
               />
               <Text
                 style={[styles.tabItemText, activeTab === 'OVERVIEW' && styles.tabItemTextActive]}
@@ -251,7 +251,7 @@ export function WorkerDetailModal({
               <AppIcon
                 name="calendar-outline"
                 size={14}
-                color={activeTab === 'ATTENDANCE' ? '#0F2851' : '#64748B'}
+                color={activeTab === 'ATTENDANCE' ? '#2563EB' : '#64748B'}
               />
               <Text
                 style={[
@@ -270,7 +270,7 @@ export function WorkerDetailModal({
               <AppIcon
                 name="wallet-outline"
                 size={14}
-                color={activeTab === 'PAYMENTS' ? '#0F2851' : '#64748B'}
+                color={activeTab === 'PAYMENTS' ? '#2563EB' : '#64748B'}
               />
               <Text
                 style={[styles.tabItemText, activeTab === 'PAYMENTS' && styles.tabItemTextActive]}
@@ -342,12 +342,12 @@ export function WorkerDetailModal({
                       <AppIcon
                         name="wallet-outline"
                         size={15}
-                        color={isPending ? '#FFFFFF' : '#0F2851'}
+                        color={isPending ? '#FFFFFF' : '#2563EB'}
                       />
                       <Text
                         style={[
                           styles.payCtaBtnText,
-                          isPending ? { color: '#FFFFFF' } : { color: '#0F2851' },
+                          isPending ? { color: '#FFFFFF' } : { color: '#2563EB' },
                         ]}
                       >
                         {isPending ? 'Pay Wages' : 'Give Advance'}
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabItemActive: {
-    borderBottomColor: '#0F2851',
+    borderBottomColor: '#2563EB',
   },
   tabItemText: {
     fontSize: 13,
@@ -775,7 +775,7 @@ const styles = StyleSheet.create({
   },
   tabItemTextActive: {
     fontWeight: '800',
-    color: '#0F2851',
+    color: '#2563EB',
   },
   modalBody: {
     flex: 1,
@@ -834,7 +834,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   payCtaBtnPending: {
-    backgroundColor: '#0F2851',
+    backgroundColor: '#2563EB',
   },
   payCtaBtnDefault: {
     backgroundColor: '#FFFFFF',
@@ -1152,7 +1152,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 11,
     borderRadius: 10,
-    backgroundColor: '#0F2851',
+    backgroundColor: '#2563EB',
   },
   footerPrimaryBtnText: {
     fontSize: 13,

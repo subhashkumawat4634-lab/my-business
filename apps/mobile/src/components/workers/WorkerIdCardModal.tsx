@@ -128,7 +128,7 @@ export function WorkerIdCardModal({
           <View style={styles.header}>
             <View style={styles.headerTitleRow}>
               <View style={styles.headerIconBox}>
-                <AppIcon name="id-card" size={20} color="#0F2851" />
+                <AppIcon name="id-card" size={20} color="#2563EB" />
               </View>
               <Text style={styles.headerTitle}>
                 {isHi ? 'कारीगर पहचान पत्र (Labour ID Card)' : 'Labour Identity Card'}
@@ -211,7 +211,7 @@ export function WorkerIdCardModal({
                   </View>
                   <View style={[styles.credRow, { borderBottomWidth: 0 }]}>
                     <Text style={styles.credKey}>{isHi ? 'वैधता' : 'VALID UPTO'}</Text>
-                    <Text style={[styles.credVal, { color: '#0F2851', fontWeight: '800' }]}>{validUntilStr}</Text>
+                    <Text style={[styles.credVal, { color: '#2563EB', fontWeight: '800' }]}>{validUntilStr}</Text>
                   </View>
                 </View>
 
@@ -345,9 +345,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 9,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: '#C7D2FE',
+    borderColor: '#BFDBFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#0F2851',
+    backgroundColor: '#2563EB',
     paddingVertical: 11,
     borderRadius: 10,
   },

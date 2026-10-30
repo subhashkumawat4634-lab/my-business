@@ -66,10 +66,10 @@ function getSiteStatusTheme(status: string) {
     case 'UPCOMING':
     default:
       return {
-        color: '#6366F1',
-        accent: '#818CF8',
-        bg: '#EEF2FF',
-        badgeBg: '#E0E7FF',
+        color: '#2563EB',
+        accent: '#3B82F6',
+        bg: '#EFF6FF',
+        badgeBg: '#DBEAFE',
       };
   }
 }
@@ -336,7 +336,7 @@ export function SitesPage({
                 <View style={styles.termsBox}>
                   <View style={styles.termsHeaderRow}>
                     <View style={styles.termsTitleGroup}>
-                      <AppIcon name="document-text-outline" size={14} color="#0F2851" />
+                      <AppIcon name="document-text-outline" size={14} color="#2563EB" />
                       <Text style={styles.termsTitleText}>{t('contractTermsNotes', 'Contract Terms & Notes')}</Text>
                     </View>
                     {isLongNotes && (
@@ -820,12 +820,12 @@ export function SitesPage({
 
             <View style={[styles.statKpiCard, styles.statKpiContract]}>
               <View style={styles.statKpiTop}>
-                <View style={[styles.statIconBadge, { backgroundColor: '#F1F5F9' }]}>
-                  <AppIcon name="receipt" size={14} color="#0F2851" />
+                <View style={[styles.statIconBadge, { backgroundColor: '#EFF6FF' }]}>
+                  <AppIcon name="receipt" size={14} color="#2563EB" />
                 </View>
                 <Text style={styles.statKpiLabel}>{t('totalValue', 'Total Value')}</Text>
               </View>
-              <Text style={[styles.statKpiValue, { color: '#0F2851' }]} numberOfLines={1}>
+              <Text style={[styles.statKpiValue, { color: '#2563EB' }]} numberOfLines={1}>
                 {money(totalContractVal)}
               </Text>
               <Text style={styles.statKpiFoot}>{t('contractAmount', 'Contract amount')}</Text>
@@ -1547,7 +1547,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderLeftWidth: 3.5,
-    borderLeftColor: '#0F2851',
+    borderLeftColor: '#2563EB',
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 5,
@@ -1566,7 +1566,7 @@ const styles = StyleSheet.create({
   termsTitleText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#0F2851',
+    color: '#2563EB',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },

@@ -34,6 +34,7 @@ import { ProfilePage } from './src/pages/Profile';
 import { NotificationsPage } from './src/pages/Notifications';
 import { SettingsPage } from './src/pages/Settings';
 import { BanksPage } from './src/pages/Banks';
+import { PaymentsPage } from './src/pages/Payments';
 import {
   MaterialBillPage,
   WagePaymentPage,
@@ -112,6 +113,9 @@ function MainApp() {
       }
       if (path === '/reports') {
         return { tab: 'reports', selectedSiteId: null, selectedWorkerId: null, isNewSite: false, activeEntryKind: null };
+      }
+      if (path === '/payments' || path === '/payment') {
+        return { tab: 'payments', selectedSiteId: null, selectedWorkerId: null, isNewSite: false, activeEntryKind: null };
       }
       if (path === '/profile') {
         return { tab: 'profile', selectedSiteId: null, selectedWorkerId: null, isNewSite: false, activeEntryKind: null };
@@ -530,6 +534,12 @@ function MainApp() {
           setSelectedSiteId(null);
           setSelectedWorkerId(null);
           setActiveEntryKind(null);
+        } else if (path === '/payments' || path === '/payment') {
+          setTab('payments');
+          setIsNewSite(false);
+          setSelectedSiteId(null);
+          setSelectedWorkerId(null);
+          setActiveEntryKind(null);
         } else if (path.startsWith('/team/') && path.length > 6) {
           setTab('team');
           setIsNewSite(false);
@@ -645,6 +655,10 @@ function MainApp() {
     }
     if (kind === 'WAGE_PAYMENT' && !data?.workers.length) {
       showToast(lang === 'hi' ? 'कृपया पहले एक मजदूर (Labour) जोड़ें' : 'Please add a worker first', 'w');
+      return;
+    }
+    if (kind === 'RECEIPT' && !siteId && !workerId) {
+      navigate('payments', '/payments', null, false, null, null);
       return;
     }
     setActiveEntryParams({ siteId, workerId, bill });
@@ -888,6 +902,21 @@ function MainApp() {
                   onBack={() => navigate('home', '/', null, false, null, null)}
                   onOpenAttendanceModal={openAttendanceModal}
                   onOpenProfile={() => handleNavigate('profile')}
+                  refreshing={refreshing}
+                  onRefresh={() => refresh()}
+                />
+              )}
+
+              {tab === 'payments' && (
+                <PaymentsPage
+                  data={data}
+                  busy={busy}
+                  error={error}
+                  onBack={() => navigate('home', '/', null, false, null, null)}
+                  onOpenProfile={() => handleNavigate('profile')}
+                  onSaveEntry={(kind, vals, sId, wId) =>
+                    handleSaveEntry(kind, vals, sId, wId)
+                  }
                   refreshing={refreshing}
                   onRefresh={() => refresh()}
                 />

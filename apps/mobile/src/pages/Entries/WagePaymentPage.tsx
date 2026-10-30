@@ -293,9 +293,8 @@ export function WagePaymentPage({
             ) : (
               <Card style={styles.inlineFormCard}>
                 <View style={styles.formCardHeader}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View style={styles.formHeaderIcon}>
-                      <AppIcon name="cash" size={18} color="#15803D" />
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>                    <View style={styles.formHeaderIcon}>
+                      <AppIcon name="cash" size={18} color="#2563EB" />
                     </View>
                     <View>
                       <Text style={styles.formTitle}>Record Wage Payment</Text>
@@ -306,7 +305,7 @@ export function WagePaymentPage({
                     onPress={() => setIsFormOpen(false)}
                     style={styles.formCloseBtn}
                   >
-                    <AppIcon name="close" size={18} color="#64748B" />
+                    <AppIcon name="close" size={16} color="#64748B" />
                   </Pressable>
                 </View>
 
@@ -404,8 +403,8 @@ export function WagePaymentPage({
                       placeholder="e.g. 1500"
                       keyboardType="numeric"
                       placeholderTextColor="#94A3B8"
-                      style={[styles.textInput, { fontSize: 20, fontWeight: '800', color: '#15803D' }]}
-                    />
+                      style={[styles.textInput, { fontSize: 20, fontWeight: '800', color: '#2563EB' }]}
+                    />          />
 
                     {/* Quick Amount Suggestion Chips */}
                     <View style={styles.quickChipsRow}>
@@ -728,11 +727,11 @@ const styles = StyleSheet.create({
   primaryAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F2851',
+    backgroundColor: '#2563EB',
     borderRadius: 14,
     padding: 14,
     gap: 12,
-    shadowColor: '#0F2851',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -747,7 +746,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryAddBtnTitle: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
-  primaryAddBtnSub: { fontSize: 11, color: '#CBD5E1', marginTop: 1 },
+  primaryAddBtnSub: { fontSize: 11, color: '#EFF6FF', marginTop: 1 },
 
   // Inline Form
   inlineFormCard: {
@@ -755,11 +754,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#A7F3D0',
+    borderColor: '#BFDBFE',
     gap: 14,
   },
   formCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  formHeaderIcon: { width: 34, height: 34, borderRadius: 8, backgroundColor: '#ECFDF5', alignItems: 'center', justifyContent: 'center' },
+  formHeaderIcon: { width: 34, height: 34, borderRadius: 8, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
   formTitle: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
   formSubtitle: { fontSize: 11, color: '#64748B' },
   formCloseBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
@@ -826,7 +825,7 @@ const styles = StyleSheet.create({
   presetChipText: { fontSize: 11, fontWeight: '700', color: '#475569' },
   modeTabsRow: { flexDirection: 'row', gap: 8 },
   modeTab: { flex: 1, paddingVertical: 9, borderRadius: 8, backgroundColor: '#F1F5F9', alignItems: 'center' },
-  modeTabActive: { backgroundColor: '#047857' },
+  modeTabActive: { backgroundColor: '#2563EB' },
   modeTabText: { fontSize: 12, fontWeight: '700', color: '#475569' },
   modeTabTextActive: { color: '#FFFFFF' },
   formActionRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
@@ -838,7 +837,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#047857',
+    backgroundColor: '#2563EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -853,7 +852,7 @@ const styles = StyleSheet.create({
   filterPicker: { flex: 1, height: 38, color: '#0F172A' },
   filterChipsScroll: { gap: 6, paddingVertical: 2 },
   modeChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: '#F1F5F9' },
-  modeChipActive: { backgroundColor: '#047857' },
+  modeChipActive: { backgroundColor: '#2563EB' },
   modeChipText: { fontSize: 11, fontWeight: '600', color: '#64748B' },
   modeChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
 
@@ -864,8 +863,8 @@ const styles = StyleSheet.create({
   recordsHeaderSub: { fontSize: 11, color: '#64748B' },
   paymentCard: { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#E2E8F0' },
   paymentCardTop: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  workerAvatar: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#A7F3D0', alignItems: 'center', justifyContent: 'center' },
-  workerAvatarText: { fontSize: 13, fontWeight: '800', color: '#047857' },
+  workerAvatar: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE', alignItems: 'center', justifyContent: 'center' },
+  workerAvatarText: { fontSize: 13, fontWeight: '800', color: '#2563EB' },
   workerNameText: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
   skillPill: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   skillPillText: { fontSize: 10, fontWeight: '600', color: '#475569' },
@@ -875,6 +874,6 @@ const styles = StyleSheet.create({
   paymentDateText: { fontSize: 11, color: '#64748B' },
   paymentDescText: { fontSize: 11, color: '#64748B', marginTop: 3 },
   paymentAmountBadge: { alignItems: 'flex-end' },
-  paymentAmountText: { fontSize: 16, fontWeight: '800', color: '#15803D' },
-  paymentAmountSub: { fontSize: 10, color: '#16A34A', fontWeight: '600', marginTop: 1 },
+  paymentAmountText: { fontSize: 16, fontWeight: '800', color: '#2563EB' },
+  paymentAmountSub: { fontSize: 10, color: '#2563EB', fontWeight: '600', marginTop: 1 },
 });

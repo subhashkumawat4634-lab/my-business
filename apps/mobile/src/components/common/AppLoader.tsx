@@ -11,7 +11,7 @@ const THEME_STEPS = [
   { icon: 'business', label: 'Sites & Projects', color: '#2563EB' },
   { icon: 'people', label: 'Labour & Haziri', color: '#16A34A' },
   { icon: 'wallet', label: 'Hisab & Ledger', color: '#D97706' },
-  { icon: 'shield-checkmark', label: 'Verified Ledger', color: '#0F2851' },
+  { icon: 'shield-checkmark', label: 'Verified Ledger', color: '#2563EB' },
 ];
 
 export function AppLoader({ message = 'ThekaBook', subtitle }: AppLoaderProps) {

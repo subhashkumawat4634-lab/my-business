@@ -291,7 +291,7 @@ export function MonthlyAttendancePage({
                   hitSlop={8}
                   accessibilityLabel="Previous Month"
                 >
-                  <AppIcon name="chevron-back" size={16} color="#0F2851" />
+                  <AppIcon name="chevron-back" size={16} color="#2563EB" />
                 </Pressable>
 
                 <Pressable
@@ -312,7 +312,7 @@ export function MonthlyAttendancePage({
                   hitSlop={8}
                   accessibilityLabel="Next Month"
                 >
-                  <AppIcon name="chevron-forward" size={16} color="#0F2851" />
+                  <AppIcon name="chevron-forward" size={16} color="#2563EB" />
                 </Pressable>
               </View>
             </View>
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
   emptyWorkersTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#0F2851',
+    color: '#0F172A',
   },
   emptyWorkersSub: {
     fontSize: 13,
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
   monthNameText: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#0F2851',
+    color: '#0F172A',
     letterSpacing: -0.2,
   },
   labourDropdownTrigger: {
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
   dropdownSelectedValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#0F2851',
+    color: '#0F172A',
     flex: 1,
   },
   nativeHiddenPicker: {

@@ -299,16 +299,16 @@ export function ExtraWorkPage({
           {/* 1. 4 KPI SUMMARY CARDS (Matching AttendancePage)          */}
           {/* ========================================================= */}
           <View style={styles.statsSummaryGrid}>
-            <View style={[styles.statKpiCard, { borderColor: '#E0E7FF', backgroundColor: '#EEF2FF' }]}>
+            <View style={[styles.statKpiCard, { borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }]}>
               <View style={styles.statKpiTop}>
-                <View style={[styles.statIconBadge, { backgroundColor: '#E0E7FF' }]}>
-                  <AppIcon name="construct" size={16} color="#4F46E5" />
+                <View style={[styles.statIconBadge, { backgroundColor: '#DBEAFE' }]}>
+                  <AppIcon name="construct" size={16} color="#2563EB" />
                 </View>
-                <Text style={[styles.statKpiLabel, { color: '#3730A3' }]}>
+                <Text style={[styles.statKpiLabel, { color: '#1D4ED8' }]}>
                   {lang === 'hi' ? 'कुल एक्स्ट्रा काम' : 'Total Extra Work'}
                 </Text>
               </View>
-              <Text style={[styles.statKpiValue, { color: '#4338CA' }]}>
+              <Text style={[styles.statKpiValue, { color: '#2563EB' }]}>
                 {money(stats.totalExtra)}
               </Text>
               <Text style={styles.statKpiFoot}>
@@ -401,7 +401,7 @@ export function ExtraWorkPage({
               <View style={styles.formHeaderRow}>
                 <View style={styles.formHeaderTitleWrap}>
                   <View style={styles.formHeaderIconBadge}>
-                    <AppIcon name="construct" size={18} color="#4F46E5" />
+                    <AppIcon name="construct" size={18} color="#2563EB" />
                   </View>
                   <View>
                     <Text style={styles.formTitle}>
@@ -466,7 +466,7 @@ export function ExtraWorkPage({
                       onPress={() => handleSelectScopePreset(cat.label)}
                       style={styles.presetChip}
                     >
-                      <AppIcon name={cat.icon as any} size={13} color="#4F46E5" />
+                      <AppIcon name={cat.icon as any} size={13} color="#2563EB" />
                       <Text style={styles.presetChipText}>{cat.label}</Text>
                     </Pressable>
                   ))}
@@ -1047,12 +1047,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
     paddingVertical: 13,
     paddingHorizontal: 20,
     borderRadius: 12,
     ...Platform.select({
-      web: { boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)' },
+      web: { boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)' },
       default: { elevation: 2 },
     }),
   },
@@ -1071,7 +1071,7 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#BFDBFE',
     backgroundColor: '#FFFFFF',
     ...Platform.select({
       web: { boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
@@ -1090,7 +1090,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1217,18 +1217,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#EFF6FF',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#BFDBFE',
   },
   presetChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4338CA',
+    color: '#2563EB',
   },
   approvalChipsWrap: {
     flexDirection: 'row',
@@ -1347,7 +1347,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
     justifyContent: 'center',
   },
   saveFormBtnText: {
@@ -1441,7 +1441,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   categoryFilterChipActive: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
   },
   categoryFilterChipText: {
     fontSize: 12,
@@ -1529,10 +1529,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   recordStatusDue: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#EFF6FF',
   },
   recordStatusDueText: {
-    color: '#4338CA',
+    color: '#2563EB',
     fontSize: 10,
     fontWeight: '700',
   },

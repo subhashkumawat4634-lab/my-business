@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Snapshot, Row } from '../../types';
 import { money, siteSummary } from '../../finance';
 import { SidebarDrawer } from '../../components/common/SidebarDrawer';
+import { useLanguage } from '../../i18n';
 
 export interface DashboardPageProps {
   data?: Snapshot | null;
@@ -52,6 +53,7 @@ export function DashboardPage({
   onShowToast,
 }: DashboardPageProps) {
   const { user } = useAuth();
+  const { t, lang } = useLanguage();
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
 
@@ -340,9 +342,9 @@ export function DashboardPage({
         id: 'attendance',
         label: 'Attendance',
         icon: 'calendar-outline',
-        bg: '#EEF2FF',
-        border: '#C7D2FE',
-        iconColor: '#4338CA',
+        bg: '#EFF6FF',
+        border: '#BFDBFE',
+        iconColor: '#2563EB',
         onPress: () => onNavigateTab('attendance'),
       },
       {
@@ -368,12 +370,12 @@ export function DashboardPage({
     [
       {
         id: 'receipt',
-        label: 'Receive Payment',
+        label: lang === 'hi' ? 'पेमेंट / लेन-देन' : 'Payment / Received',
         icon: 'card-outline',
         bg: '#DCFCE7',
         border: '#86EFAC',
         iconColor: '#166534',
-        onPress: () => onOpenEntry('RECEIPT'),
+        onPress: () => onNavigateTab('payments'),
       },
       {
         id: 'expense',
@@ -755,7 +757,7 @@ export function DashboardPage({
                 {/* Step 1: Share invite link */}
                 <View style={styles.stepItem}>
                   <View style={styles.stepIconCircle}>
-                    <AppIcon name="chatbubble-ellipses-outline" size={18} color="#4F46E5" />
+                    <AppIcon name="chatbubble-ellipses-outline" size={18} color="#2563EB" />
                   </View>
                   <Text style={styles.stepLabelText}>Share{'\n'}invite link</Text>
                 </View>
@@ -766,7 +768,7 @@ export function DashboardPage({
                 {/* Step 2: Your friend signs up */}
                 <View style={styles.stepItem}>
                   <View style={styles.stepIconCircle}>
-                    <AppIcon name="checkmark-done" size={19} color="#4F46E5" />
+                    <AppIcon name="checkmark-done" size={19} color="#2563EB" />
                   </View>
                   <Text style={styles.stepLabelText}>Your friend{'\n'}signs up</Text>
                 </View>
@@ -777,7 +779,7 @@ export function DashboardPage({
                 {/* Step 3: Get reward */}
                 <View style={styles.stepItem}>
                   <View style={styles.stepIconCircle}>
-                    <AppIcon name="cash-outline" size={18} color="#4F46E5" />
+                    <AppIcon name="cash-outline" size={18} color="#2563EB" />
                   </View>
                   <Text style={styles.stepLabelText}>Get{'\n'}reward</Text>
                 </View>
@@ -1035,7 +1037,7 @@ const styles = StyleSheet.create({
   statCardValue: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#0F2851',
+    color: '#2563EB',
     letterSpacing: -0.5,
   },
   monthCard: {

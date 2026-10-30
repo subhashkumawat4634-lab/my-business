@@ -153,8 +153,8 @@ export function SettingsPage({
         <View style={styles.cardGroup}>
           {/* Cloud Ledger Sync */}
           <View style={styles.settingItem}>
-            <View style={[styles.iconBox, { backgroundColor: '#EEF2FF' }]}>
-              <Ionicons name="cloud-done-outline" size={19} color="#4F46E5" />
+            <View style={[styles.iconBox, { backgroundColor: '#EFF6FF' }]}>
+              <Ionicons name="cloud-done-outline" size={19} color="#2563EB" />
             </View>
             <View style={styles.textWrap}>
               <Text style={styles.itemTitle}>Cloud Ledger Live Sync</Text>

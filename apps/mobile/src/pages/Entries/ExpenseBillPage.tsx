@@ -342,7 +342,7 @@ export function ExpenseBillPage({
                 <View style={styles.formCardHeader}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <View style={styles.formHeaderIcon}>
-                      <AppIcon name="receipt" size={18} color="#DC2626" />
+                      <AppIcon name="receipt" size={18} color="#2563EB" />
                     </View>
                     <View>
                       <Text style={styles.formTitle}>New Expense Bill Entry</Text>
@@ -764,11 +764,11 @@ const styles = StyleSheet.create({
   primaryAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F2851',
+    backgroundColor: '#2563EB',
     borderRadius: 14,
     padding: 14,
     gap: 12,
-    shadowColor: '#0F2851',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryAddBtnTitle: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
-  primaryAddBtnSub: { fontSize: 11, color: '#CBD5E1', marginTop: 1 },
+  primaryAddBtnSub: { fontSize: 11, color: '#EFF6FF', marginTop: 1 },
 
   // Inline Form
   inlineFormCard: {
@@ -791,11 +791,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#FECACA',
+    borderColor: '#BFDBFE',
     gap: 14,
   },
   formCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  formHeaderIcon: { width: 34, height: 34, borderRadius: 8, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
+  formHeaderIcon: { width: 34, height: 34, borderRadius: 8, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
   formTitle: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
   formSubtitle: { fontSize: 11, color: '#64748B' },
   formCloseBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
@@ -837,7 +837,7 @@ const styles = StyleSheet.create({
   datePickerBtnText: { fontSize: 13, color: '#0F172A', fontWeight: '600' },
   modeTabsRow: { flexDirection: 'row', gap: 6 },
   modeTab: { flex: 1, paddingVertical: 9, borderRadius: 8, backgroundColor: '#F1F5F9', alignItems: 'center' },
-  modeTabActive: { backgroundColor: '#DC2626' },
+  modeTabActive: { backgroundColor: '#2563EB' },
   modeTabText: { fontSize: 11, fontWeight: '700', color: '#475569' },
   modeTabTextActive: { color: '#FFFFFF' },
   formActionRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
@@ -849,7 +849,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#DC2626',
+    backgroundColor: '#2563EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -867,7 +867,7 @@ const styles = StyleSheet.create({
   dateFilterText: { fontSize: 12, color: '#64748B' },
   filterChipsScroll: { gap: 6, paddingVertical: 2 },
   categoryChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, backgroundColor: '#F1F5F9' },
-  categoryChipActive: { backgroundColor: '#DC2626' },
+  categoryChipActive: { backgroundColor: '#2563EB' },
   categoryChipText: { fontSize: 11, fontWeight: '600', color: '#64748B' },
   categoryChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
 

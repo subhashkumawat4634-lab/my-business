@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
   currentDateText: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#0F2851',
+    color: '#0F172A',
     letterSpacing: -0.2,
   },
   currentDateSub: {
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 13,
-    color: '#0F2851',
+    color: '#0F172A',
     paddingVertical: 0,
     height: '100%',
   },
@@ -800,8 +800,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   statusPillChipActive: {
-    backgroundColor: '#0F2851',
-    borderColor: '#0F2851',
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
   },
   statusPillChipText: {
     fontSize: 12,
@@ -878,14 +878,14 @@ const styles = StyleSheet.create({
   unmarkedWorkerName: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0F2851',
+    color: '#0F172A',
   },
   unmarkedWorkerSkill: {
     fontSize: 11,
     color: '#64748B',
   },
   unmarkedActionBtn: {
-    backgroundColor: '#0F2851',
+    backgroundColor: '#2563EB',
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 6,
@@ -909,7 +909,7 @@ const styles = StyleSheet.create({
   recordsHeaderTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#0F2851',
+    color: '#0F172A',
   },
   recordsHeaderSub: {
     fontSize: 11,
@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
   workerNameText: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#0F2851',
+    color: '#0F172A',
   },
   skillPill: {
     backgroundColor: '#F1F5F9',

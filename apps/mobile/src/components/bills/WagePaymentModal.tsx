@@ -148,7 +148,7 @@ export function WagePaymentModal({
                 ]}
                 accessibilityLabel="Back"
               >
-                <AppIcon name="arrow-back" size={18} color="#0F2851" />
+                <AppIcon name="arrow-back" size={18} color="#2563EB" />
               </Pressable>
             ) : null}
             <View style={styles.headerIconBadge}>
@@ -355,7 +355,7 @@ export function WagePaymentModal({
               accessibilityLabel="Select date"
             >
               <View style={styles.dateLeft}>
-                <AppIcon name="calendar" size={16} color="#4F46E5" />
+                <AppIcon name="calendar" size={16} color="#2563EB" />
                 <Text style={styles.dateText}>{date}</Text>
               </View>
               <Text style={styles.dateChangeText}>
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: '#0F2851',
+    backgroundColor: '#2563EB',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
   },
   dateLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dateText: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
-  dateChangeText: { fontSize: 12, fontWeight: '700', color: '#4F46E5' },
+  dateChangeText: { fontSize: 12, fontWeight: '700', color: '#2563EB' },
   subFieldLabel: { fontSize: 12, fontWeight: '700', color: '#475569' },
   modesRow: { flexDirection: 'row', gap: 8 },
   modeCard: {
@@ -731,9 +731,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  notePresetChipActive: { backgroundColor: '#EEF2FF', borderColor: '#C7D2FE' },
+  notePresetChipActive: { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' },
   notePresetText: { fontSize: 11, fontWeight: '600', color: '#64748B' },
-  notePresetTextActive: { color: '#4338CA', fontWeight: '700' },
+  notePresetTextActive: { color: '#2563EB', fontWeight: '700' },
   textInput: {
     backgroundColor: '#F8FAFC',
     borderRadius: 10,

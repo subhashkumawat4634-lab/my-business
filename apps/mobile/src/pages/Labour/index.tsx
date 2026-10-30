@@ -402,7 +402,7 @@ export function LabourPage({
                       ]}
                       accessibilityLabel={`View details for ${w.name}`}
                     >
-                      <AppIcon name="eye-outline" size={15} color="#0F2851" />
+                      <AppIcon name="eye-outline" size={15} color="#2563EB" />
                       <Text style={styles.viewActionBtnText}>{t('view', 'View')}</Text>
                     </Pressable>
                   </View>
@@ -660,21 +660,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EFF6FF',
     paddingVertical: 5,
     paddingHorizontal: 9,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#BFDBFE',
   },
   viewActionBtnPressed: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#DBEAFE',
     transform: [{ scale: 0.96 }],
   },
   viewActionBtnText: {
     fontSize: 11.5,
     fontWeight: '700',
-    color: '#0F2851',
+    color: '#2563EB',
   },
 });
 

@@ -279,14 +279,14 @@ export function HisabPage({
               ]}
               accessibilityLabel="Record labour payment"
             >
-              <View style={[styles.actionTileIcon, { backgroundColor: '#E0E7FF' }]}>
-                <AppIcon name="wallet" size={20} color="#4F46E5" />
+              <View style={[styles.actionTileIcon, { backgroundColor: '#EFF6FF' }]}>
+                <AppIcon name="wallet" size={20} color="#2563EB" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.actionTileTitle, { color: '#3730A3' }]}>{t('labourPay', 'Labour Pay')}</Text>
+                <Text style={[styles.actionTileTitle, { color: '#2563EB' }]}>{t('labourPay', 'Labour Pay')}</Text>
                 <Text style={styles.actionTileSub}>{t('wagesAndAdvance', 'Wages & Advance')}</Text>
               </View>
-              <AppIcon name="add" size={16} color="#4F46E5" />
+              <AppIcon name="add" size={16} color="#2563EB" />
             </Pressable>
 
             {/* Other Expense Bill */}
@@ -800,8 +800,8 @@ const styles = StyleSheet.create({
     borderColor: '#FDE68A',
   },
   actionTileLabour: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#C7D2FE',
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
   },
   actionTileExpense: {
     backgroundColor: '#FEF2F2',
@@ -869,8 +869,8 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
   },
   filterChipActive: {
-    backgroundColor: '#0F2851',
-    borderColor: '#0F2851',
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
   },
   filterChipText: {
     fontSize: 11,
